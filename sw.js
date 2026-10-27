@@ -16,7 +16,7 @@ const STATIC_ASSETS = [
   './js/map.js',
   './js/sync.js',
   './js/report.js',
-  './data/KMLs.geojson',
+  './DATA/KMLs.geojson',
   './assets/logo.jpg',
   './assets/icons/favicon.png',
   './assets/icons/icon-192.png',

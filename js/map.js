@@ -131,9 +131,12 @@ const ITPAMap = (function () {
    * @param {string} [url] Caminho do arquivo GeoJSON
    * @returns {Promise<L.GeoJSON|null>}
    */
-  async function carregarTalhoesGeoJSON(url = './data/KMLs.geojson') {
+  async function carregarTalhoesGeoJSON(url = './DATA/KMLs.geojson') {
     try {
-      const response = await fetch(url);
+      let response = await fetch(url);
+      if (!response.ok && url.includes('DATA')) {
+        response = await fetch('./data/KMLs.geojson');
+      }
       if (!response.ok) {
         throw new Error(`Falha HTTP ${response.status} ao carregar GeoJSON: ${url}`);
       }
