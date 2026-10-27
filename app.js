@@ -17,8 +17,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnCloseModal = document.getElementById('btn-close-modal-ocorrencia');
   const btnCloseDetalhes = document.getElementById('btn-close-modal-detalhes');
   const btnCancelOcorrencia = document.getElementById('btn-cancel-ocorrencia');
-  const cameraInput = document.getElementById('camera-file-input');
+  const cameraCaptureInput = document.getElementById('camera-capture-input');
+  const galleryFileInput = document.getElementById('gallery-file-input');
   const btnTriggerCamera = document.getElementById('btn-trigger-camera');
+  const btnTriggerGallery = document.getElementById('btn-trigger-gallery');
   const previewContainer = document.getElementById('photos-preview-container');
   const btnGpsLocate = document.getElementById('btn-gps-locate');
   const btnPickPoint = document.getElementById('btn-pick-point');
@@ -137,13 +139,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Acionamento da Câmera
-  btnTriggerCamera.addEventListener('click', () => {
-    cameraInput.click();
-  });
-
-  cameraInput.addEventListener('change', async (e) => {
-    const files = Array.from(e.target.files);
+  // Processamento e compressão em Canvas das fotos selecionadas
+  async function processarArquivosFotos(files) {
     if (!files || files.length === 0) return;
 
     showToast(`Otimizando ${files.length} foto(s) em Canvas...`, 'info');
@@ -169,9 +166,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         showToast('Erro ao processar imagem: ' + err.message, 'error');
       }
     }
+  }
 
-    cameraInput.value = ''; // Limpa para permitir nova seleção
-  });
+  // 1. Botão "Tirar Foto" (ativa a câmera traseira no mobile via capture="environment")
+  if (btnTriggerCamera && cameraCaptureInput) {
+    btnTriggerCamera.addEventListener('click', () => {
+      cameraCaptureInput.click();
+    });
+
+    cameraCaptureInput.addEventListener('change', async (e) => {
+      await processarArquivosFotos(Array.from(e.target.files));
+      cameraCaptureInput.value = '';
+    });
+  }
+
+  // 2. Botão "Escolher Arquivo" (abre a galeria/seletor de arquivos comum)
+  if (btnTriggerGallery && galleryFileInput) {
+    btnTriggerGallery.addEventListener('click', () => {
+      galleryFileInput.click();
+    });
+
+    galleryFileInput.addEventListener('change', async (e) => {
+      await processarArquivosFotos(Array.from(e.target.files));
+      galleryFileInput.value = '';
+    });
+  }
 
   function adicionarPreviewFoto(resultado) {
     const index = currentPhotos.length - 1;

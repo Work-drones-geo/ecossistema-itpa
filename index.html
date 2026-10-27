@@ -229,17 +229,28 @@
         </div>
 
         <!-- 4. Fotos com Compressão Automática em Canvas -->
+        <!-- 4. Fotos com Compressão Automática em Canvas -->
         <div class="form-group">
-          <label class="form-label">Registro Fotográfico (Compactação 1024px automática)</label>
-          <input type="file" id="camera-file-input" accept="image/*" capture="environment" style="display: none;" multiple>
+          <label class="form-label">Registro Fotográfico</label>
           
-          <div class="camera-action-card" id="btn-trigger-camera">
-            <span style="font-size: 1.8rem; display: block; margin-bottom: 4px;">📸</span>
-            <strong style="color: var(--itpa-green-forest); font-size: 0.9rem;">Tirar Foto ou Escolher Imagem</strong>
-            <p style="font-size: 0.75rem; color: var(--itpa-text-muted); margin-top: 2px;">
-              Processamento em Canvas cliente (Máx. 1024px • Qualidade 0.70 JPEG • Base64 &lt; 200KB)
-            </p>
+          <!-- Input câmera traseira via capture="environment" -->
+          <input type="file" id="camera-capture-input" accept="image/*" capture="environment" style="display: none;">
+          
+          <!-- Input galeria / arquivos sem capture -->
+          <input type="file" id="gallery-file-input" accept="image/*" multiple style="display: none;">
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px;">
+            <button type="button" class="btn-itpa-pill secondary" id="btn-trigger-camera" style="justify-content: center; padding: 12px 14px; font-size: 0.85rem;">
+              📸 Tirar Foto
+            </button>
+            <button type="button" class="btn-itpa-pill outline" id="btn-trigger-gallery" style="justify-content: center; padding: 12px 14px; font-size: 0.85rem;">
+              📁 Escolher Arquivo
+            </button>
           </div>
+
+          <p style="font-size: 0.72rem; color: var(--itpa-text-muted); text-align: center;">
+            Compressão em Canvas cliente (Máx. 1024px • Qualidade 0.70 JPEG • Base64 &lt; 200KB)
+          </p>
 
           <div class="camera-preview-row" id="photos-preview-container"></div>
         </div>
