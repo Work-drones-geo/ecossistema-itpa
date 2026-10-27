@@ -1,0 +1,26 @@
+{
+  "name": "Ecossistema ITPA - Monitoramento de Restauração",
+  "short_name": "ITPA Geo",
+  "description": "PWA WebGIS offline-first para monitoramento de restauração florestal e registro de ocorrências em campo do ITPA.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F7FAF5",
+  "theme_color": "#82C325",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
