@@ -8,6 +8,7 @@ const ITPAMap = (function () {
   let clusterGroup = null;
   let layerControl = null;
   let talhoesLayer = null;
+  let ortofotoLayer = null;
   let userLocationMarker = null;
   let userAccuracyCircle = null;
   let tempPickMarker = null;
@@ -57,6 +58,7 @@ const ITPAMap = (function () {
     map = L.map(containerId, {
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
+      maxZoom: 21,
       layers: [esriSat], // Padrão: Imagem de satélite para trabalho em campo com drones e reflorestamento
       zoomControl: false // Adicionaremos em posição customizada
     });
@@ -64,13 +66,29 @@ const ITPAMap = (function () {
     // Reposiciona o controle de zoom
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // 3. Controle de camadas
+    // 3. Camada de Ortofoto Local (Drone / Voo de Alta Resolução)
+    ortofotoLayer = L.tileLayer('assets/tiles/ortofoto/{z}/{x}/{y}.jpg', {
+      minZoom: 15,
+      maxZoom: 20,
+      maxNativeZoom: 20,
+      attribution: 'Ortofoto Drone &copy; Work Drones / ITPA'
+    });
+
+    // Ativada por padrão no mapa
+    ortofotoLayer.addTo(map);
+
+    // 4. Controle de camadas (Base + Overlays)
     const baseLayers = {
       '🛰️ Satélite de Alta Resolução': esriSat,
       '🗺️ Mapa Topográfico / Ruas': osm,
       '🎨 Carto Voyager (Claro)': cartoVoyager
     };
-    layerControl = L.control.layers(baseLayers, null, { position: 'topright' }).addTo(map);
+
+    const overlays = {
+      '📸 Ortofoto Drone (Alta Resolução)': ortofotoLayer
+    };
+
+    layerControl = L.control.layers(baseLayers, overlays, { position: 'topright' }).addTo(map);
 
     // 4. Inicializa o Cluster com tema do ITPA
     clusterGroup = L.markerClusterGroup({
@@ -420,6 +438,7 @@ const ITPAMap = (function () {
     init,
     carregarTalhoesGeoJSON,
     getTalhoesLayer: () => talhoesLayer,
+    getOrtofotoLayer: () => ortofotoLayer,
     carregarOcorrencias,
     obterLocalizacaoAtual,
     ativarModoSelecaoPonto,
