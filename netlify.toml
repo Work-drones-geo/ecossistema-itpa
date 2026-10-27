@@ -1,0 +1,19 @@
+[build]
+  publish = "."
+
+[context.production.environment]
+  NETLIFY_DRAWER_ENABLED = "false"
+
+[context.deploy-preview.environment]
+  NETLIFY_DRAWER_ENABLED = "false"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
