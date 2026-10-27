@@ -56,8 +56,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const mapInstance = window.ITPAMap.init('map');
 
-  // Tenta obter posição inicial do técnico
-  window.ITPAMap.obterLocalizacaoAtual().catch(() => {
+  // Callback ao clicar no botão 'Registrar Ocorrência Aqui' dentro do popup do talhão
+  window.ITPA_OnTalhaoSelecionado = (nomeTalhao, center) => {
+    abrirModalOcorrencia();
+    const talhaoInput = document.getElementById('ocorrencia-talhao');
+    if (talhaoInput) talhaoInput.value = nomeTalhao;
+
+    if (center && center.lat && center.lng) {
+      document.getElementById('ocorrencia-lat').value = center.lat;
+      document.getElementById('ocorrencia-lng').value = center.lng;
+      document.getElementById('ocorrencia-accuracy').value = 'Talhão';
+      document.getElementById('display-coords').innerText = `${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}`;
+      document.getElementById('display-accuracy').innerText = `Centro do ${nomeTalhao}`;
+    }
+  };
+
+  // Tenta obter posição inicial do técnico sem sobrescrever o enquadramento do mapa
+  window.ITPAMap.obterLocalizacaoAtual(false).catch(() => {
     console.log('GPS inicial não disponível no carregamento.');
   });
 

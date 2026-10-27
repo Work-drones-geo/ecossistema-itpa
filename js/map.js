@@ -6,6 +6,8 @@
 const ITPAMap = (function () {
   let map = null;
   let clusterGroup = null;
+  let layerControl = null;
+  let talhoesLayer = null;
   let userLocationMarker = null;
   let userAccuracyCircle = null;
   let tempPickMarker = null;
@@ -68,7 +70,7 @@ const ITPAMap = (function () {
       '🗺️ Mapa Topográfico / Ruas': osm,
       '🎨 Carto Voyager (Claro)': cartoVoyager
     };
-    L.control.layers(baseLayers, null, { position: 'topright' }).addTo(map);
+    layerControl = L.control.layers(baseLayers, null, { position: 'topright' }).addTo(map);
 
     // 4. Inicializa o Cluster com tema do ITPA
     clusterGroup = L.markerClusterGroup({
@@ -99,7 +101,124 @@ const ITPAMap = (function () {
       }
     });
 
+    // 6. Leitura assíncrona dos talhões da área (GeoJSON em data/)
+    carregarTalhoesGeoJSON('./data/KMLs.geojson');
+
     return map;
+  }
+
+  /**
+   * Faz a leitura assíncrona do GeoJSON de talhões e aplica o estilo oficial ITPA.
+   * Enquadra automaticamente a visão nos limites da camada com map.fitBounds().
+   * @param {string} [url] Caminho do arquivo GeoJSON
+   * @returns {Promise<L.GeoJSON|null>}
+   */
+  async function carregarTalhoesGeoJSON(url = './data/KMLs.geojson') {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Falha HTTP ${response.status} ao carregar GeoJSON: ${url}`);
+      }
+
+      const geojsonData = await response.json();
+
+      // Remove camada anterior se existir
+      if (talhoesLayer && map) {
+        map.removeLayer(talhoesLayer);
+        if (layerControl) layerControl.removeLayer(talhoesLayer);
+      }
+
+      // Estilo oficial da identidade do ITPA:
+      // Contorno verde vibrante (#82C325, 2px) e preenchimento suave translúcido
+      talhoesLayer = L.geoJSON(geojsonData, {
+        style: function () {
+          return {
+            color: '#82C325',       // Contorno verde vibrante oficial ITPA
+            weight: 2,              // Largura 2px
+            opacity: 1.0,           // Opacidade da borda
+            fillColor: '#82C325',   // Preenchimento verde ITPA
+            fillOpacity: 0.16       // Preenchimento suave translúcido
+          };
+        },
+        onEachFeature: function (feature, layer) {
+          const props = feature.properties || {};
+          const nomeTalhao = props.Name || props.nome || props.Nome || props.talhao || 'Talhão Florestal';
+          const layerOrigem = props.layer || '';
+          const descricao = props.description || '';
+          const codigo = props.id || props.codigo || '';
+
+          // Efeito hover interativo nos polígonos
+          layer.on({
+            mouseover: function (e) {
+              const poly = e.target;
+              poly.setStyle({
+                weight: 3,
+                color: '#6EB31A',
+                fillOpacity: 0.32
+              });
+              if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                poly.bringToFront();
+              }
+            },
+            mouseout: function (e) {
+              talhoesLayer.resetStyle(e.target);
+            }
+          });
+
+          // Popup com atributos do talhão (nome, código, camada de origem, descrição)
+          const popupHtml = `
+            <div class="itpa-popup-card">
+              <div class="popup-header">
+                <span class="popup-tipo" style="color: #82C325;">🌱 Talhão / Limite de Voo</span>
+              </div>
+              <h4 class="popup-title">${nomeTalhao}</h4>
+              ${codigo ? `<p class="popup-meta"><strong>Código:</strong> ${codigo}</p>` : ''}
+              ${layerOrigem ? `<p class="popup-meta"><strong>Camada:</strong> ${layerOrigem}</p>` : ''}
+              ${descricao ? `<p class="popup-desc">${descricao}</p>` : ''}
+              <div style="margin-top: 10px;">
+                <button class="btn-popup-ver btn-talhao-preencher" data-talhao="${nomeTalhao}">
+                  ➕ Registrar Ocorrência Aqui
+                </button>
+              </div>
+            </div>
+          `;
+
+          layer.bindPopup(popupHtml);
+
+          layer.on('popupopen', () => {
+            const btn = document.querySelector(`.btn-talhao-preencher[data-talhao="${nomeTalhao}"]`);
+            if (btn && typeof window.ITPA_OnTalhaoSelecionado === 'function') {
+              btn.onclick = () => {
+                const center = layer.getBounds ? layer.getBounds().getCenter() : null;
+                window.ITPA_OnTalhaoSelecionado(nomeTalhao, center);
+              };
+            }
+          });
+        }
+      });
+
+      if (map) {
+        talhoesLayer.addTo(map);
+
+        if (layerControl) {
+          layerControl.addOverlay(talhoesLayer, '🌱 Limites e Talhões (ITPA)');
+        }
+
+        // Ajuste automático do enquadramento do mapa para os limites da área
+        if (talhoesLayer.getBounds().isValid()) {
+          map.fitBounds(talhoesLayer.getBounds(), {
+            padding: [30, 30],
+            maxZoom: 16
+          });
+          console.log('[ITPAMap] Auto-fit aplicado aos limites dos talhões:', talhoesLayer.getBounds());
+        }
+      }
+
+      return talhoesLayer;
+    } catch (err) {
+      console.warn('[ITPAMap] Falha ao carregar GeoJSON dos talhões:', err);
+      return null;
+    }
   }
 
   /**
@@ -231,7 +350,7 @@ const ITPAMap = (function () {
    * Centraliza e acompanha a posição GPS do usuário em alta precisão.
    * @returns {Promise<{latitude: number, longitude: number, accuracy: number}>}
    */
-  function obterLocalizacaoAtual() {
+  function obterLocalizacaoAtual(centralizar = true) {
     return new Promise((resolve, reject) => {
       if (!('geolocation' in navigator)) {
         return reject(new Error('Geolocalização não suportada no aparelho.'));
@@ -268,7 +387,9 @@ const ITPAMap = (function () {
               userAccuracyCircle.setRadius(accuracy);
             }
 
-            map.setView([lat, lng], 16, { animate: true });
+            if (centralizar) {
+              map.setView([lat, lng], 16, { animate: true });
+            }
           }
 
           resolve({
@@ -297,6 +418,8 @@ const ITPAMap = (function () {
 
   return {
     init,
+    carregarTalhoesGeoJSON,
+    getTalhoesLayer: () => talhoesLayer,
     carregarOcorrencias,
     obterLocalizacaoAtual,
     ativarModoSelecaoPonto,
