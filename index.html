@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Ecossistema ITPA | Monitoramento & Restauração Florestal</title>
+  
+  <!-- Configurações PWA & Mobile -->
+  <meta name="theme-color" content="#82C325">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ITPA Geo">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
+  <!-- Tipografia Oficial: Bitter (Headings) e Plus Jakarta Sans (Interface) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,500;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet & Leaflet.markercluster CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+
+  <!-- Estilos Customizados do ITPA -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div id="app-container">
+    
+    <!-- Top Header -->
+    <header class="itpa-header">
+      <div class="brand-wrapper" id="brand-home-btn">
+        <img src="assets/logo.jpg" alt="Logo ITPA" class="brand-logo-img">
+        <div class="brand-info">
+          <span class="brand-title">ECOSSISTEMA ITPA</span>
+          <span class="brand-subtitle">Monitoramento Florestal</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Indicador de Status Online / Offline -->
+        <div class="status-pill online" id="connection-status-pill" title="Status da Conexão">
+          <span class="indicator-dot"></span>
+          <span id="connection-text">Online</span>
+          <span class="badge-counter" id="header-pending-count" style="display: none;">0</span>
+        </div>
+
+        <button class="btn-itpa-pill secondary" id="header-sync-btn" title="Sincronizar dados pendentes">
+          🔄 <span class="hide-mobile">Sincronizar</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Área Principal (Vistas: Mapa / Lista / Ajustes) -->
+    <main class="main-view-container">
+      
+      <!-- Vista 1: Mapa WebGIS -->
+      <section id="map-view">
+        <div id="map"></div>
+
+        <!-- Controles Flutuantes do Mapa -->
+        <div class="map-floating-controls">
+          <button class="btn-fab-round" id="btn-gps-locate" title="Minha Localização GPS">
+            📍
+          </button>
+          <button class="btn-fab-round" id="btn-pick-point" title="Marcar ponto no mapa">
+            🎯
+          </button>
+        </div>
+      </section>
+
+      <!-- Vista 2: Lista de Ocorrências -->
+      <section id="list-view" class="view-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Ocorrências de Campo</h2>
+          <div class="filter-actions">
+            <select id="filter-status-select" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.82rem;">
+              <option value="all">Todas</option>
+              <option value="pending">Apenas Pendentes (Offline)</option>
+              <option value="synced">Sincronizadas</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="ocorrencias-cards-list" class="cards-grid">
+          <!-- Renderizado dinamicamente via app.js -->
+        </div>
+      </section>
+
+      <!-- Vista 3: Painel de Ajustes e Sincronização Firebase -->
+      <section id="settings-view" class="view-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Ajustes & Sincronização Cloud</h2>
+        </div>
+
+        <div class="cards-grid">
+          <!-- Card de Status do Banco Local -->
+          <div class="ocorrencia-card" style="flex-direction: column;">
+            <h3 style="font-family: var(--font-heading); color: var(--itpa-green-dark); margin-bottom: 8px;">
+              💾 Armazenamento Offline-First (IndexedDB)
+            </h3>
+            <p style="font-size: 0.88rem; color: var(--itpa-text-muted); margin-bottom: 12px;">
+              Todos os registros, medições de campo e fotos compactadas são gravados localmente no seu dispositivo e continuam acessíveis mesmo sem sinal de celular.
+            </p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="btn-itpa-pill secondary" id="btn-export-geojson">
+                📥 Exportar GeoJSON
+              </button>
+              <button class="btn-itpa-pill outline" id="btn-clean-synced">
+                🧹 Limpar Sincronizados
+              </button>
+            </div>
+          </div>
+
+          <!-- Card de Integração Firebase -->
+          <div class="ocorrencia-card" style="flex-direction: column;">
+            <h3 style="font-family: var(--font-heading); color: var(--itpa-green-dark); margin-bottom: 8px;">
+              🔥 Integração Firebase Firestore & Storage
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--itpa-text-muted); margin-bottom: 14px;">
+              Configure as chaves do projeto Firebase da Work Drones / ITPA para habilitar sincronização automática em nuvem.
+            </p>
+            
+            <form id="firebase-config-form">
+              <div class="form-group">
+                <label class="form-label">API Key</label>
+                <input type="text" id="fb-apiKey" class="form-input" placeholder="AIzaSy...">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Project ID</label>
+                <input type="text" id="fb-projectId" class="form-input" placeholder="ecossistema-itpa">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Storage Bucket</label>
+                <input type="text" id="fb-storageBucket" class="form-input" placeholder="ecossistema-itpa.appspot.com">
+              </div>
+              <button type="submit" class="btn-itpa-pill" style="align-self: flex-start;">
+                Salvar Credenciais
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Barra Inferior de Navegação -->
+    <nav class="itpa-bottom-bar">
+      <button class="nav-tab-item active" data-tab="map-view">
+        <span class="nav-icon">🗺️</span>
+        <span>Mapa</span>
+      </button>
+
+      <button class="nav-tab-cta" id="btn-open-form-modal">
+        <span>➕</span>
+        <span>Nova Ocorrência</span>
+      </button>
+
+      <button class="nav-tab-item" data-tab="list-view">
+        <span class="nav-icon">📋</span>
+        <span>Registros</span>
+        <span class="badge-count" id="tab-pending-badge" style="display: none;">0</span>
+      </button>
+
+      <button class="nav-tab-item" data-tab="settings-view">
+        <span class="nav-icon">⚙️</span>
+        <span>Ajustes</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- ==========================================================================
+       Modal: Registro de Nova Ocorrência
+       ========================================================================== -->
+  <div class="modal-overlay" id="modal-ocorrencia">
+    <div class="modal-sheet">
+      <div class="modal-top-bar">
+        <h3 class="modal-title">Nova Ocorrência em Campo</h3>
+        <button class="btn-close-modal" id="btn-close-modal-ocorrencia">&times;</button>
+      </div>
+
+      <form id="form-ocorrencia">
+        <!-- 1. Categoria -->
+        <div class="form-group">
+          <label class="form-label">Tipo de Ocorrência</label>
+          <div class="category-chips-grid" id="category-selector">
+            <div class="chip-option selected" data-value="muda_danificada">🌱 Muda Danificada</div>
+            <div class="chip-option" data-value="fogo">🔥 Foco de Incêndio</div>
+            <div class="chip-option" data-value="erosao">⚠️ Processo Erosivo</div>
+            <div class="chip-option" data-value="plantio">🌿 Plantio Realizado</div>
+            <div class="chip-option" data-value="regeneracao">🍃 Regeneração</div>
+            <div class="chip-option" data-value="fauna">🐾 Fauna</div>
+            <div class="chip-option" data-value="outro">📍 Outro</div>
+          </div>
+          <input type="hidden" id="ocorrencia-tipo" value="muda_danificada" required>
+        </div>
+
+        <!-- 2. Título & Talhão -->
+        <div class="form-group">
+          <label class="form-label" for="ocorrencia-titulo">Título / Identificação</label>
+          <input type="text" id="ocorrencia-titulo" class="form-input" placeholder="Ex: Mudas secas por estiagem no setor Norte" required>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label" for="ocorrencia-talhao">Talhão / Área</label>
+            <input type="text" id="ocorrencia-talhao" class="form-input" placeholder="Ex: Talhão T-04">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label" for="ocorrencia-severidade">Severidade</label>
+            <select id="ocorrencia-severidade" class="form-select">
+              <option value="baixa">Baixa</option>
+              <option value="media" selected>Média</option>
+              <option value="alta">Alta</option>
+              <option value="critica">Crítica (Urgente)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 3. Descrição Técnica -->
+        <div class="form-group">
+          <label class="form-label" for="ocorrencia-descricao">Observações de Campo</label>
+          <textarea id="ocorrencia-descricao" class="form-textarea" rows="3" placeholder="Detalhes do solo, espécie afetada, necessidade de replantio..."></textarea>
+        </div>
+
+        <!-- 4. Fotos com Compressão Automática em Canvas -->
+        <div class="form-group">
+          <label class="form-label">Registro Fotográfico (Compactação 1280px automática)</label>
+          <input type="file" id="camera-file-input" accept="image/*" capture="environment" style="display: none;" multiple>
+          
+          <div class="camera-action-card" id="btn-trigger-camera">
+            <span style="font-size: 1.8rem; display: block; margin-bottom: 4px;">📸</span>
+            <strong style="color: var(--itpa-green-forest); font-size: 0.9rem;">Tirar Foto ou Escolher Imagem</strong>
+            <p style="font-size: 0.75rem; color: var(--itpa-text-muted); margin-top: 2px;">
+              Processamento em Canvas cliente (Máx. 1280px • Qualidade 0.75 JPEG)
+            </p>
+          </div>
+
+          <div class="camera-preview-row" id="photos-preview-container"></div>
+        </div>
+
+        <!-- 5. Coordenadas GPS -->
+        <div class="form-group">
+          <label class="form-label">Coordenadas Geográficas</label>
+          <div class="gps-info-box">
+            <div>
+              <div class="gps-coords-text" id="display-coords">Aguardando GPS...</div>
+              <div class="gps-accuracy-tag" id="display-accuracy">Precisão: --</div>
+            </div>
+            <button type="button" class="btn-itpa-pill secondary" id="btn-refresh-gps" style="padding: 6px 14px; font-size: 0.75rem;">
+              📡 Atualizar
+            </button>
+          </div>
+          <input type="hidden" id="ocorrencia-lat" required>
+          <input type="hidden" id="ocorrencia-lng" required>
+          <input type="hidden" id="ocorrencia-accuracy">
+          <input type="hidden" id="ocorrencia-altitude">
+        </div>
+
+        <!-- Botão de Ação -->
+        <div style="display: flex; gap: 10px; margin-top: 22px;">
+          <button type="button" class="btn-itpa-pill outline" id="btn-cancel-ocorrencia" style="flex: 1;">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-itpa-pill" style="flex: 2; justify-content: center;">
+            💾 Gravar Ocorrência
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Visualizador de Detalhes -->
+  <div class="modal-overlay" id="modal-detalhes">
+    <div class="modal-sheet">
+      <div class="modal-top-bar">
+        <h3 class="modal-title" id="detalhe-titulo">Detalhes da Ocorrência</h3>
+        <button class="btn-close-modal" id="btn-close-modal-detalhes">&times;</button>
+      </div>
+      <div id="detalhe-conteudo"></div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="itpa-toast-container" id="toast-container"></div>
+
+  <!-- Dependências Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+  <!-- Módulos da Aplicação Ecossistema ITPA -->
+  <script src="js/db.js"></script>
+  <script src="js/camera.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/sync.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
