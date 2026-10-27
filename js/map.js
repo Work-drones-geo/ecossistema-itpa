@@ -67,7 +67,7 @@ const ITPAMap = (function () {
     L.control.zoom({ position: 'topright' }).addTo(map);
 
     // 3. Camada de Ortofoto Local (Drone / Voo de Alta Resolução)
-    ortofotoLayer = L.tileLayer('assets/tiles/ortofoto/{z}/{x}/{y}.png', {
+    ortofotoLayer = L.tileLayer('./assets/tiles/ortofoto/{z}/{x}/{y}.png', {
       minZoom: 15,
       maxZoom: 20,
       maxNativeZoom: 20,
@@ -119,8 +119,8 @@ const ITPAMap = (function () {
       }
     });
 
-    // 6. Leitura assíncrona dos talhões da área (GeoJSON em data/)
-    carregarTalhoesGeoJSON('./data/KMLs.geojson');
+    // 6. Leitura assíncrona dos talhões da área (GeoJSON relativo)
+    carregarTalhoesGeoJSON('./DATA/KMLs.geojson');
 
     return map;
   }
@@ -131,17 +131,37 @@ const ITPAMap = (function () {
    * @param {string} [url] Caminho do arquivo GeoJSON
    * @returns {Promise<L.GeoJSON|null>}
    */
-  async function carregarTalhoesGeoJSON(url = './DATA/KMLs.geojson') {
+  async function carregarTalhoesGeoJSON(url) {
     try {
-      let response = await fetch(url);
-      if (!response.ok && url.includes('DATA')) {
-        response = await fetch('./data/KMLs.geojson');
-      }
-      if (!response.ok) {
-        throw new Error(`Falha HTTP ${response.status} ao carregar GeoJSON: ${url}`);
+      const caminhos = [
+        url,
+        './DATA/KMLs.geojson',
+        './DATA/talhoes.geojson',
+        './data/KMLs.geojson',
+        './data/talhoes.geojson'
+      ].filter(Boolean);
+
+      let geojsonData = null;
+      let urlSucesso = '';
+
+      for (const caminho of caminhos) {
+        try {
+          const resp = await fetch(caminho);
+          if (resp.ok) {
+            geojsonData = await resp.json();
+            urlSucesso = caminho;
+            break;
+          }
+        } catch (e) {
+          // Continua para o próximo caminho candidato
+        }
       }
 
-      const geojsonData = await response.json();
+      if (!geojsonData) {
+        throw new Error(`Falha ao localizar GeoJSON dos talhões em nenhum dos caminhos testados: ${caminhos.join(', ')}`);
+      }
+
+      console.log(`[ITPAMap] Talhões carregados com sucesso de: ${urlSucesso}`);
 
       // Remove camada anterior se existir
       if (talhoesLayer && map) {
