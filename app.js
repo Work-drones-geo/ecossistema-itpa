@@ -541,7 +541,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (inputProjId) inputProjId.value = cfgAtual.projectId || '';
     if (inputBucket) inputBucket.value = cfgAtual.storageBucket || '';
   }
+
   window.ITPASync.inicializarFirebase();
+
+  // Ativa a sincronização em tempo real (onSnapshot) com Firestore
+  window.ITPASync.iniciarSincronizacaoTempoReal(async () => {
+    await atualizarDadosInterface();
+  });
 
   fbForm.addEventListener('submit', async (e) => {
     e.preventDefault();

@@ -231,6 +231,100 @@ const ITPASync = (function () {
     return { total, sucesso, falhas };
   }
 
+  let unsubscribeSnapshot = null;
+
+  /**
+   * Ativa a sincronização em tempo real via onSnapshot do Firestore.
+   * Quando uma ocorrência é criada, alterada ou removida na nuvem por qualquer membro
+   * da equipe em campo ou web, os dados são automaticamente sincronizados no IndexedDB local.
+   * @param {Function} [callbackAtualizacao] Chamado quando novos dados chegam
+   * @returns {Function|null} Unsubscribe listener
+   */
+  function iniciarSincronizacaoTempoReal(callbackAtualizacao) {
+    if (!firestoreInstance) {
+      inicializarFirebase();
+    }
+    if (!firestoreInstance) {
+      console.warn('[Firestore] Instância não disponível para escuta em tempo real.');
+      return null;
+    }
+
+    if (unsubscribeSnapshot) {
+      unsubscribeSnapshot();
+    }
+
+    try {
+      unsubscribeSnapshot = firestoreInstance.collection('ocorrencias').onSnapshot(async (snapshot) => {
+        let houveMudanca = false;
+
+        for (const change of snapshot.docChanges()) {
+          const doc = change.doc;
+          const data = doc.data();
+          const docId = doc.id;
+
+          if (change.type === 'added' || change.type === 'modified') {
+            const local = await window.ITPADatabase.obterOcorrencia(docId);
+
+            // Não sobrescreve se houver alteração local ainda pendente de upload
+            if (!local || local.syncStatus !== 'pending') {
+              const ocorrenciaSincronizada = {
+                id: docId,
+                tipo: data.tipo || 'outro',
+                titulo: data.titulo || 'Ocorrência',
+                descricao: data.descricao || '',
+                talhao: data.talhao || '',
+                latitude: parseFloat(data.latitude) || 0,
+                longitude: parseFloat(data.longitude) || 0,
+                precisaoGps: data.precisaoGps || null,
+                altitude: data.altitude || null,
+                severidade: data.severidade || 'media',
+                responsavel: data.responsavel || 'Equipe ITPA',
+                fotos: (data.fotos || []).map((url, idx) => ({
+                  dataUrl: url,
+                  nome: `foto_${idx + 1}.jpg`,
+                  tamanhoFormatado: 'Cloud'
+                })),
+                syncStatus: 'synced',
+                remoteId: docId,
+                timestamp: data.criadoEm || data.timestamp || new Date().toISOString(),
+                atualizadoEm: data.sincronizadoEm || new Date().toISOString()
+              };
+
+              await window.ITPADatabase.salvarOcorrencia(ocorrenciaSincronizada);
+              houveMudanca = true;
+            }
+          } else if (change.type === 'removed') {
+            await window.ITPADatabase.removerOcorrencia(docId);
+            houveMudanca = true;
+          }
+        }
+
+        if (houveMudanca) {
+          console.log('[Firestore] Atualizações em tempo real aplicadas ao banco local.');
+          if (typeof callbackAtualizacao === 'function') {
+            callbackAtualizacao();
+          }
+        }
+      }, (erro) => {
+        console.warn('[Firestore] Erro na escuta em tempo real:', erro);
+      });
+
+      console.log('[Firestore] Sincronização em tempo real ativada com sucesso!');
+      return unsubscribeSnapshot;
+    } catch (e) {
+      console.error('[Firestore] Falha ao registrar onSnapshot:', e);
+      return null;
+    }
+  }
+
+  function pararSincronizacaoTempoReal() {
+    if (unsubscribeSnapshot) {
+      unsubscribeSnapshot();
+      unsubscribeSnapshot = null;
+      console.log('[Firestore] Escuta em tempo real desativada.');
+    }
+  }
+
   /**
    * Monitora reconexão e inicia auto-sync quando a internet voltar.
    */
@@ -252,6 +346,8 @@ const ITPASync = (function () {
     carregarConfiguracao,
     salvarConfiguracao,
     inicializarFirebase,
+    iniciarSincronizacaoTempoReal,
+    pararSincronizacaoTempoReal,
     isConfigurado,
     sincronizarTudo,
     monitorarConexao,
