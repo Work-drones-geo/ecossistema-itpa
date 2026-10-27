@@ -7,14 +7,14 @@ const ITPASync = (function () {
   let isSyncing = false;
   let listeners = [];
 
-  // Configuração padrão do Firebase (pode ser sobrescrita via IndexedDB ou interface)
+  // Configuração oficial do Firebase (Ecossistema ITPA)
   let firebaseConfig = {
-    apiKey: '',
-    authDomain: '',
-    projectId: '',
-    storageBucket: '',
-    messagingSenderId: '',
-    appId: ''
+    apiKey: "AIzaSyCrqwtEif_uxzb30TuB1cj3zVXD7GUuqvQ",
+    authDomain: "ecossistema-itpa.firebaseapp.com",
+    projectId: "ecossistema-itpa",
+    storageBucket: "ecossistema-itpa.firebasestorage.app",
+    messagingSenderId: "20602525657",
+    appId: "1:20602525657:web:c8a332bd50d70c36d8ebc8"
   };
 
   let firestoreInstance = null;
@@ -60,6 +60,7 @@ const ITPASync = (function () {
     if (window.ITPADatabase) {
       await window.ITPADatabase.salvarConfig('firebase_config', firebaseConfig);
     }
+    inicializarFirebase();
   }
 
   /**
@@ -81,9 +82,21 @@ const ITPASync = (function () {
     try {
       if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
+
+        // Habilita persistência de dados offline no Firestore
+        if (firebase.firestore) {
+          firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch((err) => {
+            if (err.code === 'failed-precondition') {
+              console.warn('[Firestore] Persistência offline em aba secundária.');
+            } else if (err.code === 'unimplemented') {
+              console.warn('[Firestore] Persistência offline do SDK não suportada neste browser.');
+            }
+          });
+        }
       }
       firestoreInstance = firebase.firestore();
       storageInstance = firebase.storage();
+      console.log('[Firebase] SDK inicializado e conectado a:', firebaseConfig.projectId);
       return true;
     } catch (e) {
       console.warn('Falha ao inicializar SDK Firebase:', e);
@@ -92,24 +105,33 @@ const ITPASync = (function () {
   }
 
   /**
-   * Faz upload de uma foto no Firebase Storage (ou gera mock de URL caso em homologação).
+   * Faz upload de uma foto no Firebase Storage.
    * @param {string} ocorrenciaId
    * @param {Object} fotoObj { dataUrl, blob, nome }
    * @returns {Promise<string>} Download URL do Storage
    */
   async function uploadFoto(ocorrenciaId, fotoObj) {
-    if (storageInstance && fotoObj.blob) {
+    if (storageInstance && (fotoObj.blob || fotoObj.dataUrl)) {
       const fotoNome = fotoObj.nome || `foto_${Date.now()}.jpg`;
       const refPath = `ocorrencias/${ocorrenciaId}/${fotoNome}`;
       const storageRef = storageInstance.ref(refPath);
-      const snapshot = await storageRef.put(fotoObj.blob, {
-        contentType: 'image/jpeg',
-        customMetadata: { ocorrenciaId: ocorrenciaId, enviadoPor: 'Ecossistema ITPA PWA' }
-      });
-      return await snapshot.ref.getDownloadURL();
+
+      let payload = fotoObj.blob;
+      if (!payload && fotoObj.dataUrl) {
+        const res = await fetch(fotoObj.dataUrl);
+        payload = await res.blob();
+      }
+
+      if (payload) {
+        const snapshot = await storageRef.put(payload, {
+          contentType: 'image/jpeg',
+          customMetadata: { ocorrenciaId: ocorrenciaId, enviadoPor: 'Ecossistema ITPA PWA' }
+        });
+        return await snapshot.ref.getDownloadURL();
+      }
     }
 
-    // Modo simulado / fallback quando o projeto ainda não foi apontado
+    // Retorna dataUrl local caso ocorra alguma falha ou não tenha storage ativo
     return fotoObj.dataUrl || '';
   }
 
@@ -229,6 +251,7 @@ const ITPASync = (function () {
     onStatusChange,
     carregarConfiguracao,
     salvarConfiguracao,
+    inicializarFirebase,
     isConfigurado,
     sincronizarTudo,
     monitorarConexao,

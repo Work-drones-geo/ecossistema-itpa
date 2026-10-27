@@ -3,7 +3,7 @@
  * Fornece caching robusto do App Shell, bibliotecas Leaflet e recursos estáticos.
  */
 
-const CACHE_NAME = 'itpa-ecossistema-v2';
+const CACHE_NAME = 'itpa-ecossistema-v3';
 
 const STATIC_ASSETS = [
   './',
@@ -26,6 +26,10 @@ const STATIC_ASSETS = [
   'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css',
   'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css',
   'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js',
+  // Firebase SDK Compat v10 (Firestore e Storage)
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js',
   // Tipografia Google Fonts
   'https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,500;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap'
 ];

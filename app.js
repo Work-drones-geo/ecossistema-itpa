@@ -532,7 +532,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Configuração do Firebase
   const fbForm = document.getElementById('firebase-config-form');
-  await window.ITPASync.carregarConfiguracao();
+  const cfgAtual = await window.ITPASync.carregarConfiguracao();
+  if (cfgAtual) {
+    const inputApiKey = document.getElementById('fb-apiKey');
+    const inputProjId = document.getElementById('fb-projectId');
+    const inputBucket = document.getElementById('fb-storageBucket');
+    if (inputApiKey) inputApiKey.value = cfgAtual.apiKey || '';
+    if (inputProjId) inputProjId.value = cfgAtual.projectId || '';
+    if (inputBucket) inputBucket.value = cfgAtual.storageBucket || '';
+  }
+  window.ITPASync.inicializarFirebase();
 
   fbForm.addEventListener('submit', async (e) => {
     e.preventDefault();
