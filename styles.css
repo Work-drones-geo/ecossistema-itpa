@@ -39,9 +39,11 @@
   --shadow-lg: 0 8px 28px rgba(31, 61, 23, 0.16);
   --shadow-pill: 0 4px 14px rgba(130, 195, 37, 0.35);
 
-  /* Dimensões de Layout */
-  --header-height: 64px;
-  --bottom-bar-height: 68px;
+  /* Dimensões de Layout com Suporte a Notch e Safe-Area (iOS/Android) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --header-height: calc(62px + var(--safe-top));
+  --bottom-bar-height: calc(66px + var(--safe-bottom));
 }
 
 /* Reset Básico */
@@ -78,12 +80,14 @@ html, body {
    ========================================================================== */
 .itpa-header {
   height: var(--header-height);
+  padding-top: var(--safe-top);
   background-color: var(--itpa-surface);
   border-bottom: 1px solid var(--itpa-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
   z-index: 1000;
   box-shadow: var(--shadow-sm);
   flex-shrink: 0;
@@ -297,14 +301,16 @@ html, body {
    ========================================================================== */
 .itpa-bottom-bar {
   height: var(--bottom-bar-height);
+  padding-bottom: var(--safe-bottom);
+  padding-left: max(10px, env(safe-area-inset-left, 0px));
+  padding-right: max(10px, env(safe-area-inset-right, 0px));
   background-color: var(--itpa-surface);
   border-top: 1px solid var(--itpa-border);
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 0 10px;
-  z-index: 1000;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+  z-index: 9999;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
   flex-shrink: 0;
 }
 
@@ -534,6 +540,7 @@ html, body {
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   padding: 24px;
+  padding-bottom: calc(24px + var(--safe-bottom));
   animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -935,4 +942,92 @@ html, body {
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Supressão Definitiva do Netlify Drawer / Feedback Widget
+   ========================================================================== */
+netlify-drawer,
+#netlify-drawer,
+#netlify-feedback,
+[data-netlify-drawer],
+[class*="netlify-drawer"],
+[class*="netlify-feedback"],
+iframe[src*="netlify"],
+iframe[title*="Netlify"],
+div[id*="netlify"],
+aside[id*="netlify"],
+body > div[style*="z-index: 2147483647"],
+body > aside[style*="z-index: 2147483647"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  z-index: -9999 !important;
+}
+
+/* ==========================================================================
+   Otimizações de Responsividade para Telas Mobile (iPhone / Android)
+   ========================================================================== */
+@media (max-width: 480px) {
+  .brand-subtitle {
+    display: none !important;
+  }
+
+  .brand-title {
+    font-size: 0.95rem;
+  }
+
+  .brand-logo-img {
+    height: 34px;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .status-pill {
+    padding: 5px 9px;
+    font-size: 0.72rem;
+  }
+
+  #header-sync-btn {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+
+  .nav-tab-cta {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+
+  .nav-tab-cta .cta-text {
+    font-size: 0.8rem;
+  }
+
+  .nav-tab-item {
+    padding: 5px 8px;
+    font-size: 0.68rem;
+  }
+
+  .map-floating-controls {
+    bottom: 16px;
+    right: 14px;
+    gap: 10px;
+  }
+
+  .btn-fab-round {
+    width: 44px;
+    height: 44px;
+    font-size: 1.15rem;
+  }
 }
