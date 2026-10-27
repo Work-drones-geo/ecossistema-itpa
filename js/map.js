@@ -67,7 +67,7 @@ const ITPAMap = (function () {
     L.control.zoom({ position: 'topright' }).addTo(map);
 
     // 3. Camada de Ortofoto Local (Drone / Voo de Alta Resolução)
-    ortofotoLayer = L.tileLayer('assets/tiles/ortofoto/{z}/{x}/{y}.jpg', {
+    ortofotoLayer = L.tileLayer('assets/tiles/ortofoto/{z}/{x}/{y}.png', {
       minZoom: 15,
       maxZoom: 20,
       maxNativeZoom: 20,
