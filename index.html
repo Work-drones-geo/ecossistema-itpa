@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-netlify-drawer="false">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -17,35 +17,26 @@
   <!-- Supressão Netlify Drawer / Feedback Badge -->
   <script>
     (function () {
-      function expurgarNetlify() {
-        var seletores = [
-          'netlify-drawer',
-          '[data-netlify-drawer]',
-          '#netlify-drawer',
-          '#netlify-feedback',
-          '[class*="netlify-drawer"]',
-          '[class*="netlify-feedback"]',
-          'iframe[src*="netlify"]',
-          'iframe[title*="Netlify"]'
-        ];
-        seletores.forEach(function (s) {
-          document.querySelectorAll(s).forEach(function (el) {
-            el.remove();
-          });
-        });
-        document.querySelectorAll('body > div, body > aside').forEach(function (el) {
-          if (el.id !== 'app-container' && !el.classList.contains('itpa-toast-container') && !el.classList.contains('modal-overlay')) {
-            if (el.textContent && el.textContent.includes('Netlify')) {
-              el.remove();
+      function removerNetlifyDrawer() {
+        try {
+          var drawers = document.querySelectorAll('netlify-drawer, #netlify-drawer, #netlify-feedback');
+          drawers.forEach(function (d) {
+            if (d && d.tagName !== 'HTML' && d.tagName !== 'BODY') {
+              d.remove();
             }
-          }
-        });
+          });
+          var iframes = document.querySelectorAll('iframe[src*="netlify"], iframe[title*="Netlify"]');
+          iframes.forEach(function (f) {
+            f.remove();
+          });
+        } catch (e) {
+          // Silencioso
+        }
       }
-      var obs = new MutationObserver(expurgarNetlify);
+      var obs = new MutationObserver(removerNetlifyDrawer);
       obs.observe(document.documentElement, { childList: true, subtree: true });
-      window.addEventListener('DOMContentLoaded', expurgarNetlify);
-      window.addEventListener('load', expurgarNetlify);
-      setInterval(expurgarNetlify, 200);
+      window.addEventListener('DOMContentLoaded', removerNetlifyDrawer);
+      window.addEventListener('load', removerNetlifyDrawer);
     })();
   </script>
 
@@ -62,7 +53,7 @@
   <!-- Estilos Customizados do ITPA -->
   <link rel="stylesheet" href="styles.css">
 </head>
-<body data-netlify-drawer="false">
+<body>
 
   <div id="app-container">
     

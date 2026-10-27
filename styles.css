@@ -945,20 +945,13 @@ html, body {
 }
 
 /* ==========================================================================
-   Supressão Definitiva do Netlify Drawer / Feedback Widget
+   Supressão Segura do Netlify Drawer / Feedback Widget
    ========================================================================== */
 netlify-drawer,
 #netlify-drawer,
 #netlify-feedback,
-[data-netlify-drawer],
-[class*="netlify-drawer"],
-[class*="netlify-feedback"],
 iframe[src*="netlify"],
-iframe[title*="Netlify"],
-div[id*="netlify"],
-aside[id*="netlify"],
-body > div[style*="z-index: 2147483647"],
-body > aside[style*="z-index: 2147483647"] {
+iframe[title*="Netlify"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
