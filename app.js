@@ -583,8 +583,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     showToast('Configurações do Firebase salvas com sucesso!', 'success');
   });
 
-  // Exportar GeoJSON offline para importação no QGIS
-  document.getElementById('btn-export-geojson').addEventListener('click', async () => {
+  // Função compartilhada para exportar GeoJSON
+  async function exportarGeoJsonOcorrencias() {
     const ocorrencias = await window.ITPADatabase.listarOcorrencias();
     if (ocorrencias.length === 0) {
       showToast('Nenhuma ocorrência para exportar.', 'info');
@@ -623,8 +623,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     a.download = `itpa_ocorrencias_${new Date().toISOString().slice(0, 10)}.geojson`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('GeoJSON exportado para uso no QGIS!', 'success');
-  });
+    showToast('GeoJSON exportado com sucesso para o QGIS!', 'success');
+  }
+
+  // Vincular exportação GeoJSON nos dois locais (Aba Registros e Aba Ajustes)
+  const btnExportGeoJsonSettings = document.getElementById('btn-export-geojson');
+  if (btnExportGeoJsonSettings) {
+    btnExportGeoJsonSettings.addEventListener('click', exportarGeoJsonOcorrencias);
+  }
+
+  const btnExportGeoJsonList = document.getElementById('btn-export-geojson-list');
+  if (btnExportGeoJsonList) {
+    btnExportGeoJsonList.addEventListener('click', exportarGeoJsonOcorrencias);
+  }
+
+  // Exportar Relatório Técnico Completo em PDF (com fotos)
+  const btnExportPdf = document.getElementById('btn-export-pdf');
+  if (btnExportPdf) {
+    btnExportPdf.addEventListener('click', async () => {
+      try {
+        const filtroAtual = filterStatusSelect ? filterStatusSelect.value : 'all';
+        const ocorrencias = await window.ITPADatabase.listarOcorrencias(filtroAtual);
+
+        if (ocorrencias.length === 0) {
+          showToast('Nenhum registro encontrado para emitir o relatório.', 'info');
+          return;
+        }
+
+        showToast('📄 Compilando relatório técnico e galeria fotográfica...', 'info');
+
+        const originalText = btnExportPdf.innerHTML;
+        btnExportPdf.disabled = true;
+        btnExportPdf.innerHTML = '⏳ Gerando PDF...';
+
+        setTimeout(async () => {
+          try {
+            await window.ITPAReport.gerarRelatorioPdf(ocorrencias);
+            showToast(`Relatório PDF com ${ocorrencias.length} registro(s) gerado e baixado!`, 'success');
+          } catch (err) {
+            console.error('[Relatório PDF] Falha:', err);
+            showToast(`Erro ao gerar PDF: ${err.message}`, 'error');
+          } finally {
+            btnExportPdf.disabled = false;
+            btnExportPdf.innerHTML = originalText;
+          }
+        }, 100);
+
+      } catch (err) {
+        console.error('[PDF] Erro geral:', err);
+        showToast('Não foi possível compilar o relatório.', 'error');
+      }
+    });
+  }
 
   // Limpar ocorrências já sincronizadas
   document.getElementById('btn-clean-synced').addEventListener('click', async () => {

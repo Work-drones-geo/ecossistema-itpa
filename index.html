@@ -101,10 +101,19 @@
 
       <!-- Vista 2: Lista de Ocorrências -->
       <section id="list-view" class="view-panel">
-        <div class="panel-header">
-          <h2 class="panel-title">Ocorrências de Campo</h2>
-          <div class="filter-actions">
-            <select id="filter-status-select" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.82rem;">
+        <div class="panel-header" style="flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 class="panel-title">Ocorrências de Campo</h2>
+            <span style="font-size: 0.74rem; color: var(--itpa-text-muted);">Monitoramento e vistorias florestais</span>
+          </div>
+          <div class="records-actions-bar" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button class="btn-itpa-pill" id="btn-export-pdf" title="Exportar Relatório Técnico Completo com Fotos em PDF" style="padding: 7px 14px; font-size: 0.8rem;">
+              📄 Exportar Relatório PDF
+            </button>
+            <button class="btn-itpa-pill secondary" id="btn-export-geojson-list" title="Exportar ocorrências em GeoJSON para o QGIS" style="padding: 7px 12px; font-size: 0.8rem;">
+              📥 GeoJSON
+            </button>
+            <select id="filter-status-select" class="form-select" style="width: auto; padding: 6px 10px; font-size: 0.8rem;">
               <option value="all">Todas</option>
               <option value="pending">Apenas Pendentes (Offline)</option>
               <option value="synced">Sincronizadas</option>
@@ -299,12 +308,12 @@
           <input type="hidden" id="ocorrencia-altitude">
         </div>
 
-        <!-- Botão de Ação -->
-        <div style="display: flex; gap: 10px; margin-top: 22px;">
-          <button type="button" class="btn-itpa-pill outline" id="btn-cancel-ocorrencia" style="flex: 1;">
+        <!-- Botões de Ação Final do Formulário -->
+        <div class="modal-form-actions">
+          <button type="button" class="btn-itpa-pill outline" id="btn-cancel-ocorrencia">
             Cancelar
           </button>
-          <button type="submit" class="btn-itpa-pill" style="flex: 2; justify-content: center;">
+          <button type="submit" class="btn-itpa-pill" id="btn-submit-ocorrencia">
             💾 Gravar Ocorrência
           </button>
         </div>
@@ -326,6 +335,10 @@
   <!-- Toast Container -->
   <div class="itpa-toast-container" id="toast-container"></div>
 
+  <!-- Bibliotecas PDF (jsPDF + AutoTable) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
   <!-- Dependências Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
@@ -340,6 +353,7 @@
   <script src="js/camera.js"></script>
   <script src="js/map.js"></script>
   <script src="js/sync.js"></script>
+  <script src="js/report.js"></script>
   <script src="app.js"></script>
 
 </body>
