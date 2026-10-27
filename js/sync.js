@@ -176,19 +176,16 @@ const ITPASync = (function () {
         try {
           await window.ITPADatabase.atualizarStatusSincronizacao(item.id, 'syncing');
 
-          // 1. Upload de fotos no Storage
-          const fotosUrls = [];
-          if (item.fotos && item.fotos.length > 0) {
-            for (const foto of item.fotos) {
-              const url = await uploadFoto(item.id, foto);
-              fotosUrls.push(url);
-            }
-          }
+          // 1. Fotos comprimidas em Base64 (salvas diretamente no Firestore, 100% plano Spark gratuito)
+          const fotosBase64 = (item.fotos || []).map((f) => {
+            if (typeof f === 'string') return f;
+            return f.dataUrl || '';
+          }).filter(Boolean);
 
-          // 2. Gravação no Firestore (ou persistência remota)
+          // 2. Gravação direta no Firestore
           let remoteId = item.id;
           if (firestoreInstance) {
-            const docRef = await firestoreInstance.collection('ocorrencias').doc(item.id).set({
+            await firestoreInstance.collection('ocorrencias').doc(item.id).set({
               tipo: item.tipo,
               titulo: item.titulo,
               descricao: item.descricao,
@@ -199,7 +196,7 @@ const ITPASync = (function () {
               altitude: item.altitude,
               severidade: item.severidade,
               responsavel: item.responsavel,
-              fotos: fotosUrls,
+              fotos: fotosBase64, // Array de strings Base64 leves (<200KB)
               criadoEm: item.timestamp,
               sincronizadoEm: new Date().toISOString()
             });

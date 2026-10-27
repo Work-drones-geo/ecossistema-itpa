@@ -290,8 +290,10 @@ const ITPAMap = (function () {
         ? '<span class="badge-status synced">✓ Sincronizado</span>'
         : '<span class="badge-status pending">⏳ Pendente Offline</span>';
 
-      const fotoHtml = item.fotos && item.fotos.length > 0
-        ? `<div class="popup-thumb"><img src="${item.fotos[0].dataUrl}" alt="Foto da ocorrência"></div>`
+      const primeiraFoto = item.fotos && item.fotos.length > 0 ? item.fotos[0] : null;
+      const fotoUrl = primeiraFoto ? (typeof primeiraFoto === 'string' ? primeiraFoto : (primeiraFoto.dataUrl || '')) : '';
+      const fotoHtml = fotoUrl
+        ? `<div class="popup-thumb"><img src="${fotoUrl}" alt="Foto da ocorrência"></div>`
         : '';
 
       const popupHtml = `

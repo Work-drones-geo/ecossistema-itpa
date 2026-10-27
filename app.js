@@ -151,14 +151,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     for (const file of files) {
       try {
         const resultado = await window.ITPACamera.compactar(file, {
-          maxDimension: 1280,
-          quality: 0.75,
+          maxDimension: 1024,
+          quality: 0.7,
           mimeType: 'image/jpeg'
         });
 
         currentPhotos.push({
           dataUrl: resultado.dataUrl,
-          blob: resultado.blob,
           nome: file.name || `foto_${Date.now()}.jpg`,
           tamanhoFormatado: resultado.tamanhoFormatado,
           taxaReducao: resultado.taxaReducao
@@ -276,7 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       longitude: lngVal,
       precisaoGps: parseFloat(document.getElementById('ocorrencia-accuracy').value) || null,
       altitude: parseFloat(document.getElementById('ocorrencia-altitude').value) || null,
-      fotos: currentPhotos,
+      fotos: currentPhotos.map((p) => p.dataUrl || p),
       syncStatus: 'pending'
     };
 
@@ -386,8 +385,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
       });
 
-      const thumbSrc = item.fotos && item.fotos.length > 0
-        ? item.fotos[0].dataUrl
+      const primeiraFoto = item.fotos && item.fotos.length > 0 ? item.fotos[0] : null;
+      const thumbSrc = primeiraFoto
+        ? (typeof primeiraFoto === 'string' ? primeiraFoto : (primeiraFoto.dataUrl || 'assets/icons/favicon.png'))
         : 'assets/icons/favicon.png';
 
       const statusBadge = item.syncStatus === 'synced'
@@ -442,12 +442,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div style="margin: 14px 0;">
           <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 8px;">Fotos Anexadas (${item.fotos.length})</h4>
           <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;">
-            ${item.fotos.map((f) => `
-              <a href="${f.dataUrl}" target="_blank" style="flex-shrink: 0;">
-                <img src="${f.dataUrl}" style="width: 140px; height: 100px; object-fit: cover; border-radius: var(--radius-md); border: 1.5px solid var(--itpa-border);" alt="Foto">
-              </a>
-            `).join('')}
+            ${item.fotos.map((f, idx) => {
+              const base64Url = typeof f === 'string' ? f : (f.dataUrl || '');
+              return `
+                <div style="flex-shrink: 0; position: relative;">
+                  <img src="${base64Url}" style="width: 150px; height: 110px; object-fit: cover; border-radius: var(--radius-md); border: 2px solid var(--itpa-green); cursor: pointer; box-shadow: var(--shadow-sm);" alt="Foto ${idx + 1}" onclick="window.open('${base64Url}', '_blank')" title="Toque para ampliar">
+                </div>
+              `;
+            }).join('')}
           </div>
+          <span style="font-size: 0.72rem; color: var(--itpa-text-muted);">Toque na foto para visualizar em tamanho ampliado</span>
         </div>
       `;
     }

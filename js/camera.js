@@ -6,8 +6,8 @@
 
 const ITPACamera = (function () {
   const DEFAULT_CONFIG = {
-    maxDimension: 1280,
-    quality: 0.75,
+    maxDimension: 1024,
+    quality: 0.7,
     mimeType: 'image/jpeg'
   };
 
