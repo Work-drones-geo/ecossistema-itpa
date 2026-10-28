@@ -77,6 +77,7 @@ const ITPAMap = (function () {
     if (!map.getPane('satelitePane')) {
       map.createPane('satelitePane');
       map.getPane('satelitePane').style.zIndex = 350;
+      map.getPane('satelitePane').style.pointerEvents = 'none';
     }
 
     // 4. Instanciação dos LayerGroups para NDVI e RGB dos talhões
