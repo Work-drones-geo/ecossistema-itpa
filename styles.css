@@ -1265,3 +1265,102 @@ iframe[title*="Netlify"] {
     font-size: 1.15rem;
   }
 }
+
+/* ==========================================================================
+   Legenda Flutuante de NDVI (Paleta Agronômica RdYlGn)
+   ========================================================================== */
+.itpa-ndvi-legend {
+  position: absolute;
+  bottom: 84px;
+  left: 14px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--itpa-border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  min-width: 210px;
+  max-width: 260px;
+  pointer-events: auto;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  animation: fadeInLegend 0.3s ease-out;
+}
+
+@keyframes fadeInLegend {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ndvi-legend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.ndvi-legend-title {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--itpa-green-dark);
+}
+
+.btn-close-ndvi-legend {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--itpa-text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.15s ease;
+}
+
+.btn-close-ndvi-legend:hover {
+  color: var(--itpa-text);
+}
+
+.ndvi-legend-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(to right, #A50026 0%, #D73027 18%, #F46D43 32%, #FEE08B 48%, #D9EF8B 64%, #66BD63 80%, #006837 100%);
+  margin-bottom: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ndvi-legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--itpa-text-muted);
+}
+
+.ndvi-legend-labels .label-low {
+  color: #A50026;
+}
+
+.ndvi-legend-labels .label-mid {
+  color: #B8860B;
+}
+
+.ndvi-legend-labels .label-high {
+  color: #006837;
+}
+
+@media (max-width: 768px) {
+  .itpa-ndvi-legend {
+    bottom: 74px;
+    left: 10px;
+    padding: 8px 12px;
+    min-width: 190px;
+  }
+}

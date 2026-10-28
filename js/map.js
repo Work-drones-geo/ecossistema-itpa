@@ -113,6 +113,40 @@ const ITPAMap = (function () {
 
     layerControl = L.control.layers(baseLayers, overlays, { position: 'topright' }).addTo(map);
 
+    // 7. Controle Dinâmico da Legenda de NDVI (RdYlGn)
+    const ndviLegendEl = document.getElementById('ndvi-legend');
+    const btnCloseLegend = document.getElementById('btn-close-ndvi-legend');
+
+    if (btnCloseLegend && ndviLegendEl) {
+      btnCloseLegend.addEventListener('click', () => {
+        ndviLegendEl.style.display = 'none';
+      });
+    }
+
+    function atualizarVisibilidadeLegendaNdvi() {
+      if (!ndviLegendEl || !map) return;
+      const recenteAtivo = layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente);
+      const anteriorAtivo = layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior);
+
+      if (recenteAtivo || anteriorAtivo) {
+        ndviLegendEl.style.display = 'block';
+      } else {
+        ndviLegendEl.style.display = 'none';
+      }
+    }
+
+    map.on('overlayadd', (e) => {
+      if (e.name && e.name.includes('NDVI')) {
+        atualizarVisibilidadeLegendaNdvi();
+      }
+    });
+
+    map.on('overlayremove', (e) => {
+      if (e.name && e.name.includes('NDVI')) {
+        atualizarVisibilidadeLegendaNdvi();
+      }
+    });
+
     // 4. Inicializa o Cluster com tema do ITPA
     clusterGroup = L.markerClusterGroup({
       showCoverageOnHover: false,

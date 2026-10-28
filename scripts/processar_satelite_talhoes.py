@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 Ecossistema ITPA - Processamento e Recorte Automatizado de Rasters Sentinel-2
-Recorta imagens Sentinel-2 (RGB True Color e NDVI) na geometria exata de cada talhão/quadrante,
-gerando overlays georreferenciados em PNG com canal alfa (transparência externa)
-otimizados para exibição no Leaflet.
+Recorta imagens Sentinel-2 (RGB True Color e NDVI) na geometria exata de cada talhão/quadrante.
+Aplica a paleta de cores agronômica padrão RdYlGn (Red-Yellow-Green) normalizada
+para alto contraste e nitidez visual no monitoramento florestal.
 """
 
 import os
@@ -16,10 +16,36 @@ import unicodedata
 from pathlib import Path
 
 import numpy as np
+import matplotlib.pyplot as plt
 from PIL import Image
 import rasterio
 from rasterio.mask import mask
 from rasterio.features import geometry_mask
+
+# Tabela de calibração espectral: Mapeamento de cores da visualização Sentinel-2 NDVI para escala contínua de NDVI
+SENTINEL_NDVI_PALETTE = np.array([
+    [13, 13, 13, 0.00],
+    [236, 236, 236, 0.05],
+    [220, 220, 220, 0.05],
+    [192, 192, 192, 0.05],
+    [255, 251, 205, 0.10],
+    [238, 233, 182, 0.15],
+    [223, 218, 156, 0.20],
+    [205, 200, 131, 0.25],
+    [189, 184, 108, 0.30],
+    [177, 195, 97, 0.35],
+    [164, 205, 90, 0.40],
+    [146, 192, 82, 0.45],
+    [128, 179, 72, 0.50],
+    [113, 164, 64, 0.55],
+    [97, 151, 54, 0.60],
+    [79, 138, 46, 0.65],
+    [64, 125, 36, 0.70],
+    [49, 110, 28, 0.75],
+    [33, 97, 18, 0.80],
+    [15, 84, 10, 0.85],
+    [0, 69, 0, 0.95]
+], dtype=np.float32)
 
 
 def normalizar_talhao_id(props: dict) -> str:
@@ -77,7 +103,6 @@ def localizar_arquivos_entrada():
         if not base_dir.exists():
             continue
 
-        # Busca True Color
         if not rgb_tiff:
             rgb_matches = list(base_dir.glob("*Sentinel-2*True_color*.tiff")) + \
                           list(base_dir.glob("*True_color*.tif*")) + \
@@ -85,7 +110,6 @@ def localizar_arquivos_entrada():
             if rgb_matches:
                 rgb_tiff = rgb_matches[0].resolve()
 
-        # Busca NDVI
         if not ndvi_tiff:
             ndvi_matches = list(base_dir.glob("*Sentinel-2*NDVI*.tiff")) + \
                            list(base_dir.glob("*NDVI*.tif*"))
@@ -100,16 +124,11 @@ def localizar_arquivos_entrada():
     return vetor_path, rgb_tiff, ndvi_tiff
 
 
-def recortar_raster_por_geometria(src_dataset, geom):
-    """
-    Recorta o raster pela geometria exata e retorna array RGBA uint8 e novo transform.
-    Pixels fora do polígono recebem alfa = 0 (transparência total).
-    """
-    # 1. Recorta no bounding box da geometria
+def recortar_rgb(src_dataset, geom):
+    """Recorta o raster RGB pela geometria exata com transparência fora do contorno."""
     out_image, out_transform = mask(src_dataset, [geom], crop=True, all_touched=True)
-
-    # 2. Gera máscara binária do polígono (True = dentro do polígono)
     _, height, width = out_image.shape
+
     mask_inside = geometry_mask(
         [geom],
         out_shape=(height, width),
@@ -118,55 +137,85 @@ def recortar_raster_por_geometria(src_dataset, geom):
         all_touched=True
     )
 
-    # 3. Extrai bandas RGB
-    if out_image.shape[0] >= 3:
-        r = out_image[0]
-        g = out_image[1]
-        b = out_image[2]
-    elif out_image.shape[0] == 1:
-        # Se for mono-banda, replica em escala de cinza
-        r = g = b = out_image[0]
-    else:
-        raise ValueError(f"Número de bandas inesperado: {out_image.shape[0]}")
+    r = out_image[0]
+    g = out_image[1]
+    b = out_image[2]
 
-    # Garante tipo uint8
-    if r.dtype != np.uint8:
-        # Se float, normaliza para 0..255
-        r_min, r_max = float(r.min()), float(r.max())
-        if r_max > r_min:
-            r = ((r - r_min) / (r_max - r_min) * 255).astype(np.uint8)
-            g = ((g - r_min) / (r_max - r_min) * 255).astype(np.uint8)
-            b = ((b - r_min) / (r_max - r_min) * 255).astype(np.uint8)
-        else:
-            r = g = b = r.astype(np.uint8)
-
-    # 4. Canal Alfa: 255 dentro do polígono, 0 fora
     alpha = np.where(mask_inside, 255, 0).astype(np.uint8)
-
-    # Zera valores RGB fora do polígono para compressão máxima no PNG
     r = np.where(mask_inside, r, 0).astype(np.uint8)
     g = np.where(mask_inside, g, 0).astype(np.uint8)
     b = np.where(mask_inside, b, 0).astype(np.uint8)
 
     rgba = np.dstack([r, g, b, alpha])
-    return rgba, out_transform
+    return rgba
+
+
+def recortar_e_colorir_ndvi(src_dataset, geom, vmin=0.15, vmax=0.85):
+    """
+    Recorta o raster NDVI pela geometria do talhão e aplica o colormap agronômico 'RdYlGn':
+    - Baixo vigor / Solo exposto (NDVI <= vmin): Vermelho/Laranja (#A50026 -> #D73027)
+    - Vigor moderado (NDVI ~ 0.5): Amarelo vibrante (#FFFFBF)
+    - Alto vigor vegetal (NDVI >= vmax): Verde floresta escuro (#006837)
+    - Fora do contorno do talhão: Canal alfa = 0 (100% transparente)
+    """
+    out_image, out_transform = mask(src_dataset, [geom], crop=True, all_touched=True)
+    _, height, width = out_image.shape
+
+    mask_inside = geometry_mask(
+        [geom],
+        out_shape=(height, width),
+        transform=out_transform,
+        invert=True,
+        all_touched=True
+    )
+
+    # 1. Recupera valores contínuos de NDVI através de busca do vizinho mais próximo no espaço RGB
+    ref_rgb = SENTINEL_NDVI_PALETTE[:, :3]
+    ref_ndvi = SENTINEL_NDVI_PALETTE[:, 3]
+
+    pixels_rgb = np.stack([out_image[0], out_image[1], out_image[2]], axis=-1).reshape(-1, 3).astype(np.float32)
+
+    # Distância Euclidiana quadrática no espaço RGB
+    diff = pixels_rgb[:, None, :] - ref_rgb[None, :, :]
+    dists = np.sum(diff ** 2, axis=2)
+    nearest_idx = np.argmin(dists, axis=1)
+
+    ndvi_continuous = ref_ndvi[nearest_idx].reshape(height, width)
+
+    # 2. Normalização no intervalo agronômico [vmin, vmax]
+    ndvi_norm = np.clip((ndvi_continuous - vmin) / (vmax - vmin), 0.0, 1.0)
+
+    # 3. Aplica colormap RdYlGn oficial do Matplotlib
+    cmap = plt.colormaps['RdYlGn']
+    colored_rgba = cmap(ndvi_norm)  # Retorna float [0..1] com 4 canais
+
+    r_col = (colored_rgba[:, :, 0] * 255).astype(np.uint8)
+    g_col = (colored_rgba[:, :, 1] * 255).astype(np.uint8)
+    b_col = (colored_rgba[:, :, 2] * 255).astype(np.uint8)
+
+    # 4. Transparência alfa 100% fora do contorno
+    alpha = np.where(mask_inside, 255, 0).astype(np.uint8)
+    r_final = np.where(mask_inside, r_col, 0).astype(np.uint8)
+    g_final = np.where(mask_inside, g_col, 0).astype(np.uint8)
+    b_final = np.where(mask_inside, b_col, 0).astype(np.uint8)
+
+    rgba = np.dstack([r_final, g_final, b_final, alpha])
+    return rgba, ndvi_continuous
 
 
 def main():
-    print("=" * 65)
-    print("  Ecossistema ITPA - Pipeline de Recorte Sentinel-2 (RGB & NDVI)")
-    print("=" * 65)
+    print("=" * 70)
+    print("  Ecossistema ITPA - Recorte Sentinel-2 & Colorização Agronômica (RdYlGn)")
+    print("=" * 70)
 
     vetor_path, rgb_tiff_path, ndvi_tiff_path = localizar_arquivos_entrada()
     print(f"[1/4] Vetor de Talhões : {vetor_path}")
     print(f"[1/4] Raster RGB       : {rgb_tiff_path}")
     print(f"[1/4] Raster NDVI      : {ndvi_tiff_path}")
 
-    # Cria pasta de saída
     out_dir = Path("assets/satelite")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Lê o GeoJSON
     with open(vetor_path, "r", encoding="utf-8") as f:
         geojson = json.load(f)
 
@@ -174,11 +223,10 @@ def main():
     total_features = len(features)
     print(f"\n[2/4] Total de talhões/quadrantes encontrados: {total_features}")
 
-    # Abre os datasets Sentinel-2
     with rasterio.open(rgb_tiff_path) as src_rgb, rasterio.open(ndvi_tiff_path) as src_ndvi:
-        print(f"      CRS RGB  : {src_rgb.crs} | Dimensões: {src_rgb.width}x{src_rgb.height}")
-        print(f"      CRS NDVI : {src_ndvi.crs} | Dimensões: {src_ndvi.width}x{src_ndvi.height}")
-        print("\n[3/4] Iniciando recorte por talhão...")
+        print(f"      Paleta NDVI : RdYlGn (Vermelho = Baixo | Amarelo = Médio | Verde = Alto)")
+        print(f"      Intervalo   : vmin=0.15 (solo/baixo) até vmax=0.85 (alto vigor)")
+        print("\n[3/4] Processando e colorindo recortes...")
 
         processados = 0
         arquivos_gerados = []
@@ -190,55 +238,57 @@ def main():
             talhao_id = normalizar_talhao_id(props)
 
             if not geom or geom.get("type") not in ["Polygon", "MultiPolygon"]:
-                print(f"  [!] Ignorando {nome}: Geometria inválida ou ausente.")
                 continue
 
             try:
-                # 1. Recorte RGB
-                rgba_rgb, _ = recortar_raster_por_geometria(src_rgb, geom)
+                # 1. RGB Recente e Anterior
+                rgba_rgb = recortar_rgb(src_rgb, geom)
                 img_rgb = Image.fromarray(rgba_rgb, mode="RGBA")
-                out_rgb_recente = out_dir / f"{talhao_id}_rgb_recente.png"
-                img_rgb.save(out_rgb_recente, format="PNG", optimize=True)
-                arquivos_gerados.append(out_rgb_recente)
 
-                # Cópia para passagem anterior (-15d) garantindo que ambas as camadas funcionem
-                out_rgb_anterior = out_dir / f"{talhao_id}_rgb_anterior.png"
-                img_rgb.save(out_rgb_anterior, format="PNG", optimize=True)
-                arquivos_gerados.append(out_rgb_anterior)
+                p_rgb_rec = out_dir / f"{talhao_id}_rgb_recente.png"
+                img_rgb.save(p_rgb_rec, format="PNG", optimize=True)
+                arquivos_gerados.append(p_rgb_rec)
 
-                # 2. Recorte NDVI
-                rgba_ndvi, _ = recortar_raster_por_geometria(src_ndvi, geom)
+                p_rgb_ant = out_dir / f"{talhao_id}_rgb_anterior.png"
+                img_rgb.save(p_rgb_ant, format="PNG", optimize=True)
+                arquivos_gerados.append(p_rgb_ant)
+
+                # 2. NDVI RdYlGn Recente e Anterior
+                rgba_ndvi, ndvi_vals = recortar_e_colorir_ndvi(src_ndvi, geom, vmin=0.15, vmax=0.85)
                 img_ndvi = Image.fromarray(rgba_ndvi, mode="RGBA")
-                out_ndvi_recente = out_dir / f"{talhao_id}_ndvi_recente.png"
-                img_ndvi.save(out_ndvi_recente, format="PNG", optimize=True)
-                arquivos_gerados.append(out_ndvi_recente)
 
-                # Cópia para passagem anterior (-15d)
-                out_ndvi_anterior = out_dir / f"{talhao_id}_ndvi_anterior.png"
-                img_ndvi.save(out_ndvi_anterior, format="PNG", optimize=True)
-                arquivos_gerados.append(out_ndvi_anterior)
+                p_ndvi_rec = out_dir / f"{talhao_id}_ndvi_recente.png"
+                img_ndvi.save(p_ndvi_rec, format="PNG", optimize=True)
+                arquivos_gerados.append(p_ndvi_rec)
+
+                p_ndvi_ant = out_dir / f"{talhao_id}_ndvi_anterior.png"
+                img_ndvi.save(p_ndvi_ant, format="PNG", optimize=True)
+                arquivos_gerados.append(p_ndvi_ant)
 
                 processados += 1
-                h, w, _ = rgba_rgb.shape
-                tamanho_rgb_kb = out_rgb_recente.stat().st_size / 1024
-                tamanho_ndvi_kb = out_ndvi_recente.stat().st_size / 1024
+                h, w, _ = rgba_ndvi.shape
+                tamanho_ndvi_kb = p_ndvi_rec.stat().st_size / 1024
+
+                # Extrai estatísticas simples do talhão
+                val_min = float(ndvi_vals.min())
+                val_max = float(ndvi_vals.max())
+                val_mean = float(ndvi_vals.mean())
 
                 print(
                     f"  [{idx:02d}/{total_features:02d}] ✓ {talhao_id} ({nome}) -> "
-                    f"{w}x{h}px | RGB: {tamanho_rgb_kb:.1f}KB | NDVI: {tamanho_ndvi_kb:.1f}KB"
+                    f"{w}x{h}px | NDVI min={val_min:.2f}, med={val_mean:.2f}, max={val_max:.2f} | "
+                    f"PNG: {tamanho_ndvi_kb:.1f}KB"
                 )
 
             except Exception as e:
                 print(f"  [X] Erro ao processar {nome} ({talhao_id}): {e}")
 
-    print("\n[4/4] Conclusão:")
-    print(f"  - Total de talhões processados com sucesso: {processados}/{total_features}")
-    print(f"  - Total de arquivos PNG gerados em {out_dir}: {len(arquivos_gerados)}")
-
-    # Calcula tamanho total gerado
+    print("\n[4/4] Conclusão da Regeneração dos Rasters:")
+    print(f"  - Talhões processados: {processados}/{total_features}")
+    print(f"  - Total de arquivos PNG em {out_dir}: {len(arquivos_gerados)}")
     total_bytes = sum(p.stat().st_size for p in arquivos_gerados if p.exists())
-    print(f"  - Tamanho total leve otimizado: {total_bytes / (1024 * 1024):.2f} MB")
-    print("=" * 65)
+    print(f"  - Tamanho total leve: {total_bytes / (1024 * 1024):.2f} MB")
+    print("=" * 70)
 
 
 if __name__ == "__main__":
