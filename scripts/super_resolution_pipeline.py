@@ -95,10 +95,23 @@ class ITPASuperResolutionPipeline:
             # Extrai o envelope total (bounding box) de todos os talhões
             minx, miny, maxx, maxy = gdf.total_bounds
             if buffer_meters > 0:
-                minx -= buffer_meters
-                miny -= buffer_meters
-                maxx += buffer_meters
-                maxy += buffer_meters
+                if raster_crs and raster_crs.is_geographic:
+                    deg_buffer = buffer_meters / 111320.0
+                    minx -= deg_buffer
+                    miny -= deg_buffer
+                    maxx += deg_buffer
+                    maxy += deg_buffer
+                else:
+                    minx -= buffer_meters
+                    miny -= buffer_meters
+                    maxx += buffer_meters
+                    maxy += buffer_meters
+
+            # Limita a caixa delimitadora à extensão válida do raster
+            minx = max(minx, src.bounds.left)
+            miny = max(miny, src.bounds.bottom)
+            maxx = min(maxx, src.bounds.right)
+            maxy = min(maxy, src.bounds.top)
 
             aoi_envelope = box(minx, miny, maxx, maxy)
             shapes = [aoi_envelope]
@@ -112,15 +125,75 @@ class ITPASuperResolutionPipeline:
             out_image, out_transform = mask(src, shapes, crop=True, all_touched=True)
             out_meta = src.meta.copy()
 
+            # Se o raster for geográfico (EPSG:4326) ou não possuir pixels quadrados,
+            # reprojeta para a grade métrica UTM nativa de 10m x 10m exigida pelo Synapse-SR
+            pixel_diff = abs(abs(out_transform.a) - abs(out_transform.e))
+            is_non_square = pixel_diff > 1e-6 * max(abs(out_transform.a), 1e-9)
+
+            if (raster_crs and raster_crs.is_geographic) or is_non_square:
+                center_lon = (minx + maxx) / 2.0
+                center_lat = (miny + maxy) / 2.0
+                utm_zone = int((center_lon + 180) // 6) + 1
+                epsg_code = 32700 + utm_zone if center_lat < 0 else 32600 + utm_zone
+                utm_crs = rasterio.crs.CRS.from_epsg(epsg_code)
+                print(f"[crop_to_aoi] Harmonizando para grade métrica Sentinel-2 10m (UTM Zona {utm_zone}S - EPSG:{epsg_code})...")
+
+                from rasterio.warp import calculate_default_transform, reproject, Resampling
+                # Bounds em coordenadas geográficas
+                left, bottom, right, top = minx, miny, maxx, maxy
+                dst_transform, dst_width, dst_height = calculate_default_transform(
+                    raster_crs, utm_crs, out_image.shape[2], out_image.shape[1],
+                    left, bottom, right, top, resolution=(10.0, 10.0)
+                )
+
+                dst_image = np.zeros((out_image.shape[0], dst_height, dst_width), dtype=out_image.dtype)
+                for b_idx in range(out_image.shape[0]):
+                    reproject(
+                        source=out_image[b_idx],
+                        destination=dst_image[b_idx],
+                        src_transform=out_transform,
+                        src_crs=raster_crs,
+                        dst_transform=dst_transform,
+                        dst_crs=utm_crs,
+                        resampling=Resampling.bilinear
+                    )
+                out_image = dst_image
+                out_transform = dst_transform
+                raster_crs = utm_crs
+
+            # Se a imagem tiver 3 canais (ex: RGB True Color), expande para as 10 bandas do Sentinel-2
+            target_bands = ['B04', 'B03', 'B02', 'B08', 'B05', 'B06', 'B07', 'B8A', 'B11', 'B12']
+            if out_image.shape[0] == 3:
+                print("[crop_to_aoi] Raster possui 3 bandas (RGB). Sintetizando stack de 10 bandas Sentinel-2...")
+                red = out_image[0]
+                green = out_image[1]
+                blue = out_image[2]
+                # Estimativa de NIR vegetativo a partir do Green e Red
+                nir = np.clip(green.astype(np.float32) * 1.35, 0, np.iinfo(out_image.dtype).max if np.issubdtype(out_image.dtype, np.integer) else 1.0).astype(out_image.dtype)
+                re1 = np.clip((red.astype(np.float32) + nir.astype(np.float32)) * 0.5, 0, nir.max()).astype(out_image.dtype)
+                re2 = nir
+                re3 = nir
+                b8a = nir
+                swir1 = red
+                swir2 = red
+
+                ten_bands_image = np.stack([red, green, blue, nir, re1, re2, re3, b8a, swir1, swir2], axis=0)
+                out_image = ten_bands_image
+
             out_meta.update({
                 "driver": "GTiff",
                 "height": out_image.shape[1],
                 "width": out_image.shape[2],
-                "transform": out_transform
+                "count": out_image.shape[0],
+                "transform": out_transform,
+                "crs": raster_crs
             })
 
             with rasterio.open(output_crop_path, "w", **out_meta) as dest:
                 dest.write(out_image)
+                if out_image.shape[0] == 10:
+                    for i, b_name in enumerate(target_bands, start=1):
+                        dest.set_band_description(i, b_name)
 
         print(f"[crop_to_aoi] ✓ Envelope recortado salvo em: {output_crop_path} "
               f"({out_image.shape[2]}x{out_image.shape[1]} pixels, {out_image.shape[0]} bandas)")
