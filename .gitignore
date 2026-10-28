@@ -10,3 +10,12 @@ Desktop.ini
 
 # Local Netlify folder
 .netlify
+
+# Projetos locais e rasters pesados (QGIS / Satélite)
+QGIS/
+*.qgz
+*.qgs
+*.tif
+*.tiff
+*.zip
+dados_satelite/
