@@ -14,6 +14,12 @@ const ITPAMap = (function () {
   let tempPickMarker = null;
   let onPointSelectedCallback = null;
 
+  // Grupos de Sobreposição de Satélite (Recortados por Talhão)
+  let layerGroupNdviRecente = null;
+  let layerGroupRgbRecente = null;
+  let layerGroupNdviAnterior = null;
+  let layerGroupRgbAnterior = null;
+
   // Centro padrão: Região de atuação do ITPA (Mata Atlântica / Vale do Café / Tinguá - RJ)
   const DEFAULT_CENTER = [-22.4589, -43.4312];
   const DEFAULT_ZOOM = 13;
@@ -66,7 +72,20 @@ const ITPAMap = (function () {
     // Reposiciona o controle de zoom
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // 3. Camada de Ortofoto Local (Drone / Voo de Alta Resolução)
+    // 3. Pane dedicado para sobreposição de imagens de satélite recortadas dos talhões
+    // zIndex 350 fica entre os tiles base (200) e os vetores de contorno (overlayPane: 400)
+    if (!map.getPane('satelitePane')) {
+      map.createPane('satelitePane');
+      map.getPane('satelitePane').style.zIndex = 350;
+    }
+
+    // 4. Instanciação dos LayerGroups para NDVI e RGB dos talhões
+    layerGroupNdviRecente = L.layerGroup();
+    layerGroupRgbRecente = L.layerGroup();
+    layerGroupNdviAnterior = L.layerGroup();
+    layerGroupRgbAnterior = L.layerGroup();
+
+    // 5. Camada de Ortofoto Local (Drone / Voo de Alta Resolução)
     ortofotoLayer = L.tileLayer('./assets/tiles/ortofoto/{z}/{x}/{y}.png', {
       minZoom: 15,
       maxZoom: 20,
@@ -77,7 +96,7 @@ const ITPAMap = (function () {
     // Ativada por padrão no mapa
     ortofotoLayer.addTo(map);
 
-    // 4. Controle de camadas (Base + Overlays)
+    // 6. Controle de camadas (Base + Overlays)
     const baseLayers = {
       '🛰️ Satélite de Alta Resolução': esriSat,
       '🗺️ Mapa Topográfico / Ruas': osm,
@@ -85,7 +104,11 @@ const ITPAMap = (function () {
     };
 
     const overlays = {
-      '📸 Ortofoto Drone (Alta Resolução)': ortofotoLayer
+      '📸 Ortofoto Drone (Alta Resolução)': ortofotoLayer,
+      '🌱 Talhões - NDVI (Recente)': layerGroupNdviRecente,
+      '🛰️ Talhões - RGB (Recente)': layerGroupRgbRecente,
+      '🌱 Talhões - NDVI (Passagem Anterior -15d)': layerGroupNdviAnterior,
+      '🛰️ Talhões - RGB (Passagem Anterior -15d)': layerGroupRgbAnterior
     };
 
     layerControl = L.control.layers(baseLayers, overlays, { position: 'topright' }).addTo(map);
@@ -123,6 +146,29 @@ const ITPAMap = (function () {
     carregarTalhoesGeoJSON('./DATA/KMLs.geojson');
 
     return map;
+  }
+
+  /**
+   * Extrai e normaliza o ID do talhão para mapeamento de arquivos raster (ex: quadrante_1).
+   * @param {Object} feature
+   * @param {string} nomeTalhao
+   * @returns {string}
+   */
+  function extrairTalhaoId(feature, nomeTalhao) {
+    const props = (feature && feature.properties) || {};
+    if (props.id) return String(props.id).trim().toLowerCase();
+
+    // Identifica padrão "Quadrante X"
+    const matchQuad = (nomeTalhao || '').match(/quadrante\s*(\d+)/i);
+    if (matchQuad) {
+      return `quadrante_${matchQuad[1]}`;
+    }
+
+    return (nomeTalhao || 'talhao')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
   }
 
   /**
@@ -169,16 +215,22 @@ const ITPAMap = (function () {
         if (layerControl) layerControl.removeLayer(talhoesLayer);
       }
 
+      // Limpa camadas anteriores de sobreposição de satélite dos talhões
+      if (layerGroupNdviRecente) layerGroupNdviRecente.clearLayers();
+      if (layerGroupRgbRecente) layerGroupRgbRecente.clearLayers();
+      if (layerGroupNdviAnterior) layerGroupNdviAnterior.clearLayers();
+      if (layerGroupRgbAnterior) layerGroupRgbAnterior.clearLayers();
+
       // Estilo oficial da identidade do ITPA:
-      // Contorno verde vibrante (#82C325, 2px) e preenchimento suave translúcido
+      // Contorno verde vibrante destacado (#82C325, 2.5px) e preenchimento quase transparente para permitir visualização de satélite/NDVI
       talhoesLayer = L.geoJSON(geojsonData, {
         style: function () {
           return {
             color: '#82C325',       // Contorno verde vibrante oficial ITPA
-            weight: 2,              // Largura 2px
-            opacity: 1.0,           // Opacidade da borda
+            weight: 2.5,            // Borda destacada
+            opacity: 1.0,           // Opacidade total na borda
             fillColor: '#82C325',   // Preenchimento verde ITPA
-            fillOpacity: 0.16       // Preenchimento suave translúcido
+            fillOpacity: 0.04       // Sem preenchimento opaco (mantém visibilidade sobre satélite/NDVI)
           };
         },
         onEachFeature: function (feature, layer) {
@@ -188,14 +240,71 @@ const ITPAMap = (function () {
           const descricao = props.description || '';
           const codigo = props.id || props.codigo || '';
 
+          // 1. Sobreposição de Imagens de Satélite (L.imageOverlay) recortadas no bounding box exato
+          if (layer.getBounds && typeof layer.getBounds === 'function') {
+            const b = layer.getBounds();
+            if (b && b.isValid()) {
+              const south = b.getSouth();
+              const west = b.getWest();
+              const north = b.getNorth();
+              const east = b.getEast();
+              const exactBounds = [[south, west], [north, east]];
+
+              const talhaoId = extrairTalhaoId(feature, nomeTalhao);
+
+              // Helper para criar ImageOverlay georreferenciado com opacidade 0.9 e pane dedicado
+              const criarSateliteOverlay = (caminhoRelativo) => {
+                const overlay = L.imageOverlay(caminhoRelativo, exactBounds, {
+                  opacity: 0.9,
+                  interactive: false,
+                  pane: 'satelitePane'
+                });
+                overlay.on('error', () => {
+                  if (overlay.getElement()) {
+                    overlay.getElement().style.display = 'none';
+                  }
+                });
+                return overlay;
+              };
+
+              // a) 🌱 Talhões - NDVI (Recente)
+              if (layerGroupNdviRecente) {
+                layerGroupNdviRecente.addLayer(
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_recente.png`)
+                );
+              }
+
+              // b) 🛰️ Talhões - RGB (Recente)
+              if (layerGroupRgbRecente) {
+                layerGroupRgbRecente.addLayer(
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_recente.png`)
+                );
+              }
+
+              // c) 🌱 Talhões - NDVI (Passagem Anterior -15d)
+              if (layerGroupNdviAnterior) {
+                layerGroupNdviAnterior.addLayer(
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_anterior.png`)
+                );
+              }
+
+              // d) 🛰️ Talhões - RGB (Passagem Anterior -15d)
+              if (layerGroupRgbAnterior) {
+                layerGroupRgbAnterior.addLayer(
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_anterior.png`)
+                );
+              }
+            }
+          }
+
           // Efeito hover interativo nos polígonos
           layer.on({
             mouseover: function (e) {
               const poly = e.target;
               poly.setStyle({
-                weight: 3,
+                weight: 3.5,
                 color: '#6EB31A',
-                fillOpacity: 0.32
+                fillOpacity: 0.22
               });
               if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
                 poly.bringToFront();
@@ -474,6 +583,10 @@ const ITPAMap = (function () {
     carregarTalhoesGeoJSON,
     getTalhoesLayer: () => talhoesLayer,
     getOrtofotoLayer: () => ortofotoLayer,
+    getLayerGroupNdviRecente: () => layerGroupNdviRecente,
+    getLayerGroupRgbRecente: () => layerGroupRgbRecente,
+    getLayerGroupNdviAnterior: () => layerGroupNdviAnterior,
+    getLayerGroupRgbAnterior: () => layerGroupRgbAnterior,
     carregarOcorrencias,
     obterLocalizacaoAtual,
     ativarModoSelecaoPonto,
