@@ -102,6 +102,10 @@
             <span class="pill-dot"></span>
             <span>🛰️ Satélite RGB</span>
           </button>
+          <button type="button" class="map-quick-pill swipe-pill" id="pill-quick-swipe" title="Comparador Antes e Depois (Swipe)">
+            <span class="pill-dot"></span>
+            <span>↔️ Comparar</span>
+          </button>
           <button type="button" class="btn-quick-layers" id="btn-open-layers-sheet" title="Abrir Menu Completo de Camadas" aria-label="Camadas">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
@@ -109,6 +113,30 @@
               <polyline points="2 12 12 17 22 12"></polyline>
             </svg>
           </button>
+        </div>
+
+        <!-- Ferramenta de Comparação 'Antes e Depois' (Swipe / Cortina Deslizante) -->
+        <div class="map-swipe-container" id="map-swipe-container" style="display: none;">
+          <div class="swipe-top-bar">
+            <div class="swipe-tag left">
+              <span class="swipe-indicator green"></span>
+              <span class="swipe-title">🌱 Recente (2m)</span>
+              <span class="swipe-sub">28/Out</span>
+            </div>
+            <button type="button" class="btn-close-swipe" id="btn-close-swipe" title="Sair da Comparação">
+              ✕ Sair da Comparação
+            </button>
+            <div class="swipe-tag right">
+              <span class="swipe-indicator amber"></span>
+              <span class="swipe-title">⏪ Anterior (-15d)</span>
+              <span class="swipe-sub">13/Out</span>
+            </div>
+          </div>
+          <div class="swipe-divider-line" id="swipe-divider-line">
+            <div class="swipe-handle-circle" id="swipe-handle" title="Arraste para comparar">
+              <span>↔</span>
+            </div>
+          </div>
         </div>
 
         <!-- Controles Flutuantes do Mapa -->
@@ -369,26 +397,79 @@
     </div>
   </div>
 
-  <!-- Modal: Detalhes do Talhão & Documentos Técnicos -->
+  <!-- Modal: Detalhes do Talhão, Gráfico Multitemporal & Documentos -->
   <div class="modal-overlay" id="modal-talhao">
-    <div class="modal-sheet">
+    <div class="modal-sheet talhao-modal-large">
       <div class="modal-top-bar">
-        <h3 class="modal-title" id="talhao-modal-titulo">Detalhes do Talhão</h3>
+        <h3 class="modal-title" id="talhao-modal-titulo">Painel do Talhão</h3>
         <button class="btn-close-modal" id="btn-close-modal-talhao">&times;</button>
       </div>
+
+      <!-- Abas de Navegação do Talhão -->
+      <div class="talhao-sheet-tabs">
+        <button type="button" class="talhao-tab-btn active" data-tab-pane="tab-talhao-grafico">
+          📈 Evolução NDVI
+        </button>
+        <button type="button" class="talhao-tab-btn" data-tab-pane="tab-talhao-docs">
+          📂 Documentos
+        </button>
+      </div>
+
       <div id="talhao-modal-conteudo">
-        <!-- Seção dentro do popup ou modal do Talhão -->
-        <div class="secao-documentos">
-          <h4>Documentos Anexados</h4>
-          <ul id="listaDocumentos">
-            <li class="doc-vazio">Nenhum documento anexado ainda.</li>
-          </ul>
-          <hr>
-          <h5>Adicionar Novo Documento</h5>
-          <input type="text" id="docDescricao" placeholder="Ex: Laudo Técnico de Plantio">
-          <input type="url" id="docLink" placeholder="Cole aqui o link do Google Drive / Nuvem">
-          <button id="btnEnviarDoc" type="button">Registar Documento</button>
-          <div id="statusUpload" style="display:none; font-size: 12px; color: #007700;">Registando...</div>
+        <!-- Painel 1: Gráfico Multitemporal & Métricas -->
+        <div class="talhao-tab-content active" id="tab-talhao-grafico">
+          <!-- Cards de Métricas em Destaque -->
+          <div class="talhao-stats-row" id="talhao-modal-stats-row">
+            <div class="stat-pill-box">
+              <span class="stat-pill-label">Área Líquida</span>
+              <span class="stat-pill-value" id="modal-stat-area">-- ha</span>
+            </div>
+            <div class="stat-pill-box">
+              <span class="stat-pill-label">Perímetro</span>
+              <span class="stat-pill-value" id="modal-stat-perimetro">-- m</span>
+            </div>
+            <div class="stat-pill-box highlight">
+              <span class="stat-pill-label">NDVI Recente (2m)</span>
+              <span class="stat-pill-value" id="modal-stat-ndvi">--</span>
+            </div>
+          </div>
+
+          <!-- Container do Gráfico Chart.js -->
+          <div class="chart-wrapper-card">
+            <div class="chart-header-row">
+              <div>
+                <h4 class="chart-title-text">Curva de Evolução Temporal de Vigor</h4>
+                <span class="chart-subtitle-text">Sentinel-2 L2A • Monitoramento de Mudas e Dossel</span>
+              </div>
+              <span class="chart-gain-badge" id="modal-chart-gain">+14.2%</span>
+            </div>
+            <div class="chart-canvas-box">
+              <canvas id="talhao-ndvi-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Ação Rápida: Ativar Swipe para este Talhão -->
+          <div style="margin-top: 14px;">
+            <button type="button" class="btn-itpa-pill" id="btn-swipe-deste-talhao" style="width: 100%; justify-content: center; gap: 8px;">
+              ↔️ Comparar Dinâmica no Mapa (Swipe)
+            </button>
+          </div>
+        </div>
+
+        <!-- Painel 2: Seção de Documentos Técnicos (Firestore) -->
+        <div class="talhao-tab-content" id="tab-talhao-docs">
+          <div class="secao-documentos">
+            <h4>Documentos Anexados</h4>
+            <ul id="listaDocumentos">
+              <li class="doc-vazio">Nenhum documento anexado ainda.</li>
+            </ul>
+            <hr>
+            <h5>Adicionar Novo Documento</h5>
+            <input type="text" id="docDescricao" placeholder="Ex: Laudo Técnico de Plantio">
+            <input type="url" id="docLink" placeholder="Cole aqui o link do Google Drive / Nuvem">
+            <button id="btnEnviarDoc" type="button">Registar Documento</button>
+            <div id="statusUpload" style="display:none; font-size: 12px; color: #007700;">Registando...</div>
+          </div>
         </div>
       </div>
     </div>
@@ -562,6 +643,9 @@
   <!-- Dependências Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+  <!-- Biblioteca Chart.js para Análise Temporal de NDVI -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
   <!-- Firebase SDK (Compat v10) para Firestore e Storage -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>

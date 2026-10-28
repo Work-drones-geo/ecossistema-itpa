@@ -2077,3 +2077,331 @@ iframe[title*="Netlify"] {
 .ios-toggle input:checked + .ios-toggle-track::before {
   transform: translateX(22px);
 }
+
+/* ==========================================================================
+   Etapa 2 - Gráfico Multitemporal e Cortina de Comparação Swipe
+   ========================================================================== */
+
+/* 1. Botão de Comparação (Swipe) nos Popups e Barra Rápida */
+.btn-popup-action.swipe-action-btn {
+  background-color: #0f172a;
+  color: #ffffff;
+  border: 1px solid #334155;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+}
+
+.btn-popup-action.swipe-action-btn:hover {
+  background-color: #1e293b;
+  transform: translateY(-1px);
+}
+
+.map-quick-pill.swipe-pill {
+  border-color: #cbd5e1;
+}
+
+.map-quick-pill.swipe-pill.active {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #020617 !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.35) !important;
+}
+
+/* 2. Modal do Talhão Expandido */
+.talhao-modal-large {
+  max-width: 580px;
+  width: 95%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.talhao-sheet-tabs {
+  display: flex;
+  background-color: #f1f5f9;
+  border-radius: 12px;
+  padding: 4px;
+  margin: 0 16px 14px 16px;
+  gap: 4px;
+}
+
+.talhao-tab-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.talhao-tab-btn.active {
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.talhao-tab-content {
+  display: none;
+}
+
+.talhao-tab-content.active {
+  display: block;
+}
+
+/* Chips Estatísticos do Modal */
+.talhao-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.stat-pill-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-pill-box.highlight {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.stat-pill-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.stat-pill-box.highlight .stat-pill-label {
+  color: #15803d;
+}
+
+.stat-pill-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.stat-pill-box.highlight .stat-pill-value {
+  color: #16a34a;
+}
+
+/* Card do Gráfico Chart.js */
+.chart-wrapper-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.chart-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.chart-title-text {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.chart-subtitle-text {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.chart-gain-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.chart-gain-badge.negative {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.chart-canvas-box {
+  position: relative;
+  height: 210px;
+  width: 100%;
+}
+
+/* ==========================================================================
+   3. Comparador Swipe "Antes e Depois" (Cortina Deslizante)
+   ========================================================================== */
+.map-swipe-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 860;
+}
+
+/* Barra Superior com Tags e Botão Fechar */
+.swipe-top-bar {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  pointer-events: auto;
+  z-index: 870;
+  max-width: 94vw;
+}
+
+.swipe-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(15, 23, 42, 0.85);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.swipe-tag .swipe-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.swipe-tag .swipe-sub {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.swipe-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.swipe-indicator.green {
+  background-color: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+}
+
+.swipe-indicator.amber {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+.btn-close-swipe {
+  border: none;
+  background-color: #ffffff;
+  color: #0f172a;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-close-swipe:hover {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Linha Divisória e Alça Central Touch */
+.swipe-divider-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #ffffff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  z-index: 865;
+  pointer-events: auto;
+  cursor: ew-resize;
+  touch-action: none;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.swipe-handle-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 3px solid #16a34a;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+  cursor: ew-resize;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.swipe-handle-circle:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45);
+}
+
+.swipe-handle-circle:active {
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+@media (max-width: 600px) {
+  .swipe-top-bar {
+    top: 10px;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .swipe-tag {
+    padding: 4px 8px;
+  }
+  .swipe-tag .swipe-title {
+    font-size: 0.72rem;
+  }
+  .swipe-tag .swipe-sub {
+    display: none;
+  }
+  .btn-close-swipe {
+    padding: 5px 10px;
+    font-size: 0.72rem;
+  }
+  .talhao-stats-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}

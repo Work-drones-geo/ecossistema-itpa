@@ -77,12 +77,18 @@ const ITPAMap = (function () {
     // Reposiciona o controle de zoom no topo esquerdo para liberar a lateral direita aos atalhos rápidos
     L.control.zoom({ position: 'topleft' }).addTo(map);
 
-    // 3. Pane dedicado para sobreposição de imagens de satélite recortadas dos talhões
-    // zIndex 350 fica entre os tiles base (200) e os vetores de contorno (overlayPane: 400)
+    // 3. Panes dedicados para sobreposição de imagens de satélite recortadas dos talhões
+    // satelitePane (Recente 2m - zIndex 355) e sateliteAnteriorPane (Anterior -15d - zIndex 345)
+    // Ficam entre os tiles base (200) e os vetores de contorno (overlayPane: 400)
     if (!map.getPane('satelitePane')) {
       map.createPane('satelitePane');
-      map.getPane('satelitePane').style.zIndex = 350;
+      map.getPane('satelitePane').style.zIndex = 355;
       map.getPane('satelitePane').style.pointerEvents = 'none';
+    }
+    if (!map.getPane('sateliteAnteriorPane')) {
+      map.createPane('sateliteAnteriorPane');
+      map.getPane('sateliteAnteriorPane').style.zIndex = 345;
+      map.getPane('sateliteAnteriorPane').style.pointerEvents = 'none';
     }
 
     // 4. Instanciação dos LayerGroups para NDVI e RGB dos talhões
@@ -289,12 +295,12 @@ const ITPAMap = (function () {
 
               const talhaoId = extrairTalhaoId(feature, nomeTalhao);
 
-              // Helper para criar ImageOverlay georreferenciado com opacidade 0.9 e pane dedicado
-              const criarSateliteOverlay = (caminhoRelativo) => {
+              // Helper para criar ImageOverlay georreferenciado com opacidade e pane dedicado
+              const criarSateliteOverlay = (caminhoRelativo, paneName = 'satelitePane') => {
                 const overlay = L.imageOverlay(caminhoRelativo, exactBounds, {
-                  opacity: 0.9,
+                  opacity: 0.92,
                   interactive: false,
-                  pane: 'satelitePane'
+                  pane: paneName
                 });
                 overlay.on('error', () => {
                   if (overlay.getElement()) {
@@ -304,31 +310,31 @@ const ITPAMap = (function () {
                 return overlay;
               };
 
-              // a) 🌱 Talhões - NDVI (Recente)
+              // a) 🌱 Talhões - NDVI (Recente 2m)
               if (layerGroupNdviRecente) {
                 layerGroupNdviRecente.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_recente.png`)
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_recente.png`, 'satelitePane')
                 );
               }
 
-              // b) 🛰️ Talhões - RGB (Recente)
+              // b) 🛰️ Talhões - RGB (Recente 2m)
               if (layerGroupRgbRecente) {
                 layerGroupRgbRecente.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_recente.png`)
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_recente.png`, 'satelitePane')
                 );
               }
 
               // c) 🌱 Talhões - NDVI (Passagem Anterior -15d)
               if (layerGroupNdviAnterior) {
                 layerGroupNdviAnterior.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_anterior.png`)
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_anterior.png`, 'sateliteAnteriorPane')
                 );
               }
 
               // d) 🛰️ Talhões - RGB (Passagem Anterior -15d)
               if (layerGroupRgbAnterior) {
                 layerGroupRgbAnterior.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_anterior.png`)
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_anterior.png`, 'sateliteAnteriorPane')
                 );
               }
             }
@@ -435,12 +441,20 @@ const ITPAMap = (function () {
 
               <!-- Botões de Ação Operacional -->
               <div class="talhao-popup-actions">
-                <button class="btn-popup-action primary btn-talhao-preencher" data-talhao="${nomeTalhao}">
-                  ➕ Registrar Ocorrência Aqui
+                <button class="btn-popup-action primary btn-talhao-grafico" data-talhao="${nomeTalhao}">
+                  📈 Evolução Histórica (Gráfico)
                 </button>
-                <button class="btn-popup-action secondary btn-talhao-documentos" data-talhao="${nomeTalhao}">
-                  📂 Documentos do Talhão
+                <button class="btn-popup-action swipe-action-btn btn-talhao-swipe" data-talhao="${nomeTalhao}">
+                  ↔️ Comparar Dinâmica (Swipe)
                 </button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                  <button class="btn-popup-action secondary btn-talhao-preencher" data-talhao="${nomeTalhao}">
+                    ➕ Ocorrência
+                  </button>
+                  <button class="btn-popup-action secondary btn-talhao-documentos" data-talhao="${nomeTalhao}">
+                    📂 Documentos
+                  </button>
+                </div>
               </div>
             </div>
           `;
@@ -451,6 +465,20 @@ const ITPAMap = (function () {
           });
 
           layer.on('popupopen', () => {
+            const btnGrafico = document.querySelector(`.btn-talhao-grafico[data-talhao="${nomeTalhao}"]`);
+            if (btnGrafico && typeof window.ITPA_OnTalhaoGrafico === 'function') {
+              btnGrafico.onclick = () => {
+                window.ITPA_OnTalhaoGrafico(nomeTalhao, props, layer.getBounds ? layer.getBounds() : null);
+              };
+            }
+
+            const btnSwipe = document.querySelector(`.btn-talhao-swipe[data-talhao="${nomeTalhao}"]`);
+            if (btnSwipe) {
+              btnSwipe.onclick = () => {
+                ativarModoSwipe(nomeTalhao, layer.getBounds ? layer.getBounds() : null);
+              };
+            }
+
             const btn = document.querySelector(`.btn-talhao-preencher[data-talhao="${nomeTalhao}"]`);
             if (btn && typeof window.ITPA_OnTalhaoSelecionado === 'function') {
               btn.onclick = () => {
@@ -462,7 +490,7 @@ const ITPAMap = (function () {
             const btnDocs = document.querySelector(`.btn-talhao-documentos[data-talhao="${nomeTalhao}"]`);
             if (btnDocs && typeof window.ITPA_OnTalhaoDocumentos === 'function') {
               btnDocs.onclick = () => {
-                window.ITPA_OnTalhaoDocumentos(nomeTalhao, props);
+                window.ITPA_OnTalhaoDocumentos(nomeTalhao, props, 'tab-talhao-docs');
               };
             }
           });
@@ -918,7 +946,159 @@ const ITPAMap = (function () {
       sincronizarEstadosUI();
     });
 
+    // Inicializa os controles do Comparador Swipe
+    setupSwipeInteractions();
+
     sincronizarEstadosUI();
+  }
+
+  // ==========================================================================
+  // 9. Ferramenta de Comparação "Antes e Depois" (Swipe / Cortina Deslizante)
+  // ==========================================================================
+  let swipeAtivo = false;
+
+  function ativarModoSwipe(talhaoFoco = null, bounds = null) {
+    if (!map) return;
+    swipeAtivo = true;
+
+    const swipeContainer = document.getElementById('map-swipe-container');
+    const pillSwipe = document.getElementById('pill-quick-swipe');
+    if (pillSwipe) pillSwipe.classList.add('active');
+
+    // Liga ambas as camadas para a comparação: Recente (superior) vs Anterior (inferior)
+    if (layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) {
+      map.addLayer(layerGroupNdviRecente);
+    }
+    if (layerGroupNdviAnterior && !map.hasLayer(layerGroupNdviAnterior)) {
+      map.addLayer(layerGroupNdviAnterior);
+    }
+
+    if (swipeContainer) {
+      swipeContainer.style.display = 'block';
+    }
+
+    // Se fornecido bounds do talhão, aproxima e fecha popup
+    if (bounds && bounds.isValid && bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 17 });
+      map.closePopup();
+    }
+
+    // Posiciona o divisor inicialmente a 50%
+    setTimeout(() => {
+      atualizarPosicaoSwipe(map.getSize().x * 0.5);
+    }, 50);
+  }
+
+  function desativarModoSwipe() {
+    swipeAtivo = false;
+    const swipeContainer = document.getElementById('map-swipe-container');
+    const pillSwipe = document.getElementById('pill-quick-swipe');
+    if (pillSwipe) pillSwipe.classList.remove('active');
+
+    if (swipeContainer) {
+      swipeContainer.style.display = 'none';
+    }
+
+    // Restaura o clipPath
+    const pane = map ? map.getPane('satelitePane') : null;
+    if (pane) {
+      pane.style.clipPath = '';
+    }
+
+    // Desliga a camada anterior após o swipe para manter o mapa limpo
+    if (layerGroupNdviAnterior && map && map.hasLayer(layerGroupNdviAnterior)) {
+      map.removeLayer(layerGroupNdviAnterior);
+    }
+  }
+
+  function atualizarPosicaoSwipe(xPx) {
+    if (!map || !swipeAtivo) return;
+    const mapWidth = map.getSize().x;
+    const clampedX = Math.max(10, Math.min(mapWidth - 10, xPx));
+
+    const divider = document.getElementById('swipe-divider-line');
+    if (divider) {
+      divider.style.left = `${clampedX}px`;
+    }
+
+    const pane = map.getPane('satelitePane');
+    if (pane) {
+      pane.style.clipPath = `polygon(0 0, ${clampedX}px 0, ${clampedX}px 100%, 0 100%)`;
+    }
+  }
+
+  function setupSwipeInteractions() {
+    const divider = document.getElementById('swipe-divider-line');
+    const handle = document.getElementById('swipe-handle');
+    const btnClose = document.getElementById('btn-close-swipe');
+    const pillSwipe = document.getElementById('pill-quick-swipe');
+
+    if (pillSwipe) {
+      pillSwipe.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (swipeAtivo) {
+          desativarModoSwipe();
+        } else {
+          ativarModoSwipe();
+        }
+      });
+    }
+
+    if (btnClose) {
+      btnClose.addEventListener('click', (e) => {
+        e.preventDefault();
+        desativarModoSwipe();
+      });
+    }
+
+    let isDragging = false;
+
+    const startDrag = (e) => {
+      isDragging = true;
+      if (map && map.dragging) map.dragging.disable();
+    };
+
+    const doDrag = (e) => {
+      if (!isDragging) return;
+      let clientX = e.clientX;
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+      }
+      const mapEl = document.getElementById('map');
+      if (mapEl) {
+        const rect = mapEl.getBoundingClientRect();
+        atualizarPosicaoSwipe(clientX - rect.left);
+      }
+    };
+
+    const stopDrag = () => {
+      if (isDragging) {
+        isDragging = false;
+        if (map && map.dragging) map.dragging.enable();
+      }
+    };
+
+    if (handle) {
+      handle.addEventListener('mousedown', startDrag);
+      handle.addEventListener('touchstart', startDrag, { passive: true });
+    }
+    if (divider) {
+      divider.addEventListener('mousedown', startDrag);
+      divider.addEventListener('touchstart', startDrag, { passive: true });
+    }
+
+    window.addEventListener('mousemove', doDrag);
+    window.addEventListener('touchmove', doDrag, { passive: true });
+    window.addEventListener('mouseup', stopDrag);
+    window.addEventListener('touchend', stopDrag);
+
+    if (map) {
+      map.on('resize', () => {
+        if (swipeAtivo) {
+          atualizarPosicaoSwipe(map.getSize().x * 0.5);
+        }
+      });
+    }
   }
 
   function getMapInstance() {
@@ -929,6 +1109,9 @@ const ITPAMap = (function () {
     init,
     carregarTalhoesGeoJSON,
     setupTouchLayerControls,
+    ativarModoSwipe,
+    desativarModoSwipe,
+    isSwipeAtivo: () => swipeAtivo,
     getTalhoesLayer: () => talhoesLayer,
     getOrtofotoLayer: () => ortofotoLayer,
     getLayerGroupNdviRecente: () => layerGroupNdviRecente,
