@@ -78,14 +78,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const listaUl = document.getElementById('listaDocumentos');
     if (!listaUl) return;
 
-    listaUl.innerHTML = '<li style="font-style: italic; color: var(--itpa-text-muted);">Consultando documentos anexados...</li>';
+    listaUl.innerHTML = '<li class="doc-carregando" style="font-style: italic; color: var(--itpa-text-muted);">Consultando documentos anexados...</li>';
 
     try {
       const docs = await window.ITPASync.listarDocumentosTalhao(talhaoId);
       listaUl.innerHTML = '';
 
       if (!docs || docs.length === 0) {
-        listaUl.innerHTML = '<li>Nenhum documento anexado ainda.</li>';
+        listaUl.innerHTML = '<li class="doc-vazio">Nenhum documento anexado ainda.</li>';
         return;
       }
 
@@ -93,16 +93,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         const li = document.createElement('li');
         const urlFinal = doc.url_documento || doc.url_storage || '#';
         li.innerHTML = `
-          <a href="${urlFinal}" target="_blank" rel="noopener noreferrer" title="Toque para abrir/visualizar link">
-            📄 <span>${doc.nome_documento}</span>
+          <a href="${urlFinal}" target="_blank" rel="noopener noreferrer" class="doc-link" title="Toque para abrir documento em nova aba">
+            <div class="doc-corpo">
+              <span class="doc-titulo">📄 <span>${doc.nome_documento}</span></span>
+              ${doc.data_registo ? `<span class="doc-data">${doc.data_registo}</span>` : ''}
+            </div>
+            <span class="doc-seta" aria-hidden="true">↗</span>
           </a>
-          ${doc.data_registo ? `<span style="font-size: 0.72rem; color: var(--itpa-text-muted); flex-shrink: 0;">${doc.data_registo}</span>` : ''}
         `;
         listaUl.appendChild(li);
       });
     } catch (err) {
       console.warn('[Talhões] Erro ao carregar documentos do talhão:', err);
-      listaUl.innerHTML = '<li>Nenhum documento anexado ainda.</li>';
+      listaUl.innerHTML = '<li class="doc-vazio">Nenhum documento anexado ainda.</li>';
     }
   }
 
