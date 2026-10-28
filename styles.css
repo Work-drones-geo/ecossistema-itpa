@@ -1035,7 +1035,8 @@ html, body {
   color: var(--itpa-green-hover);
 }
 
-.secao-documentos #docDescricao {
+.secao-documentos #docDescricao,
+.secao-documentos #docLink {
   width: 100%;
   padding: 11px 14px;
   border: 1.5px solid var(--itpa-border);
@@ -1048,47 +1049,11 @@ html, body {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.secao-documentos #docDescricao:focus {
+.secao-documentos #docDescricao:focus,
+.secao-documentos #docLink:focus {
   outline: none;
   border-color: var(--itpa-green);
   box-shadow: 0 0 0 3px rgba(130, 195, 37, 0.2);
-}
-
-.secao-documentos #docArquivo {
-  display: block;
-  width: 100%;
-  padding: 10px 12px;
-  font-family: var(--font-body);
-  font-size: 0.82rem;
-  color: var(--itpa-text);
-  background: var(--itpa-bg);
-  border: 1.5px dashed var(--itpa-green);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  margin-bottom: 14px;
-  transition: background-color 0.2s ease;
-}
-
-.secao-documentos #docArquivo:hover {
-  background-color: var(--itpa-mint-light);
-}
-
-.secao-documentos #docArquivo::file-selector-button {
-  background: var(--itpa-mint);
-  color: var(--itpa-green-forest);
-  border: 1px solid var(--itpa-border);
-  border-radius: var(--radius-pill);
-  padding: 6px 14px;
-  margin-right: 10px;
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.secao-documentos #docArquivo::file-selector-button:hover {
-  background: #d4eec1;
 }
 
 .secao-documentos #btnEnviarDoc {

@@ -357,87 +357,76 @@ const ITPASync = (function () {
     const documentos = [];
     snapshot.forEach((doc) => {
       const data = doc.data();
-      let dataEnvioFormatada = '';
+      const rawDate = data.data_registo || data.data_envio;
+      let dataFormatada = '';
       let dataMs = 0;
-      if (data.data_envio && data.data_envio.toDate) {
-        const d = data.data_envio.toDate();
-        dataEnvioFormatada = d.toLocaleString('pt-BR');
+      if (rawDate && rawDate.toDate) {
+        const d = rawDate.toDate();
+        dataFormatada = d.toLocaleString('pt-BR');
         dataMs = d.getTime();
-      } else if (data.data_envio) {
-        const d = new Date(data.data_envio);
-        dataEnvioFormatada = d.toLocaleString('pt-BR');
+      } else if (rawDate) {
+        const d = new Date(rawDate);
+        dataFormatada = d.toLocaleString('pt-BR');
         dataMs = d.getTime();
       }
+
+      const url = data.url_documento || data.url_storage || '#';
 
       documentos.push({
         id: doc.id,
         talhao_id: data.talhao_id,
         nome_documento: data.nome_documento || 'Documento sem título',
-        url_storage: data.url_storage || '',
-        data_envio: dataEnvioFormatada,
-        data_envio_ms: dataMs
+        url_documento: url,
+        data_registo: dataFormatada,
+        data_registo_ms: dataMs
       });
     });
 
     // Ordena do mais recente para o mais antigo no cliente
-    documentos.sort((a, b) => b.data_envio_ms - a.data_envio_ms);
+    documentos.sort((a, b) => b.data_registo_ms - a.data_registo_ms);
     return documentos;
   }
 
   /**
-   * Faz upload de arquivo para o Firebase Storage e grava registro no Firestore.
+   * Grava diretamente no Firestore o registro do documento do talhão (sem Storage).
    * @param {string} talhaoId
    * @param {string} nomeDocumento
-   * @param {File} arquivo
-   * @returns {Promise<{id: string, url_storage: string}>}
+   * @param {string} urlDocumento
+   * @returns {Promise<{id: string, talhao_id: string, nome_documento: string, url_documento: string}>}
    */
-  async function enviarDocumentoTalhao(talhaoId, nomeDocumento, arquivo) {
+  async function registrarDocumentoTalhao(talhaoId, nomeDocumento, urlDocumento) {
     inicializarFirebase();
-    if (!storageInstance || !firestoreInstance) {
-      throw new Error('Serviços do Firebase não inicializados ou indisponíveis.');
+    if (!firestoreInstance) {
+      throw new Error('Serviço Firestore não inicializado ou indisponível.');
     }
 
     if (!talhaoId) {
       throw new Error('Identificador do talhão não fornecido.');
     }
     if (!nomeDocumento || !nomeDocumento.trim()) {
-      throw new Error('Por favor, informe o título do documento.');
+      throw new Error('Por favor, informe o título/descrição do documento.');
     }
-    if (!arquivo) {
-      throw new Error('Por favor, selecione um arquivo.');
+    if (!urlDocumento || !urlDocumento.trim()) {
+      throw new Error('Por favor, informe o link do documento.');
     }
 
-    const timestamp = Date.now();
-    const nomeLimpo = arquivo.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `documentos_itpa/${encodeURIComponent(talhaoId)}/${timestamp}_${nomeLimpo}`;
-    const storageRef = storageInstance.ref(storagePath);
+    let linkNormalizado = urlDocumento.trim();
+    if (!/^https?:\/\//i.test(linkNormalizado)) {
+      linkNormalizado = 'https://' + linkNormalizado;
+    }
 
-    // Upload no Firebase Storage
-    const snapshot = await storageRef.put(arquivo, {
-      contentType: arquivo.type || 'application/octet-stream',
-      customMetadata: {
-        talhao_id: talhaoId,
-        nome_documento: nomeDocumento.trim(),
-        enviadoPor: 'Ecossistema ITPA PWA'
-      }
-    });
-
-    // Obtenção da URL de download público
-    const url_storage = await snapshot.ref.getDownloadURL();
-
-    // Gravação no Firestore na coleção 'documentos_talhoes'
     const docRef = await firestoreInstance.collection('documentos_talhoes').add({
       talhao_id: talhaoId,
       nome_documento: nomeDocumento.trim(),
-      url_storage: url_storage,
-      data_envio: firebase.firestore.FieldValue.serverTimestamp()
+      url_documento: linkNormalizado,
+      data_registo: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     return {
       id: docRef.id,
-      url_storage: url_storage,
       talhao_id: talhaoId,
-      nome_documento: nomeDocumento.trim()
+      nome_documento: nomeDocumento.trim(),
+      url_documento: linkNormalizado
     };
   }
 
@@ -452,7 +441,8 @@ const ITPASync = (function () {
     sincronizarTudo,
     monitorarConexao,
     listarDocumentosTalhao,
-    enviarDocumentoTalhao,
+    registrarDocumentoTalhao,
+    enviarDocumentoTalhao: registrarDocumentoTalhao,
     isSyncing: () => isSyncing
   };
 })();

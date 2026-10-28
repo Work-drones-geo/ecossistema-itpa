@@ -91,11 +91,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       docs.forEach((doc) => {
         const li = document.createElement('li');
+        const urlFinal = doc.url_documento || doc.url_storage || '#';
         li.innerHTML = `
-          <a href="${doc.url_storage}" target="_blank" rel="noopener noreferrer" title="Toque para abrir/baixar">
+          <a href="${urlFinal}" target="_blank" rel="noopener noreferrer" title="Toque para abrir/visualizar link">
             📄 <span>${doc.nome_documento}</span>
           </a>
-          ${doc.data_envio ? `<span style="font-size: 0.72rem; color: var(--itpa-text-muted); flex-shrink: 0;">${doc.data_envio}</span>` : ''}
+          ${doc.data_registo ? `<span style="font-size: 0.72rem; color: var(--itpa-text-muted); flex-shrink: 0;">${doc.data_registo}</span>` : ''}
         `;
         listaUl.appendChild(li);
       });
@@ -116,22 +117,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       tituloModal.innerHTML = `📂 Documentos do Talhão: <span style="color: var(--itpa-green);">${nomeTalhao}</span>`;
     }
 
-    // 2. Registra o talhão ativo no modal e personaliza o campo de título
+    // 2. Registra o talhão ativo no modal e personaliza os campos
     modalTalhao.setAttribute('data-talhao-ativo', nomeTalhao);
     const docDescricao = document.getElementById('docDescricao');
-    const docArquivo = document.getElementById('docArquivo');
+    const docLink = document.getElementById('docLink');
     const statusUpload = document.getElementById('statusUpload');
 
     if (docDescricao) {
       docDescricao.value = '';
-      docDescricao.placeholder = `Título (Ex: Laudo Técnico - ${nomeTalhao})`;
+      docDescricao.placeholder = 'Ex: Laudo Técnico de Plantio';
     }
-    if (docArquivo) {
-      docArquivo.value = '';
+    if (docLink) {
+      docLink.value = '';
+      docLink.placeholder = 'Cole aqui o link do Google Drive / Nuvem';
     }
     if (statusUpload) {
       statusUpload.style.display = 'none';
-      statusUpload.textContent = 'Enviando...';
+      statusUpload.textContent = 'Registando...';
     }
 
     // 3. Abre o modal/gaveta
@@ -622,30 +624,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Upload de Documentos do Talhão (Firebase Storage & Firestore)
+  // Registo de Documentos do Talhão (100% Firestore / sem Storage)
   const btnEnviarDoc = document.getElementById('btnEnviarDoc');
   if (btnEnviarDoc) {
     btnEnviarDoc.addEventListener('click', async () => {
       const talhaoId = modalTalhao ? modalTalhao.getAttribute('data-talhao-ativo') : null;
       const docDescricao = document.getElementById('docDescricao');
-      const docArquivo = document.getElementById('docArquivo');
+      const docLink = document.getElementById('docLink');
       const statusUpload = document.getElementById('statusUpload');
 
       const titulo = docDescricao ? docDescricao.value.trim() : '';
-      const arquivo = docArquivo && docArquivo.files ? docArquivo.files[0] : null;
+      const link = docLink ? docLink.value.trim() : '';
 
       if (!talhaoId) {
         alert('Identificador do talhão não encontrado. Selecione o talhão novamente no mapa.');
         return;
       }
       if (!titulo) {
-        alert('Por favor, informe o título do documento.');
+        alert('Por favor, informe a descrição/título do documento.');
         if (docDescricao) docDescricao.focus();
         return;
       }
-      if (!arquivo) {
-        alert('Por favor, selecione um arquivo (.pdf, .jpg ou .png) para upload.');
-        if (docArquivo) docArquivo.focus();
+      if (!link) {
+        alert('Por favor, cole o link do documento (ex: Google Drive, OneDrive ou Nuvem).');
+        if (docLink) docLink.focus();
         return;
       }
 
@@ -653,20 +655,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (statusUpload) {
           statusUpload.style.display = 'block';
           statusUpload.style.color = '#007700';
-          statusUpload.textContent = 'Enviando documento...';
+          statusUpload.textContent = 'Registando documento no Firestore...';
         }
         btnEnviarDoc.disabled = true;
 
-        // Upload no Firebase Storage e registro no Firestore
-        await window.ITPASync.enviarDocumentoTalhao(talhaoId, titulo, arquivo);
+        // Gravação direta no Firestore
+        await window.ITPASync.registrarDocumentoTalhao(talhaoId, titulo, link);
 
         if (statusUpload) {
-          statusUpload.textContent = '✓ Documento enviado com sucesso!';
+          statusUpload.textContent = '✓ Documento registado com sucesso!';
         }
 
-        // Limpa os campos
+        // Limpa os campos de entrada
         if (docDescricao) docDescricao.value = '';
-        if (docArquivo) docArquivo.value = '';
+        if (docLink) docLink.value = '';
 
         // Recarrega lista imediatamente para exibir o novo documento
         await carregarListaDocumentosTalhao(talhaoId);
@@ -678,12 +680,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 4000);
 
       } catch (err) {
-        console.error('[Upload Documento Talhão] Erro:', err);
-        alert('Falha ao enviar documento para o repositório: ' + err.message);
+        console.error('[Registo Documento Talhão] Erro:', err);
+        alert('Falha ao registar documento: ' + err.message);
         if (statusUpload) {
           statusUpload.style.display = 'block';
           statusUpload.style.color = '#cc0000';
-          statusUpload.textContent = 'Erro ao enviar. Tente novamente.';
+          statusUpload.textContent = 'Erro ao registar. Tente novamente.';
         }
       } finally {
         btnEnviarDoc.disabled = false;
