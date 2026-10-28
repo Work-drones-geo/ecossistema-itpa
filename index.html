@@ -88,6 +88,29 @@
       <section id="map-view">
         <div id="map"></div>
 
+        <!-- Barra de Acesso Rápido de Camadas (Estilo 'Dados Fazenda' Touch-Friendly) -->
+        <div class="map-quick-layer-bar" id="map-quick-layer-bar">
+          <button type="button" class="map-quick-pill" id="pill-quick-ndvi" title="Alternar Talhões NDVI 2m">
+            <span class="pill-dot"></span>
+            <span>🌱 NDVI 2m</span>
+          </button>
+          <button type="button" class="map-quick-pill active" id="pill-quick-drone" title="Alternar Ortofoto Drone">
+            <span class="pill-dot"></span>
+            <span>📸 Drone</span>
+          </button>
+          <button type="button" class="map-quick-pill" id="pill-quick-rgb" title="Alternar Satélite RGB 2m">
+            <span class="pill-dot"></span>
+            <span>🛰️ Satélite RGB</span>
+          </button>
+          <button type="button" class="btn-quick-layers" id="btn-open-layers-sheet" title="Abrir Menu Completo de Camadas" aria-label="Camadas">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+          </button>
+        </div>
+
         <!-- Controles Flutuantes do Mapa -->
         <div class="map-floating-controls">
           <button class="btn-fab-round" id="btn-gps-locate" title="Minha Localização GPS">
@@ -366,6 +389,164 @@
           <input type="url" id="docLink" placeholder="Cole aqui o link do Google Drive / Nuvem">
           <button id="btnEnviarDoc" type="button">Registar Documento</button>
           <div id="statusUpload" style="display:none; font-size: 12px; color: #007700;">Registando...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Sheet: Seletor Moderno de Camadas (Estilo 'Dados Fazenda') -->
+  <div class="bottom-sheet-overlay" id="sheet-camadas-overlay">
+    <div class="bottom-sheet-modal" id="sheet-camadas-modal">
+      <!-- Alça de arraste cinza centralizada no topo -->
+      <div class="bottom-sheet-drag-handle"></div>
+
+      <!-- Topo da Gaveta -->
+      <div class="bottom-sheet-header">
+        <div class="bottom-sheet-title-box">
+          <div class="bottom-sheet-icon-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+          </div>
+          <div>
+            <h3 class="bottom-sheet-title">Camadas do Mapa</h3>
+            <span class="bottom-sheet-subtitle">WebGIS • Restauração ITPA</span>
+          </div>
+        </div>
+        <button class="btn-close-bottom-sheet" id="btn-close-sheet-camadas" aria-label="Fechar gaveta de camadas">&times;</button>
+      </div>
+
+      <!-- Corpo da Gaveta com Scroll Touch-Friendly -->
+      <div class="bottom-sheet-body">
+        <!-- 1. Mapas de Fundo -->
+        <div class="sheet-section">
+          <div class="sheet-section-header">
+            <span class="sheet-section-title">Mapas de Fundo</span>
+            <span class="sheet-section-badge">Base</span>
+          </div>
+          <div class="sheet-radio-list">
+            <label class="sheet-choice-item" for="base-opt-satelite">
+              <div class="sheet-choice-left">
+                <span class="sheet-choice-emoji">🛰️</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Satélite de Alta Resolução</span>
+                  <span class="sheet-choice-sub">Esri World Imagery / Maxar</span>
+                </div>
+              </div>
+              <input type="radio" name="base-map-choice" id="base-opt-satelite" value="satelite" checked class="sheet-radio">
+              <span class="sheet-radio-mark"></span>
+            </label>
+
+            <label class="sheet-choice-item" for="base-opt-osm">
+              <div class="sheet-choice-left">
+                <span class="sheet-choice-emoji">🗺️</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Mapa Topográfico / Ruas</span>
+                  <span class="sheet-choice-sub">OpenStreetMap Padrão</span>
+                </div>
+              </div>
+              <input type="radio" name="base-map-choice" id="base-opt-osm" value="osm" class="sheet-radio">
+              <span class="sheet-radio-mark"></span>
+            </label>
+
+            <label class="sheet-choice-item" for="base-opt-voyager">
+              <div class="sheet-choice-left">
+                <span class="sheet-choice-emoji">🎨</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Carto Voyager</span>
+                  <span class="sheet-choice-sub">Visual cartográfico claro e suave</span>
+                </div>
+              </div>
+              <input type="radio" name="base-map-choice" id="base-opt-voyager" value="voyager" class="sheet-radio">
+              <span class="sheet-radio-mark"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 2. Camadas Operacionais -->
+        <div class="sheet-section">
+          <div class="sheet-section-header">
+            <span class="sheet-section-title">Camadas Operacionais</span>
+            <span class="sheet-section-badge">Sobreposição</span>
+          </div>
+          <div class="sheet-switches-list">
+            <!-- Ortofoto Drone -->
+            <div class="sheet-switch-row">
+              <div class="sheet-switch-left">
+                <span class="sheet-choice-emoji">📸</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Ortofoto Drone (Alta Resolução)</span>
+                  <span class="sheet-choice-sub">Voo aerofotogramétrico georreferenciado</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-drone">
+                <input type="checkbox" id="sheet-toggle-drone" checked>
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+
+            <!-- Talhões NDVI 2m -->
+            <div class="sheet-switch-row">
+              <div class="sheet-switch-left">
+                <span class="sheet-choice-emoji">🌱</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Talhões NDVI 2m</span>
+                  <span class="sheet-choice-sub">Vigor vegetativo super-resolvido (Recente)</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-ndvi">
+                <input type="checkbox" id="sheet-toggle-ndvi">
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+
+            <!-- Talhões RGB 2m -->
+            <div class="sheet-switch-row">
+              <div class="sheet-switch-left">
+                <span class="sheet-choice-emoji">🛰️</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Talhões RGB 2m</span>
+                  <span class="sheet-choice-sub">Cor verdadeira super-resolvida (Recente)</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-rgb">
+                <input type="checkbox" id="sheet-toggle-rgb">
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+
+            <!-- Passagem Anterior -15d -->
+            <div class="sheet-switch-row">
+              <div class="sheet-switch-left">
+                <span class="sheet-choice-emoji">⏪</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">NDVI - Passagem Anterior</span>
+                  <span class="sheet-choice-sub">Comparativo temporal de vigor (-15d)</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-ndvi-ant">
+                <input type="checkbox" id="sheet-toggle-ndvi-ant">
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+
+            <!-- Limites dos Talhões -->
+            <div class="sheet-switch-row">
+              <div class="sheet-switch-left">
+                <span class="sheet-choice-emoji">🟩</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Limites dos Talhões</span>
+                  <span class="sheet-choice-sub">Polígonos vetoriais das áreas de plantio</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-talhoes">
+                <input type="checkbox" id="sheet-toggle-talhoes" checked>
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     </div>

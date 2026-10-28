@@ -20,6 +20,11 @@ const ITPAMap = (function () {
   let layerGroupNdviAnterior = null;
   let layerGroupRgbAnterior = null;
 
+  // Camadas Base Globais
+  let osmLayer = null;
+  let esriSatLayer = null;
+  let cartoVoyagerLayer = null;
+
   // Centro padrão: Região de atuação do ITPA (Mata Atlântica / Vale do Café / Tinguá - RJ)
   const DEFAULT_CENTER = [-22.4589, -43.4312];
   const DEFAULT_ZOOM = 13;
@@ -45,17 +50,17 @@ const ITPAMap = (function () {
     if (map) return map;
 
     // 1. Camadas base
-    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | ITPA'
     });
 
-    const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    esriSatLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
       attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics | ITPA'
     });
 
-    const cartoVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    cartoVoyagerLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
       attribution: '&copy; CartoDB | ITPA'
     });
@@ -65,12 +70,12 @@ const ITPAMap = (function () {
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
       maxZoom: 21,
-      layers: [esriSat], // Padrão: Imagem de satélite para trabalho em campo com drones e reflorestamento
+      layers: [esriSatLayer], // Padrão: Imagem de satélite para trabalho em campo com drones e reflorestamento
       zoomControl: false // Adicionaremos em posição customizada
     });
 
-    // Reposiciona o controle de zoom
-    L.control.zoom({ position: 'topright' }).addTo(map);
+    // Reposiciona o controle de zoom no topo esquerdo para liberar a lateral direita aos atalhos rápidos
+    L.control.zoom({ position: 'topleft' }).addTo(map);
 
     // 3. Pane dedicado para sobreposição de imagens de satélite recortadas dos talhões
     // zIndex 350 fica entre os tiles base (200) e os vetores de contorno (overlayPane: 400)
@@ -97,11 +102,11 @@ const ITPAMap = (function () {
     // Ativada por padrão no mapa
     ortofotoLayer.addTo(map);
 
-    // 6. Controle de camadas (Base + Overlays)
+    // 6. Controle de camadas (Base + Overlays) - Mantido para compatibilidade desktop
     const baseLayers = {
-      '🛰️ Satélite de Alta Resolução': esriSat,
-      '🗺️ Mapa Topográfico / Ruas': osm,
-      '🎨 Carto Voyager (Claro)': cartoVoyager
+      '🛰️ Satélite de Alta Resolução': esriSatLayer,
+      '🗺️ Mapa Topográfico / Ruas': osmLayer,
+      '🎨 Carto Voyager (Claro)': cartoVoyagerLayer
     };
 
     const overlays = {
@@ -136,17 +141,14 @@ const ITPAMap = (function () {
       }
     }
 
-    map.on('overlayadd', (e) => {
+    map.on('overlayadd overlayremove', (e) => {
       if (e.name && e.name.includes('NDVI')) {
         atualizarVisibilidadeLegendaNdvi();
       }
     });
 
-    map.on('overlayremove', (e) => {
-      if (e.name && e.name.includes('NDVI')) {
-        atualizarVisibilidadeLegendaNdvi();
-      }
-    });
+    // 8. Inicializa os Controles Mobile Touch-Friendly (Estilo 'Dados Fazenda' e Bottom Sheet)
+    setupTouchLayerControls();
 
     // 4. Inicializa o Cluster com tema do ITPA
     clusterGroup = L.markerClusterGroup({
@@ -609,6 +611,241 @@ const ITPAMap = (function () {
     });
   }
 
+  /**
+   * Configura os controles modernos touch-friendly de camadas (Inspirados no 'Dados Fazenda'):
+   * - Barra vertical flutuante de botões rápidos ("NDVI 2m", "Drone", "Satélite RGB", "Camadas")
+   * - Bottom Sheet modal com cantos arredondados, alça cinza, mapas de fundo e switches iOS
+   */
+  function setupTouchLayerControls() {
+    const pillNdvi = document.getElementById('pill-quick-ndvi');
+    const pillDrone = document.getElementById('pill-quick-drone');
+    const pillRgb = document.getElementById('pill-quick-rgb');
+    const btnOpenSheet = document.getElementById('btn-open-layers-sheet');
+
+    const sheetOverlay = document.getElementById('sheet-camadas-overlay');
+    const btnCloseSheet = document.getElementById('btn-close-sheet-camadas');
+    const baseRadios = document.querySelectorAll('input[name="base-map-choice"]');
+
+    const toggleDrone = document.getElementById('sheet-toggle-drone');
+    const toggleNdvi = document.getElementById('sheet-toggle-ndvi');
+    const toggleRgb = document.getElementById('sheet-toggle-rgb');
+    const toggleNdviAnt = document.getElementById('sheet-toggle-ndvi-ant');
+    const toggleTalhoes = document.getElementById('sheet-toggle-talhoes');
+
+    // Sincroniza o estado das pílulas e interruptores com o mapa Leaflet
+    function sincronizarEstadosUI() {
+      if (!map) return;
+
+      // 1. Ortofoto Drone
+      const droneAtivo = ortofotoLayer && map.hasLayer(ortofotoLayer);
+      if (pillDrone) pillDrone.classList.toggle('active', !!droneAtivo);
+      if (toggleDrone) toggleDrone.checked = !!droneAtivo;
+
+      // 2. Talhões NDVI 2m
+      const ndviAtivo = layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente);
+      if (pillNdvi) pillNdvi.classList.toggle('active', !!ndviAtivo);
+      if (toggleNdvi) toggleNdvi.checked = !!ndviAtivo;
+
+      // 3. Talhões RGB 2m
+      const rgbAtivo = layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente);
+      if (pillRgb) pillRgb.classList.toggle('active', !!rgbAtivo);
+      if (toggleRgb) toggleRgb.checked = !!rgbAtivo;
+
+      // 4. Passagem Anterior (-15d)
+      const ndviAntAtivo = layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior);
+      if (toggleNdviAnt) toggleNdviAnt.checked = !!ndviAntAtivo;
+
+      // 5. Limites dos Talhões
+      const talhoesAtivo = talhoesLayer && map.hasLayer(talhoesLayer);
+      if (toggleTalhoes) toggleTalhoes.checked = !!talhoesAtivo;
+
+      // 6. Mapas Base
+      if (baseRadios && baseRadios.length) {
+        baseRadios.forEach(radio => {
+          if (radio.value === 'satelite') {
+            radio.checked = !!(esriSatLayer && map.hasLayer(esriSatLayer));
+          } else if (radio.value === 'osm') {
+            radio.checked = !!(osmLayer && map.hasLayer(osmLayer));
+          } else if (radio.value === 'voyager') {
+            radio.checked = !!(cartoVoyagerLayer && map.hasLayer(cartoVoyagerLayer));
+          }
+        });
+      }
+
+      // Atualiza legenda flutuante de NDVI
+      const ndviLegendEl = document.getElementById('ndvi-legend');
+      if (ndviLegendEl) {
+        if (ndviAtivo || ndviAntAtivo) {
+          ndviLegendEl.style.display = 'block';
+        } else {
+          ndviLegendEl.style.display = 'none';
+        }
+      }
+    }
+
+    function alternarCamada(camada) {
+      if (!camada || !map) return;
+      if (map.hasLayer(camada)) {
+        map.removeLayer(camada);
+      } else {
+        map.addLayer(camada);
+      }
+      sincronizarEstadosUI();
+    }
+
+    // Eventos das Pílulas Rápidas Flutuantes
+    if (pillNdvi) {
+      pillNdvi.onclick = (e) => {
+        e.preventDefault();
+        alternarCamada(layerGroupNdviRecente);
+      };
+    }
+
+    if (pillDrone) {
+      pillDrone.onclick = (e) => {
+        e.preventDefault();
+        alternarCamada(ortofotoLayer);
+      };
+    }
+
+    if (pillRgb) {
+      pillRgb.onclick = (e) => {
+        e.preventDefault();
+        alternarCamada(layerGroupRgbRecente);
+      };
+    }
+
+    // Abertura e Fechamento do Bottom Sheet
+    function abrirSheet() {
+      if (sheetOverlay) {
+        sincronizarEstadosUI();
+        sheetOverlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function fecharSheet() {
+      if (sheetOverlay) {
+        sheetOverlay.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    }
+
+    if (btnOpenSheet) {
+      btnOpenSheet.onclick = (e) => {
+        e.preventDefault();
+        abrirSheet();
+      };
+    }
+
+    if (btnCloseSheet) {
+      btnCloseSheet.onclick = (e) => {
+        e.preventDefault();
+        fecharSheet();
+      };
+    }
+
+    if (sheetOverlay) {
+      sheetOverlay.onclick = (e) => {
+        if (e.target === sheetOverlay) {
+          fecharSheet();
+        }
+      };
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sheetOverlay && sheetOverlay.classList.contains('open')) {
+        fecharSheet();
+      }
+    });
+
+    // Mapas de Fundo Base (Radios)
+    if (baseRadios && baseRadios.length) {
+      baseRadios.forEach(radio => {
+        radio.onchange = () => {
+          if (!map) return;
+          if (radio.value === 'satelite') {
+            if (esriSatLayer) map.addLayer(esriSatLayer);
+            if (osmLayer) map.removeLayer(osmLayer);
+            if (cartoVoyagerLayer) map.removeLayer(cartoVoyagerLayer);
+          } else if (radio.value === 'osm') {
+            if (osmLayer) map.addLayer(osmLayer);
+            if (esriSatLayer) map.removeLayer(esriSatLayer);
+            if (cartoVoyagerLayer) map.removeLayer(cartoVoyagerLayer);
+          } else if (radio.value === 'voyager') {
+            if (cartoVoyagerLayer) map.addLayer(cartoVoyagerLayer);
+            if (esriSatLayer) map.removeLayer(esriSatLayer);
+            if (osmLayer) map.removeLayer(osmLayer);
+          }
+          sincronizarEstadosUI();
+        };
+      });
+    }
+
+    // Switches de Camadas Operacionais
+    if (toggleDrone) {
+      toggleDrone.onchange = () => {
+        if (toggleDrone.checked) {
+          if (ortofotoLayer && !map.hasLayer(ortofotoLayer)) map.addLayer(ortofotoLayer);
+        } else {
+          if (ortofotoLayer && map.hasLayer(ortofotoLayer)) map.removeLayer(ortofotoLayer);
+        }
+        sincronizarEstadosUI();
+      };
+    }
+
+    if (toggleNdvi) {
+      toggleNdvi.onchange = () => {
+        if (toggleNdvi.checked) {
+          if (layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) map.addLayer(layerGroupNdviRecente);
+        } else {
+          if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
+        }
+        sincronizarEstadosUI();
+      };
+    }
+
+    if (toggleRgb) {
+      toggleRgb.onchange = () => {
+        if (toggleRgb.checked) {
+          if (layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) map.addLayer(layerGroupRgbRecente);
+        } else {
+          if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
+        }
+        sincronizarEstadosUI();
+      };
+    }
+
+    if (toggleNdviAnt) {
+      toggleNdviAnt.onchange = () => {
+        if (toggleNdviAnt.checked) {
+          if (layerGroupNdviAnterior && !map.hasLayer(layerGroupNdviAnterior)) map.addLayer(layerGroupNdviAnterior);
+        } else {
+          if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
+        }
+        sincronizarEstadosUI();
+      };
+    }
+
+    if (toggleTalhoes) {
+      toggleTalhoes.onchange = () => {
+        if (toggleTalhoes.checked) {
+          if (talhoesLayer && !map.hasLayer(talhoesLayer)) map.addLayer(talhoesLayer);
+        } else {
+          if (talhoesLayer && map.hasLayer(talhoesLayer)) map.removeLayer(talhoesLayer);
+        }
+        sincronizarEstadosUI();
+      };
+    }
+
+    // Reatividade a qualquer mudança de camada no Leaflet
+    map.on('layeradd layerremove', () => {
+      sincronizarEstadosUI();
+    });
+
+    sincronizarEstadosUI();
+  }
+
   function getMapInstance() {
     return map;
   }
@@ -616,6 +853,7 @@ const ITPAMap = (function () {
   return {
     init,
     carregarTalhoesGeoJSON,
+    setupTouchLayerControls,
     getTalhoesLayer: () => talhoesLayer,
     getOrtofotoLayer: () => ortofotoLayer,
     getLayerGroupNdviRecente: () => layerGroupNdviRecente,
