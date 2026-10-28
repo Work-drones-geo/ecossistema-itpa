@@ -844,9 +844,278 @@ html, body {
   border: 1px solid var(--itpa-border);
 }
 
+.talhao-popup-custom-wrapper .leaflet-popup-content-wrapper {
+  border-radius: 18px !important;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.22) !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.talhao-popup-custom-wrapper .leaflet-popup-close-button {
+  top: 10px !important;
+  right: 12px !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  font-size: 1.25rem !important;
+  transition: all 0.2s ease !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+.talhao-popup-custom-wrapper .leaflet-popup-close-button:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
 .leaflet-popup-content {
   margin: 0 !important;
   line-height: 1.4 !important;
+}
+
+/* ==========================================================================
+   Card Analítico de Talhão no Pop-up (Etapa 1 - Métricas & NDVI 2m)
+   ========================================================================== */
+.talhao-analytic-popup {
+  padding: 14px 16px 16px 16px;
+  width: 290px;
+  max-width: 90vw;
+  font-family: inherit;
+}
+
+.talhao-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-right: 22px; /* Espaço para o botão fechar */
+}
+
+.talhao-badge {
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.talhao-code-pill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.talhao-popup-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+  line-height: 1.25;
+}
+
+/* Grid de Métricas de Geometria */
+.talhao-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.metric-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metric-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.metric-data {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.metric-value {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Card Analítico de Vigor Vegetativo (NDVI 2m) */
+.talhao-ndvi-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.ndvi-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.ndvi-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ndvi-header-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.ndvi-header-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ndvi-value-badge {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 2px 8px;
+  border-radius: 8px;
+  border: 1px solid #86efac;
+}
+
+/* Barra de Progresso com Rampa RdYlGn */
+.ndvi-progress-wrapper {
+  margin: 6px 0 6px 0;
+}
+
+.ndvi-progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #A50026 0%, #D73027 18%, #F46D43 32%, #FEE08B 48%, #D9EF8B 64%, #66BD63 80%, #006837 100%);
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ndvi-progress-pin {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2.5px solid #0f172a;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  transition: left 0.3s ease;
+}
+
+.ndvi-progress-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.62rem;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.ndvi-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.70rem;
+  color: #64748b;
+  margin-top: 6px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 6px;
+}
+
+.ndvi-range-tag strong {
+  color: #1e293b;
+}
+
+.ndvi-class-tag {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #16a34a;
+  background: #f0fdf4;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* Botões de Ação do Pop-up */
+.talhao-popup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-popup-action {
+  width: 100%;
+  border: none;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+}
+
+.btn-popup-action.primary {
+  background-color: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+}
+
+.btn-popup-action.primary:hover {
+  background-color: #15803d;
+  transform: translateY(-1px);
+}
+
+.btn-popup-action.secondary {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-popup-action.secondary:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
 }
 
 .itpa-popup-card {

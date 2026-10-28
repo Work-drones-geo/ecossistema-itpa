@@ -352,28 +352,103 @@ const ITPAMap = (function () {
             }
           });
 
-          // Popup com atributos do talhão (nome, código, camada de origem, descrição)
+          // Extração das métricas analíticas calculadas pelo pipeline de 2m
+          const areaHa = props.area_ha !== undefined ? Number(props.area_ha) : null;
+          const perimetroM = props.perimetro_m !== undefined ? Number(props.perimetro_m) : null;
+          const ndviMean = props.ndvi_mean !== undefined ? Number(props.ndvi_mean) : null;
+          const ndviMin = props.ndvi_min !== undefined ? Number(props.ndvi_min) : null;
+          const ndviMax = props.ndvi_max !== undefined ? Number(props.ndvi_max) : null;
+          const ndviClasse = props.ndvi_classe || 'Vigor Vegetativo';
+
+          // Posicionamento percentual na escala RdYlGn (de -0.10 a 0.85)
+          const ndviPct = ndviMean !== null 
+            ? Math.max(3, Math.min(97, ((ndviMean - (-0.10)) / (0.85 - (-0.10))) * 100))
+            : 50;
+
+          const areaTexto = areaHa !== null 
+            ? areaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ha' 
+            : '-- ha';
+
+          const perimetroTexto = perimetroM !== null 
+            ? Math.round(perimetroM).toLocaleString('pt-BR') + ' m' 
+            : '-- m';
+
+          const ndviMeanTexto = ndviMean !== null ? ndviMean.toFixed(3) : '--';
+          const ndviMinTexto = ndviMin !== null ? ndviMin.toFixed(3) : '--';
+          const ndviMaxTexto = ndviMax !== null ? ndviMax.toFixed(3) : '--';
+
+          // Pop-up analítico moderno e touch-friendly (Etapa 1)
           const popupHtml = `
-            <div class="itpa-popup-card">
-              <div class="popup-header">
-                <span class="popup-tipo" style="color: #82C325;">🌱 Talhão / Limite de Voo</span>
+            <div class="itpa-popup-card talhao-analytic-popup">
+              <div class="talhao-popup-header">
+                <span class="talhao-badge">🌱 TALHÃO FLORESTAL</span>
+                ${codigo ? `<span class="talhao-code-pill">${codigo}</span>` : ''}
               </div>
-              <h4 class="popup-title">${nomeTalhao}</h4>
-              ${codigo ? `<p class="popup-meta"><strong>Código:</strong> ${codigo}</p>` : ''}
-              ${layerOrigem ? `<p class="popup-meta"><strong>Camada:</strong> ${layerOrigem}</p>` : ''}
-              ${descricao ? `<p class="popup-desc">${descricao}</p>` : ''}
-              <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
-                <button class="btn-popup-ver btn-talhao-preencher" data-talhao="${nomeTalhao}">
+
+              <h4 class="talhao-popup-title">${nomeTalhao}</h4>
+
+              <!-- Métricas de Geometria: Área Líquida e Perímetro (UTM 23S) -->
+              <div class="talhao-metrics-grid">
+                <div class="metric-card">
+                  <span class="metric-icon">📐</span>
+                  <div class="metric-data">
+                    <span class="metric-label">Área Líquida</span>
+                    <span class="metric-value">${areaTexto}</span>
+                  </div>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-icon">📏</span>
+                  <div class="metric-data">
+                    <span class="metric-label">Perímetro</span>
+                    <span class="metric-value">${perimetroTexto}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cartão Analítico de Vigor Vegetativo (NDVI a 2 metros) -->
+              <div class="talhao-ndvi-card">
+                <div class="ndvi-card-header">
+                  <div class="ndvi-header-left">
+                    <span class="ndvi-header-icon">🌿</span>
+                    <span class="ndvi-header-title">NDVI Médio (2m)</span>
+                  </div>
+                  <span class="ndvi-value-badge">${ndviMeanTexto}</span>
+                </div>
+
+                <!-- Barra de Progresso com Escala RdYlGn e Indicador -->
+                <div class="ndvi-progress-wrapper">
+                  <div class="ndvi-progress-track">
+                    <div class="ndvi-progress-pin" style="left: ${ndviPct}%;" title="Média: ${ndviMeanTexto}"></div>
+                  </div>
+                  <div class="ndvi-progress-scale-labels">
+                    <span>Baixo (0.1)</span>
+                    <span>Médio (0.4)</span>
+                    <span>Alto (0.85)</span>
+                  </div>
+                </div>
+
+                <div class="ndvi-card-footer">
+                  <span class="ndvi-range-tag">Intervalo: <strong>${ndviMinTexto}</strong> a <strong>${ndviMaxTexto}</strong></span>
+                  <span class="ndvi-class-tag">${ndviClasse}</span>
+                </div>
+              </div>
+
+              <!-- Botões de Ação Operacional -->
+              <div class="talhao-popup-actions">
+                <button class="btn-popup-action primary btn-talhao-preencher" data-talhao="${nomeTalhao}">
                   ➕ Registrar Ocorrência Aqui
                 </button>
-                <button class="btn-popup-ver btn-talhao-documentos" data-talhao="${nomeTalhao}">
+                <button class="btn-popup-action secondary btn-talhao-documentos" data-talhao="${nomeTalhao}">
                   📂 Documentos do Talhão
                 </button>
               </div>
             </div>
           `;
 
-          layer.bindPopup(popupHtml);
+          layer.bindPopup(popupHtml, {
+            maxWidth: 320,
+            className: 'talhao-popup-custom-wrapper'
+          });
 
           layer.on('popupopen', () => {
             const btn = document.querySelector(`.btn-talhao-preencher[data-talhao="${nomeTalhao}"]`);
