@@ -73,6 +73,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
+  // Callback ao clicar no botão '📂 Documentos do Talhão' dentro do popup do talhão
+  window.ITPA_OnTalhaoDocumentos = (nomeTalhao, props) => {
+    const modalTalhao = document.getElementById('modal-talhao');
+    if (!modalTalhao) return;
+
+    // 1. Atualiza cabeçalho com o nome ou identificador do talhão ativo
+    const tituloModal = document.getElementById('talhao-modal-titulo');
+    if (tituloModal) {
+      tituloModal.innerHTML = `📂 Documentos do Talhão: <span style="color: var(--itpa-green);">${nomeTalhao}</span>`;
+    }
+
+    // 2. Registra o talhão ativo no modal e personaliza o campo de título
+    modalTalhao.setAttribute('data-talhao-ativo', nomeTalhao);
+    const docDescricao = document.getElementById('docDescricao');
+    if (docDescricao) {
+      docDescricao.placeholder = `Título (Ex: Laudo Técnico - ${nomeTalhao})`;
+    }
+
+    // 3. Abre o modal/gaveta
+    modalTalhao.classList.add('active');
+  };
+
   // Tenta obter posição inicial do técnico sem sobrescrever o enquadramento do mapa
   window.ITPAMap.obterLocalizacaoAtual(false).catch(() => {
     console.log('GPS inicial não disponível no carregamento.');
@@ -539,6 +561,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   btnCloseDetalhes.addEventListener('click', () => {
     modalDetalhes.classList.remove('active');
   });
+
+  // Fechamento do Modal de Talhão
+  const modalTalhao = document.getElementById('modal-talhao');
+  const btnCloseTalhao = document.getElementById('btn-close-modal-talhao');
+  if (btnCloseTalhao && modalTalhao) {
+    btnCloseTalhao.addEventListener('click', () => {
+      modalTalhao.classList.remove('active');
+    });
+    modalTalhao.addEventListener('click', (e) => {
+      if (e.target === modalTalhao) {
+        modalTalhao.classList.remove('active');
+      }
+    });
+  }
 
   // ==========================================================================
   // 8. Sincronização & Integração Cloud

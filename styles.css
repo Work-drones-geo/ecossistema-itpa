@@ -921,6 +921,17 @@ html, body {
   background: var(--itpa-green-hover);
 }
 
+.btn-popup-ver.btn-talhao-documentos {
+  background: var(--itpa-mint);
+  color: var(--itpa-green-forest);
+  border: 1.5px solid var(--itpa-border);
+}
+
+.btn-popup-ver.btn-talhao-documentos:hover {
+  background: #d6eec3;
+  border-color: var(--itpa-green);
+}
+
 .badge-status {
   padding: 2px 8px;
   border-radius: var(--radius-pill);
@@ -936,6 +947,193 @@ html, body {
 .badge-status.pending {
   background: #FEF5E7;
   color: var(--status-pending);
+}
+
+/* ==========================================================================
+   Seção de Documentos do Talhão (Laudos, Plantio, Vistorias)
+   ========================================================================== */
+.secao-documentos {
+  background: var(--itpa-surface);
+  border: 1px solid var(--itpa-border);
+  border-radius: var(--radius-md);
+  padding: 18px 16px;
+  margin-top: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.secao-documentos h4 {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  color: var(--itpa-green-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.secao-documentos h4::before {
+  content: '📁';
+  font-size: 1.1rem;
+}
+
+.secao-documentos h5 {
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  color: var(--itpa-green-forest);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.secao-documentos h5::before {
+  content: '📄';
+  font-size: 0.95rem;
+}
+
+.secao-documentos hr {
+  border: 0;
+  height: 1px;
+  background: var(--itpa-border);
+  margin: 16px 0;
+}
+
+.secao-documentos #listaDocumentos {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.secao-documentos #listaDocumentos li {
+  font-size: 0.85rem;
+  color: var(--itpa-text-muted);
+  background: var(--itpa-mint-light);
+  border: 1px dashed var(--itpa-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.secao-documentos #listaDocumentos li a {
+  color: var(--itpa-green-dark);
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  word-break: break-all;
+}
+
+.secao-documentos #listaDocumentos li a:hover {
+  text-decoration: underline;
+  color: var(--itpa-green-hover);
+}
+
+.secao-documentos #docDescricao {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--itpa-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--itpa-text);
+  background-color: var(--itpa-surface);
+  margin-bottom: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.secao-documentos #docDescricao:focus {
+  outline: none;
+  border-color: var(--itpa-green);
+  box-shadow: 0 0 0 3px rgba(130, 195, 37, 0.2);
+}
+
+.secao-documentos #docArquivo {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--itpa-text);
+  background: var(--itpa-bg);
+  border: 1.5px dashed var(--itpa-green);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  margin-bottom: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.secao-documentos #docArquivo:hover {
+  background-color: var(--itpa-mint-light);
+}
+
+.secao-documentos #docArquivo::file-selector-button {
+  background: var(--itpa-mint);
+  color: var(--itpa-green-forest);
+  border: 1px solid var(--itpa-border);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  margin-right: 10px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.secao-documentos #docArquivo::file-selector-button:hover {
+  background: #d4eec1;
+}
+
+.secao-documentos #btnEnviarDoc {
+  width: 100%;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, var(--itpa-green) 0%, #6EB31A 100%);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(130, 195, 37, 0.35);
+  transition: all 0.2s ease;
+}
+
+.secao-documentos #btnEnviarDoc:hover {
+  background: var(--itpa-green-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(130, 195, 37, 0.45);
+}
+
+.secao-documentos #btnEnviarDoc:active {
+  transform: translateY(1px);
+}
+
+.secao-documentos #statusUpload {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #E8F8F0;
+  color: #196F3D !important;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  animation: pulse-status 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes pulse-status {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
 }
 
 /* ==========================================================================

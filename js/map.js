@@ -216,9 +216,12 @@ const ITPAMap = (function () {
               ${codigo ? `<p class="popup-meta"><strong>Código:</strong> ${codigo}</p>` : ''}
               ${layerOrigem ? `<p class="popup-meta"><strong>Camada:</strong> ${layerOrigem}</p>` : ''}
               ${descricao ? `<p class="popup-desc">${descricao}</p>` : ''}
-              <div style="margin-top: 10px;">
+              <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
                 <button class="btn-popup-ver btn-talhao-preencher" data-talhao="${nomeTalhao}">
                   ➕ Registrar Ocorrência Aqui
+                </button>
+                <button class="btn-popup-ver btn-talhao-documentos" data-talhao="${nomeTalhao}">
+                  📂 Documentos do Talhão
                 </button>
               </div>
             </div>
@@ -232,6 +235,13 @@ const ITPAMap = (function () {
               btn.onclick = () => {
                 const center = layer.getBounds ? layer.getBounds().getCenter() : null;
                 window.ITPA_OnTalhaoSelecionado(nomeTalhao, center);
+              };
+            }
+
+            const btnDocs = document.querySelector(`.btn-talhao-documentos[data-talhao="${nomeTalhao}"]`);
+            if (btnDocs && typeof window.ITPA_OnTalhaoDocumentos === 'function') {
+              btnDocs.onclick = () => {
+                window.ITPA_OnTalhaoDocumentos(nomeTalhao, props);
               };
             }
           });

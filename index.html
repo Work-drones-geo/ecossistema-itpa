@@ -321,7 +321,7 @@
     </div>
   </div>
 
-  <!-- Modal: Visualizador de Detalhes -->
+  <!-- Modal: Visualizador de Detalhes da Ocorrência -->
   <div class="modal-overlay" id="modal-detalhes">
     <div class="modal-sheet">
       <div class="modal-top-bar">
@@ -329,6 +329,31 @@
         <button class="btn-close-modal" id="btn-close-modal-detalhes">&times;</button>
       </div>
       <div id="detalhe-conteudo"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Detalhes do Talhão & Documentos Técnicos -->
+  <div class="modal-overlay" id="modal-talhao">
+    <div class="modal-sheet">
+      <div class="modal-top-bar">
+        <h3 class="modal-title" id="talhao-modal-titulo">Detalhes do Talhão</h3>
+        <button class="btn-close-modal" id="btn-close-modal-talhao">&times;</button>
+      </div>
+      <div id="talhao-modal-conteudo">
+        <!-- Seção dentro do popup ou modal do Talhão -->
+        <div class="secao-documentos">
+          <h4>Documentos Anexados</h4>
+          <ul id="listaDocumentos">
+            <li>Nenhum documento anexado ainda.</li>
+          </ul>
+          <hr>
+          <h5>Adicionar Novo Documento</h5>
+          <input type="text" id="docDescricao" placeholder="Título (Ex: Laudo Técnico de Plantio)">
+          <input type="file" id="docArquivo" accept=".pdf,image/jpeg,image/png">
+          <button id="btnEnviarDoc" type="button">Subir para o Repositório</button>
+          <div id="statusUpload" style="display:none; font-size: 12px; color: #007700;">Enviando...</div>
+        </div>
+      </div>
     </div>
   </div>
 
