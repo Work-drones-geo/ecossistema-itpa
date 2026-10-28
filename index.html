@@ -448,10 +448,13 @@
             </div>
           </div>
 
-          <!-- Ação Rápida: Ativar Swipe para este Talhão -->
-          <div style="margin-top: 14px;">
-            <button type="button" class="btn-itpa-pill" id="btn-swipe-deste-talhao" style="width: 100%; justify-content: center; gap: 8px;">
-              ↔️ Comparar Dinâmica no Mapa (Swipe)
+          <!-- Ações Rápidas: Swipe e Exportar Ficha Técnica PDF -->
+          <div class="talhao-modal-actions-grid" style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button type="button" class="btn-itpa-pill" id="btn-swipe-deste-talhao" style="justify-content: center; gap: 6px; font-size: 13px;">
+              ↔️ Comparar (Swipe)
+            </button>
+            <button type="button" class="btn-itpa-pill btn-itpa-pdf-action" id="btn-pdf-deste-talhao" style="justify-content: center; gap: 6px; font-size: 13px;">
+              📄 Ficha Técnica (PDF)
             </button>
           </div>
         </div>
@@ -636,9 +639,10 @@
   <!-- Toast Container -->
   <div class="itpa-toast-container" id="toast-container"></div>
 
-  <!-- Bibliotecas PDF (jsPDF + AutoTable) -->
+  <!-- Bibliotecas PDF (jsPDF + AutoTable + html2canvas) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- Dependências Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -658,6 +662,7 @@
   <script src="js/map.js"></script>
   <script src="js/sync.js"></script>
   <script src="js/report.js"></script>
+  <script src="js/relatorio_talhao.js"></script>
   <script src="app.js"></script>
 
 </body>

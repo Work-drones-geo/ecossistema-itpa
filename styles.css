@@ -2095,6 +2095,32 @@ iframe[title*="Netlify"] {
   transform: translateY(-1px);
 }
 
+.btn-popup-action.pdf-action-btn {
+  background-color: #274D1E;
+  color: #ffffff;
+  border: 1px solid #1e3c17;
+  box-shadow: 0 2px 6px rgba(39, 77, 30, 0.25);
+}
+
+.btn-popup-action.pdf-action-btn:hover {
+  background-color: #1e3c17;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(39, 77, 30, 0.35);
+}
+
+.btn-itpa-pdf-action {
+  background: linear-gradient(135deg, #274D1E 0%, #1a3314 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #14280f !important;
+  box-shadow: 0 2px 8px rgba(39, 77, 30, 0.3) !important;
+}
+
+.btn-itpa-pdf-action:hover {
+  background: linear-gradient(135deg, #1e3c17 0%, #11220d 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(39, 77, 30, 0.45) !important;
+}
+
 .map-quick-pill.swipe-pill {
   border-color: #cbd5e1;
 }

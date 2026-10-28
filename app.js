@@ -269,6 +269,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       };
     }
 
+    // Ação do botão Ficha Técnica (PDF) dentro do modal
+    const btnPdf = document.getElementById('btn-pdf-deste-talhao');
+    if (btnPdf) {
+      btnPdf.onclick = (e) => {
+        e.preventDefault();
+        if (window.ITPARelatorioTalhao && typeof window.ITPARelatorioTalhao.exportarFichaTecnica === 'function') {
+          window.ITPARelatorioTalhao.exportarFichaTecnica(props, bounds);
+        }
+      };
+    }
+
     // Seleciona a aba do gráfico
     alternarAbaModalTalhao('tab-talhao-grafico');
 
@@ -1090,4 +1101,5 @@ document.addEventListener('DOMContentLoaded', async () => {
       setTimeout(() => toast.remove(), 300);
     }, 3500);
   }
+  window.showToast = showToast;
 });

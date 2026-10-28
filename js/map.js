@@ -444,9 +444,14 @@ const ITPAMap = (function () {
                 <button class="btn-popup-action primary btn-talhao-grafico" data-talhao="${nomeTalhao}">
                   📈 Evolução Histórica (Gráfico)
                 </button>
-                <button class="btn-popup-action swipe-action-btn btn-talhao-swipe" data-talhao="${nomeTalhao}">
-                  ↔️ Comparar Dinâmica (Swipe)
-                </button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                  <button class="btn-popup-action swipe-action-btn btn-talhao-swipe" data-talhao="${nomeTalhao}">
+                    ↔️ Comparar
+                  </button>
+                  <button class="btn-popup-action pdf-action-btn btn-talhao-pdf" data-talhao="${nomeTalhao}">
+                    📄 Ficha (PDF)
+                  </button>
+                </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
                   <button class="btn-popup-action secondary btn-talhao-preencher" data-talhao="${nomeTalhao}">
                     ➕ Ocorrência
@@ -476,6 +481,15 @@ const ITPAMap = (function () {
             if (btnSwipe) {
               btnSwipe.onclick = () => {
                 ativarModoSwipe(nomeTalhao, layer.getBounds ? layer.getBounds() : null);
+              };
+            }
+
+            const btnPdf = document.querySelector(`.btn-talhao-pdf[data-talhao="${nomeTalhao}"]`);
+            if (btnPdf) {
+              btnPdf.onclick = () => {
+                if (window.ITPARelatorioTalhao && typeof window.ITPARelatorioTalhao.exportarFichaTecnica === 'function') {
+                  window.ITPARelatorioTalhao.exportarFichaTecnica(props, layer.getBounds ? layer.getBounds() : null);
+                }
               };
             }
 
