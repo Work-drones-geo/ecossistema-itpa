@@ -338,6 +338,109 @@ const ITPASync = (function () {
     });
   }
 
+  /**
+   * Consulta documentos de um talhão específico no Firestore.
+   * @param {string} talhaoId
+   * @returns {Promise<Array>}
+   */
+  async function listarDocumentosTalhao(talhaoId) {
+    inicializarFirebase();
+    if (!firestoreInstance) {
+      throw new Error('Serviço Firestore não inicializado.');
+    }
+
+    const snapshot = await firestoreInstance
+      .collection('documentos_talhoes')
+      .where('talhao_id', '==', talhaoId)
+      .get();
+
+    const documentos = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      let dataEnvioFormatada = '';
+      let dataMs = 0;
+      if (data.data_envio && data.data_envio.toDate) {
+        const d = data.data_envio.toDate();
+        dataEnvioFormatada = d.toLocaleString('pt-BR');
+        dataMs = d.getTime();
+      } else if (data.data_envio) {
+        const d = new Date(data.data_envio);
+        dataEnvioFormatada = d.toLocaleString('pt-BR');
+        dataMs = d.getTime();
+      }
+
+      documentos.push({
+        id: doc.id,
+        talhao_id: data.talhao_id,
+        nome_documento: data.nome_documento || 'Documento sem título',
+        url_storage: data.url_storage || '',
+        data_envio: dataEnvioFormatada,
+        data_envio_ms: dataMs
+      });
+    });
+
+    // Ordena do mais recente para o mais antigo no cliente
+    documentos.sort((a, b) => b.data_envio_ms - a.data_envio_ms);
+    return documentos;
+  }
+
+  /**
+   * Faz upload de arquivo para o Firebase Storage e grava registro no Firestore.
+   * @param {string} talhaoId
+   * @param {string} nomeDocumento
+   * @param {File} arquivo
+   * @returns {Promise<{id: string, url_storage: string}>}
+   */
+  async function enviarDocumentoTalhao(talhaoId, nomeDocumento, arquivo) {
+    inicializarFirebase();
+    if (!storageInstance || !firestoreInstance) {
+      throw new Error('Serviços do Firebase não inicializados ou indisponíveis.');
+    }
+
+    if (!talhaoId) {
+      throw new Error('Identificador do talhão não fornecido.');
+    }
+    if (!nomeDocumento || !nomeDocumento.trim()) {
+      throw new Error('Por favor, informe o título do documento.');
+    }
+    if (!arquivo) {
+      throw new Error('Por favor, selecione um arquivo.');
+    }
+
+    const timestamp = Date.now();
+    const nomeLimpo = arquivo.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `documentos_itpa/${encodeURIComponent(talhaoId)}/${timestamp}_${nomeLimpo}`;
+    const storageRef = storageInstance.ref(storagePath);
+
+    // Upload no Firebase Storage
+    const snapshot = await storageRef.put(arquivo, {
+      contentType: arquivo.type || 'application/octet-stream',
+      customMetadata: {
+        talhao_id: talhaoId,
+        nome_documento: nomeDocumento.trim(),
+        enviadoPor: 'Ecossistema ITPA PWA'
+      }
+    });
+
+    // Obtenção da URL de download público
+    const url_storage = await snapshot.ref.getDownloadURL();
+
+    // Gravação no Firestore na coleção 'documentos_talhoes'
+    const docRef = await firestoreInstance.collection('documentos_talhoes').add({
+      talhao_id: talhaoId,
+      nome_documento: nomeDocumento.trim(),
+      url_storage: url_storage,
+      data_envio: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    return {
+      id: docRef.id,
+      url_storage: url_storage,
+      talhao_id: talhaoId,
+      nome_documento: nomeDocumento.trim()
+    };
+  }
+
   return {
     onStatusChange,
     carregarConfiguracao,
@@ -348,6 +451,8 @@ const ITPASync = (function () {
     isConfigurado,
     sincronizarTudo,
     monitorarConexao,
+    listarDocumentosTalhao,
+    enviarDocumentoTalhao,
     isSyncing: () => isSyncing
   };
 })();

@@ -73,8 +73,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
+  // Função para consultar e renderizar documentos do talhão ativo
+  async function carregarListaDocumentosTalhao(talhaoId) {
+    const listaUl = document.getElementById('listaDocumentos');
+    if (!listaUl) return;
+
+    listaUl.innerHTML = '<li style="font-style: italic; color: var(--itpa-text-muted);">Consultando documentos anexados...</li>';
+
+    try {
+      const docs = await window.ITPASync.listarDocumentosTalhao(talhaoId);
+      listaUl.innerHTML = '';
+
+      if (!docs || docs.length === 0) {
+        listaUl.innerHTML = '<li>Nenhum documento anexado ainda.</li>';
+        return;
+      }
+
+      docs.forEach((doc) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <a href="${doc.url_storage}" target="_blank" rel="noopener noreferrer" title="Toque para abrir/baixar">
+            📄 <span>${doc.nome_documento}</span>
+          </a>
+          ${doc.data_envio ? `<span style="font-size: 0.72rem; color: var(--itpa-text-muted); flex-shrink: 0;">${doc.data_envio}</span>` : ''}
+        `;
+        listaUl.appendChild(li);
+      });
+    } catch (err) {
+      console.warn('[Talhões] Erro ao carregar documentos do talhão:', err);
+      listaUl.innerHTML = '<li>Nenhum documento anexado ainda.</li>';
+    }
+  }
+
   // Callback ao clicar no botão '📂 Documentos do Talhão' dentro do popup do talhão
-  window.ITPA_OnTalhaoDocumentos = (nomeTalhao, props) => {
+  window.ITPA_OnTalhaoDocumentos = async (nomeTalhao, props) => {
     const modalTalhao = document.getElementById('modal-talhao');
     if (!modalTalhao) return;
 
@@ -87,12 +119,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Registra o talhão ativo no modal e personaliza o campo de título
     modalTalhao.setAttribute('data-talhao-ativo', nomeTalhao);
     const docDescricao = document.getElementById('docDescricao');
+    const docArquivo = document.getElementById('docArquivo');
+    const statusUpload = document.getElementById('statusUpload');
+
     if (docDescricao) {
+      docDescricao.value = '';
       docDescricao.placeholder = `Título (Ex: Laudo Técnico - ${nomeTalhao})`;
+    }
+    if (docArquivo) {
+      docArquivo.value = '';
+    }
+    if (statusUpload) {
+      statusUpload.style.display = 'none';
+      statusUpload.textContent = 'Enviando...';
     }
 
     // 3. Abre o modal/gaveta
     modalTalhao.classList.add('active');
+
+    // 4. Consulta a coleção 'documentos_talhoes' no Firestore filtrando por 'talhao_id'
+    await carregarListaDocumentosTalhao(nomeTalhao);
   };
 
   // Tenta obter posição inicial do técnico sem sobrescrever o enquadramento do mapa
@@ -572,6 +618,75 @@ document.addEventListener('DOMContentLoaded', async () => {
     modalTalhao.addEventListener('click', (e) => {
       if (e.target === modalTalhao) {
         modalTalhao.classList.remove('active');
+      }
+    });
+  }
+
+  // Upload de Documentos do Talhão (Firebase Storage & Firestore)
+  const btnEnviarDoc = document.getElementById('btnEnviarDoc');
+  if (btnEnviarDoc) {
+    btnEnviarDoc.addEventListener('click', async () => {
+      const talhaoId = modalTalhao ? modalTalhao.getAttribute('data-talhao-ativo') : null;
+      const docDescricao = document.getElementById('docDescricao');
+      const docArquivo = document.getElementById('docArquivo');
+      const statusUpload = document.getElementById('statusUpload');
+
+      const titulo = docDescricao ? docDescricao.value.trim() : '';
+      const arquivo = docArquivo && docArquivo.files ? docArquivo.files[0] : null;
+
+      if (!talhaoId) {
+        alert('Identificador do talhão não encontrado. Selecione o talhão novamente no mapa.');
+        return;
+      }
+      if (!titulo) {
+        alert('Por favor, informe o título do documento.');
+        if (docDescricao) docDescricao.focus();
+        return;
+      }
+      if (!arquivo) {
+        alert('Por favor, selecione um arquivo (.pdf, .jpg ou .png) para upload.');
+        if (docArquivo) docArquivo.focus();
+        return;
+      }
+
+      try {
+        if (statusUpload) {
+          statusUpload.style.display = 'block';
+          statusUpload.style.color = '#007700';
+          statusUpload.textContent = 'Enviando documento...';
+        }
+        btnEnviarDoc.disabled = true;
+
+        // Upload no Firebase Storage e registro no Firestore
+        await window.ITPASync.enviarDocumentoTalhao(talhaoId, titulo, arquivo);
+
+        if (statusUpload) {
+          statusUpload.textContent = '✓ Documento enviado com sucesso!';
+        }
+
+        // Limpa os campos
+        if (docDescricao) docDescricao.value = '';
+        if (docArquivo) docArquivo.value = '';
+
+        // Recarrega lista imediatamente para exibir o novo documento
+        await carregarListaDocumentosTalhao(talhaoId);
+
+        setTimeout(() => {
+          if (statusUpload && statusUpload.textContent.includes('sucesso')) {
+            statusUpload.style.display = 'none';
+          }
+        }, 4000);
+
+      } catch (err) {
+        console.error('[Upload Documento Talhão] Erro:', err);
+        alert('Falha ao enviar documento para o repositório: ' + err.message);
+        if (statusUpload) {
+          statusUpload.style.display = 'block';
+          statusUpload.style.color = '#cc0000';
+          statusUpload.textContent = 'Erro ao enviar. Tente novamente.';
+        }
+      } finally {
+        btnEnviarDoc.disabled = false;
       }
     });
   }
