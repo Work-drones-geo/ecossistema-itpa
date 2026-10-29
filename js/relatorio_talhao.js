@@ -676,21 +676,27 @@
 
       // 1. Variáveis prontas estruturadas com fallback seguro para traço (--)
       const nome_imovel = sanitizarTextoPdf(dados.nome_imovel) || 'ESEC Guanabara';
-      const tipo_imovel = sanitizarTextoPdf(dados.tipo_imovel) || 'Unidade de Conservacao Federal';
+      const tipo_imovel = sanitizarTextoPdf(dados.tipo_imovel) || 'Imovel Rural Privado';
+      const municipio = sanitizarTextoPdf(dados.municipio) || 'Miguel Pereira - RJ';
       const codigo_car = sanitizarTextoPdf(dados.codigo_car) || '--';
-      const area_total_ha = (dados.area_total_ha !== null && dados.area_total_ha !== undefined && !isNaN(dados.area_total_ha) && Number(dados.area_total_ha) > 0)
-        ? `${Number(dados.area_total_ha).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`
-        : '-- ha';
+      const area_total_ha = dados.area_texto_oficial
+        ? sanitizarTextoPdf(dados.area_texto_oficial)
+        : ((dados.area_total_ha !== null && dados.area_total_ha !== undefined && !isNaN(dados.area_total_ha) && Number(dados.area_total_ha) > 0)
+          ? `${Number(dados.area_total_ha).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ha`
+          : '-- ha');
       const sobreposicao_prodes_ha = (dados.sobreposicao_prodes_ha !== null && dados.sobreposicao_prodes_ha !== undefined && !isNaN(dados.sobreposicao_prodes_ha))
         ? `${Number(dados.sobreposicao_prodes_ha).toFixed(4)} ha`
-        : '-- ha';
+        : '0.00 ha';
+      const status_car = sanitizarTextoPdf(dados.status_car || 'Ativo');
       
       // Dados Oficiais de Emissão Pericial
       const responsavel_tecnico = sanitizarTextoPdf(dados.responsavel_tecnico) || 'Bruno Sodero de Freitas';
       const qualificacao_tecnica = sanitizarTextoPdf(dados.qualificacao) || 'Especialista em Geoprocessamento e Fotogrametria Aerea';
       const certificacao_anac = sanitizarTextoPdf(dados.certificacao) || 'Piloto Remoto Certificado ANAC';
       const registro_crea_cft = sanitizarTextoPdf(dados.registro_crea_cft) || '--';
-      const statusElegivel = dados.status === 'Conforme' ? 'ELEGIVEL' : (dados.status === 'Inconforme' ? 'IMPEDITIVO / INCONFORME' : 'PENDENTE DE ARQUIVOS');
+      const statusElegivel = dados.elegibilidade_credito
+        ? sanitizarTextoPdf(dados.elegibilidade_credito)
+        : (dados.status === 'Conforme' ? 'ELEGIVEL (Resolucao CMN no 5.303/2026)' : (dados.status === 'Inconforme' ? 'IMPEDITIVO / INCONFORME' : 'PENDENTE DE ARQUIVOS'));
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({
@@ -766,28 +772,31 @@
       // B. BLOCO DE IDENTIFICAÇÃO DO IMÓVEL (CAR)
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(marginLeft, cursorY, contentWidth, 27, 2.5, 2.5, 'FD');
+      doc.roundedRect(marginLeft, cursorY, contentWidth, 31, 2.5, 2.5, 'FD');
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.8);
       doc.setTextColor(15, 23, 42);
-      doc.text('1. DADOS DO IMOVEL RURAL AUDITADO', marginLeft + 4, cursorY + 6.0);
+      doc.text('1. DADOS DO IMOVEL RURAL AUDITADO', marginLeft + 4, cursorY + 5.8);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.6);
       doc.setTextColor(51, 65, 85);
 
-      doc.text(`Imovel: ${nome_imovel}`, marginLeft + 4, cursorY + 11.5);
-      doc.text(`Tipo: ${tipo_imovel}`, marginLeft + 105, cursorY + 11.5);
+      doc.text(`Imovel: ${nome_imovel}`, marginLeft + 4, cursorY + 11.2);
+      doc.text(`Municipio / UF: ${municipio}`, marginLeft + 105, cursorY + 11.2);
 
-      doc.text(`Codigo do CAR Oficial: ${codigo_car}`, marginLeft + 4, cursorY + 17.0);
-      doc.text(`Area Total Auditada: ${area_total_ha}`, marginLeft + 105, cursorY + 17.0);
+      doc.text(`Codigo do CAR Oficial: ${codigo_car}`, marginLeft + 4, cursorY + 16.5);
+      doc.text(`Area Registrada: ${area_total_ha}`, marginLeft + 105, cursorY + 16.5);
 
       const emissaoData = new Date().toLocaleDateString('pt-BR');
-      doc.text(`Data da Auditoria Espacial: ${emissaoData}`, marginLeft + 4, cursorY + 22.5);
-      doc.text('Referencial Geodesico: SIRGAS 2000 / UTM Fuso 23S (EPSG:31983)', marginLeft + 105, cursorY + 22.5);
+      doc.text(`Data da Auditoria Espacial: ${emissaoData}`, marginLeft + 4, cursorY + 21.8);
+      doc.text('Referencial Geodesico: SIRGAS 2000 / UTM Fuso 23S (EPSG:31983)', marginLeft + 105, cursorY + 21.8);
 
-      cursorY += 31;
+      doc.text(`Situacao Cadastral SICAR: ${status_car}`, marginLeft + 4, cursorY + 27.0);
+      doc.text(`Regime Fundiario: ${tipo_imovel}`, marginLeft + 105, cursorY + 27.0);
+
+      cursorY += 35;
 
       // C. TABELA DE VERIFICAÇÃO DE REQUISITOS CMN 5.303
       const tabelaRequisitos = [
@@ -967,8 +976,9 @@
 
       // Download
       const dataArquivoStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const safeImovelName = (dados.nome_imovel || 'Imovel').replace(/[^a-zA-Z0-9_-]/g, '_');
       const safeCarName = codigo_car.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const nomeArquivo = `Laudo_CMN_5303_${safeCarName}_${dataArquivoStr}.pdf`;
+      const nomeArquivo = `Laudo_CMN_5303_${safeImovelName}_${safeCarName}_${dataArquivoStr}.pdf`;
 
       doc.save(nomeArquivo);
       showToast('✓ Laudo Pericial de Regularidade Socioambiental gerado com sucesso!', 'success');

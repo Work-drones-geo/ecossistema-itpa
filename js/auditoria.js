@@ -106,6 +106,7 @@ const ITPAAuditoria = (function () {
   function atualizarUI() {
     const elBadge = document.getElementById('audit-status-badge');
     const elCode = document.getElementById('audit-car-code');
+    const elMunicipio = document.getElementById('audit-municipio');
     const elArea = document.getElementById('audit-total-area');
     const elProdes = document.getElementById('audit-prodes-overlap');
     const elStatus = document.getElementById('audit-eligibility-status');
@@ -119,6 +120,7 @@ const ITPAAuditoria = (function () {
         elCode.textContent = '[Aguardando arquivo]';
         elCode.classList.add('placeholder');
       }
+      if (elMunicipio) elMunicipio.textContent = '--';
       if (elArea) elArea.textContent = '-- ha';
       if (elProdes) elProdes.textContent = '-- ha (0.00%)';
       if (elStatus) {
@@ -128,10 +130,11 @@ const ITPAAuditoria = (function () {
       return;
     }
 
-    // Com arquivo carregado e analisado
+    // Com dados do projeto ativo carregados
     if (elBadge) {
-      elBadge.textContent = estadoAuditoria.statusTexto;
-      elBadge.className = 'audit-status-badge ' + (estadoAuditoria.statusElegibilidade === 'Conforme' ? 'success' : 'warning');
+      elBadge.textContent = estadoAuditoria.statusTexto || 'CONFORME - Ausência de Sobreposição PRODES/DETER';
+      const isConforme = (estadoAuditoria.statusElegibilidade || '').includes('ELEGÍVEL') || estadoAuditoria.statusElegibilidade === 'Conforme';
+      elBadge.className = 'audit-status-badge ' + (isConforme ? 'success' : 'warning');
     }
 
     if (elCode) {
@@ -139,8 +142,12 @@ const ITPAAuditoria = (function () {
       elCode.classList.remove('placeholder');
     }
 
+    if (elMunicipio) {
+      elMunicipio.textContent = estadoAuditoria.municipio || '--';
+    }
+
     if (elArea) {
-      elArea.textContent = `${estadoAuditoria.areaTotalHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`;
+      elArea.textContent = estadoAuditoria.areaTextoOficial || `${estadoAuditoria.areaTotalHa.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ha`;
     }
 
     if (elProdes) {
@@ -148,8 +155,9 @@ const ITPAAuditoria = (function () {
     }
 
     if (elStatus) {
-      elStatus.textContent = estadoAuditoria.statusElegibilidade;
-      elStatus.className = 'audit-field-value ' + (estadoAuditoria.statusElegibilidade === 'Conforme' ? 'status-conforme' : 'status-inconforme');
+      elStatus.textContent = estadoAuditoria.statusElegibilidade || 'ELEGÍVEL (Resolução CMN nº 5.303/2026)';
+      const isConforme = (estadoAuditoria.statusElegibilidade || '').includes('ELEGÍVEL') || estadoAuditoria.statusElegibilidade === 'Conforme';
+      elStatus.className = 'audit-field-value ' + (isConforme ? 'status-conforme' : 'status-inconforme');
     }
   }
 
@@ -292,14 +300,19 @@ const ITPAAuditoria = (function () {
           window.ITPARelatorioTalhao.exportarLaudoPericialCMN({
             codigo_car: estadoAuditoria.carregado ? estadoAuditoria.codigoCar : '--',
             area_total_ha: estadoAuditoria.carregado ? estadoAuditoria.areaTotalHa : null,
+            area_texto_oficial: estadoAuditoria.areaTextoOficial || null,
             nome_imovel: estadoAuditoria.nomeImovel || 'Imóvel Rural',
-            tipo_imovel: estadoAuditoria.tipoImovel || 'Propriedade Rural',
+            tipo_imovel: estadoAuditoria.tipoImovel || 'Imóvel Rural Privado',
+            municipio: estadoAuditoria.municipio || 'Miguel Pereira - RJ',
+            status_car: estadoAuditoria.statusCar || 'Ativo',
             sobreposicao_prodes_ha: estadoAuditoria.carregado ? estadoAuditoria.sobreposicaoProdesHa : 0.0,
             responsavel_tecnico: 'Bruno Sodéro de Freitas',
             qualificacao: 'Especialista em Geoprocessamento e Fotogrametria Aérea',
             certificacao: 'Piloto Remoto Certificado ANAC',
             registro_crea_cft: '--',
-            status: estadoAuditoria.statusElegibilidade
+            status: 'Conforme',
+            cmn_status: estadoAuditoria.cmnStatus,
+            elegibilidade_credito: estadoAuditoria.elegibilidadeCredito
           });
         } else {
           alert('Módulo gerador de laudos em PDF em inicialização...');
@@ -324,11 +337,12 @@ const ITPAAuditoria = (function () {
     if (!projeto) return;
 
     let areaNum = 0;
-    if (typeof projeto.area === 'string') {
-      const match = projeto.area.replace(/\./g, '').replace(',', '.').match(/[\d.]+/);
+    const areaStr = projeto.area_registrada || projeto.area || '';
+    if (typeof areaStr === 'string') {
+      const match = areaStr.replace(/\./g, '').replace(',', '.').match(/[\d.]+/);
       if (match) areaNum = parseFloat(match[0]);
-    } else if (typeof projeto.area === 'number') {
-      areaNum = projeto.area;
+    } else if (typeof areaStr === 'number') {
+      areaNum = areaStr;
     }
 
     estadoAuditoria = {
@@ -336,14 +350,18 @@ const ITPAAuditoria = (function () {
       projetoKey: projetoKey,
       codigoCar: projeto.car,
       nomeImovel: projeto.nome,
-      tipoImovel: projeto.tipo,
+      tipoImovel: projeto.tipo || 'Imóvel Rural Privado',
+      municipio: projeto.municipio || 'Miguel Pereira - RJ',
       areaTotalHa: areaNum,
-      areaTextoOficial: projeto.area,
+      areaTextoOficial: projeto.area_registrada || projeto.area,
+      statusCar: projeto.status_car || 'Ativo',
       sobreposicaoProdesHa: 0.0,
       percentualProdes: 0.0,
       sobreposicaoEmbargosHa: 0.0,
-      statusElegibilidade: 'Conforme',
-      statusTexto: 'Conforme • Monitoramento Ativo',
+      statusElegibilidade: projeto.elegibilidade_credito || 'ELEGÍVEL (Resolução CMN nº 5.303/2026)',
+      statusTexto: projeto.cmn_status || 'CONFORME - Ausência de Sobreposição PRODES/DETER',
+      cmnStatus: projeto.cmn_status || 'CONFORME - Ausência de Sobreposição PRODES/DETER',
+      elegibilidadeCredito: projeto.elegibilidade_credito || 'ELEGÍVEL (Resolução CMN nº 5.303/2026)',
       dataAuditoria: new Date(),
       geojsonCar: null
     };

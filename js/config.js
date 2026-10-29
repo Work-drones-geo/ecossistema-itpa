@@ -151,29 +151,50 @@
     esec: {
       nome: "ESEC Guanabara",
       tipo: "Unidade de Conservação Federal",
+      municipio: "Guapimirim / APA - RJ",
       car: "Regime Público (CNUC / ICMBio)",
       area: "3.200 ha",
+      area_registrada: "3.200 ha",
+      status_car: "Ativo",
       geojson: "DATA/esec_poligono.geojson",
+      arquivo_geojson: "DATA/esec_poligono.geojson",
       coords: [-22.705, -43.030],
-      zoom: 14
+      coordenadas_centro: [-22.705, -43.030],
+      zoom: 14,
+      cmn_status: "CONFORME - Ausência de Sobreposição PRODES/DETER",
+      elegibilidade_credito: "ELEGÍVEL (Resolução CMN nº 5.303/2026)"
     },
     nelito: {
       nome: "Fazenda Nelito",
       tipo: "Imóvel Rural Privado",
+      municipio: "Miguel Pereira - RJ",
       car: "RJ-3302908-AE983FB03BAE42A9B32833247D8CCD4D",
       area: "246,116 ha",
+      area_registrada: "246,116 ha",
+      status_car: "Ativo",
       geojson: "DATA/nelito.geojson",
+      arquivo_geojson: "DATA/nelito.geojson",
       coords: [-22.540, -43.545],
-      zoom: 15
+      coordenadas_centro: [-22.540, -43.545],
+      zoom: 15,
+      cmn_status: "CONFORME - Ausência de Sobreposição PRODES/DETER",
+      elegibilidade_credito: "ELEGÍVEL (Resolução CMN nº 5.303/2026)"
     },
     guanai: {
       nome: "Fazenda Guanaí",
       tipo: "Imóvel Rural Privado",
+      municipio: "Miguel Pereira - RJ",
       car: "RJ-3302908-D52C6812F1464345885FE14360B005CE",
       area: "615,808 ha",
+      area_registrada: "615,808 ha",
+      status_car: "Ativo",
       geojson: "DATA/guanai.geojson",
+      arquivo_geojson: "DATA/guanai.geojson",
       coords: [-22.552, -43.558],
-      zoom: 15
+      coordenadas_centro: [-22.552, -43.558],
+      zoom: 15,
+      cmn_status: "CONFORME - Ausência de Sobreposição PRODES/DETER",
+      elegibilidade_credito: "ELEGÍVEL (Resolução CMN nº 5.303/2026)"
     }
   };
 

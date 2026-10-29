@@ -748,9 +748,13 @@ const ITPAMap = (function () {
 
     // 2. Se for a ESEC Guanabara (Guapimirim / APA)
     if (projetoKey === 'esec') {
-      await carregarTalhoesGeoJSON(projeto.geojson || './DATA/esec_poligono.geojson');
+      await carregarTalhoesGeoJSON(projeto.arquivo_geojson || projeto.geojson || './DATA/esec_poligono.geojson');
       if (map) {
-        map.flyTo(projeto.coords, projeto.zoom, { duration: 1.5 });
+        if (talhoesLayer && talhoesLayer.getBounds && talhoesLayer.getBounds().isValid()) {
+          map.fitBounds(talhoesLayer.getBounds().pad(0.15), { padding: [30, 30], maxZoom: 15 });
+        } else {
+          map.flyTo(projeto.coordenadas_centro || projeto.coords, projeto.zoom, { duration: 1.5 });
+        }
       }
     } else {
       // 3. Fazenda Nelito ou Fazenda Guanaí (Miguel Pereira - RJ)
@@ -764,11 +768,12 @@ const ITPAMap = (function () {
       }
 
       // Caminhos candidatos para o GeoJSON oficial do projeto
+      const arquivoGeojson = projeto.arquivo_geojson || projeto.geojson;
       const caminhos = [
-        './' + projeto.geojson,
-        projeto.geojson,
-        './DATA/' + projeto.geojson.split('/').pop(),
-        './data/' + projeto.geojson.split('/').pop()
+        './' + arquivoGeojson,
+        arquivoGeojson,
+        './DATA/' + arquivoGeojson.split('/').pop(),
+        './data/' + arquivoGeojson.split('/').pop()
       ];
 
       let geojsonData = null;
@@ -791,11 +796,11 @@ const ITPAMap = (function () {
         talhoesLayer = L.geoJSON(geojsonData, {
           style: function () {
             return {
-              color: '#16a34a',       // Verde vibrante de propriedade rural
-              weight: 3.0,
+              color: '#27ae60',       // Contorno verde escuro (#27ae60)
+              weight: 3.5,
               opacity: 1.0,
-              fillColor: '#22c55e',
-              fillOpacity: 0.16
+              fillColor: '#2ecc71',   // Preenchimento verde (#2ecc71) levemente translúcido
+              fillOpacity: 0.20
             };
           },
           onEachFeature: function (feature, layer) {
@@ -804,7 +809,7 @@ const ITPAMap = (function () {
 
             layer.on({
               mouseover: function (e) {
-                e.target.setStyle({ weight: 4.5, color: '#15803d', fillOpacity: 0.28 });
+                e.target.setStyle({ weight: 4.5, color: '#1e8449', fillOpacity: 0.35 });
                 if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) e.target.bringToFront();
               },
               mouseout: function (e) {
@@ -820,15 +825,23 @@ const ITPAMap = (function () {
                 </div>
                 <div class="talhao-popup-body">
                   <h3 class="talhao-popup-title">${projeto.nome}</h3>
-                  <span class="talhao-popup-layer">Tipo: ${projeto.tipo}</span>
+                  <span class="talhao-popup-layer">Município: ${projeto.municipio || 'Miguel Pereira - RJ'}</span>
                   <div class="talhao-popup-metrics" style="grid-template-columns: 1fr; margin-top: 8px;">
                     <div class="metric-chip">
-                      <span class="metric-chip-label">Área Oficial</span>
-                      <span class="metric-chip-val">${projeto.area}</span>
+                      <span class="metric-chip-label">Área Registrada</span>
+                      <span class="metric-chip-val">${projeto.area_registrada || projeto.area}</span>
                     </div>
                     <div class="metric-chip" style="margin-top: 4px;">
                       <span class="metric-chip-label">Código do CAR</span>
                       <span class="metric-chip-val" style="font-size: 11px; word-break: break-all;">${projeto.car}</span>
+                    </div>
+                    <div class="metric-chip" style="margin-top: 4px;">
+                      <span class="metric-chip-label">Conformidade CMN</span>
+                      <span class="metric-chip-val" style="font-size: 11px; color: #15803d; font-weight: 700;">${projeto.cmn_status || 'CONFORME'}</span>
+                    </div>
+                    <div class="metric-chip" style="margin-top: 4px;">
+                      <span class="metric-chip-label">Elegibilidade Crédito</span>
+                      <span class="metric-chip-val" style="font-size: 11px; color: #15803d; font-weight: 700;">${projeto.elegibilidade_credito || 'ELEGÍVEL'}</span>
                     </div>
                   </div>
                   <div style="margin-top: 10px; display: flex; gap: 6px;">
@@ -864,23 +877,31 @@ const ITPAMap = (function () {
           }
           if (talhoesLayer.getBounds().isValid()) {
             map.fitBounds(talhoesLayer.getBounds().pad(0.15), {
-              padding: [40, 40],
+              padding: [30, 30],
               maxZoom: 16
             });
           } else {
-            map.flyTo(projeto.coords, projeto.zoom, { duration: 1.5 });
+            map.flyTo(projeto.coordenadas_centro || projeto.coords, projeto.zoom, { duration: 1.5 });
           }
         }
       } else {
         if (map) {
-          map.flyTo(projeto.coords, projeto.zoom, { duration: 1.5 });
+          map.flyTo(projeto.coordenadas_centro || projeto.coords, projeto.zoom, { duration: 1.5 });
         }
       }
     }
 
-    // 4. Notifica o módulo de auditoria territorial para atualizar o CAR e área oficiais
+    // 4. Notifica o módulo de auditoria territorial para atualizar o CAR, município, área e elegibilidade oficiais
     if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
       window.ITPAAuditoria.definirProjetoAtivo(projetoKey);
+    }
+
+    // Expande o card de auditoria na tela para visualização imediata dos dados reais do imóvel selecionado
+    const cardAudit = document.getElementById('card-auditoria-cmn');
+    if (cardAudit) {
+      cardAudit.classList.remove('collapsed');
+      const pill = document.getElementById('pill-quick-auditoria');
+      if (pill) pill.classList.add('active');
     }
   }
 
