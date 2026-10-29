@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 
   <!-- Estilos Customizados do ITPA -->
-  <link rel="stylesheet" href="styles.css?v=5.1">
+  <link rel="stylesheet" href="styles.css?v=5.2">
 </head>
 <body>
 
@@ -164,7 +164,7 @@
                 <span class="audit-card-subtitle" id="audit-card-header-sub" style="font-size:0.68rem; color:#64748b;">Fazenda Nelito • CMN 5.303/2026</span>
               </div>
             </div>
-            <button type="button" id="btn-toggle-audit" class="btn-toggle-audit-card" style="background:none;border:none;font-size:18px;font-weight:bold;cursor:pointer;padding:4px 8px;color:#475569;">−</button>
+            <button type="button" id="btn-toggle-audit" class="btn-toggle-audit-card" onclick="event.stopPropagation(); window.toggleAuditoria();" style="background:none;border:none;font-size:18px;font-weight:bold;cursor:pointer;padding:4px 8px;color:#475569;">−</button>
           </div>
           <div id="auditoria-body" class="card-body audit-card-body" style="display: block; padding: 12px 14px;">
             <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
@@ -838,17 +838,17 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <!-- Módulos da Aplicação Ecossistema ITPA -->
-  <script src="script.js?v=5.1"></script>
-  <script src="js/config.js?v=5.1"></script>
-  <script src="js/db.js?v=5.1"></script>
-  <script src="js/camera.js?v=5.1"></script>
-  <script src="js/map.js?v=5.1"></script>
-  <script src="js/sync.js?v=5.1"></script>
-  <script src="js/report.js?v=5.1"></script>
-  <script src="js/assets_laudo.js?v=5.1"></script>
-  <script src="js/relatorio_talhao.js?v=5.1"></script>
-  <script src="js/auditoria.js?v=5.1"></script>
-  <script src="app.js?v=5.1"></script>
+  <script src="script.js?v=5.2"></script>
+  <script src="js/config.js?v=5.2"></script>
+  <script src="js/db.js?v=5.2"></script>
+  <script src="js/camera.js?v=5.2"></script>
+  <script src="js/map.js?v=5.2"></script>
+  <script src="js/sync.js?v=5.2"></script>
+  <script src="js/report.js?v=5.2"></script>
+  <script src="js/assets_laudo.js?v=5.2"></script>
+  <script src="js/relatorio_talhao.js?v=5.2"></script>
+  <script src="js/auditoria.js?v=5.2"></script>
+  <script src="app.js?v=5.2"></script>
 
 </body>
 </html>

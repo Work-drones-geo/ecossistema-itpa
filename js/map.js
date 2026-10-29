@@ -743,43 +743,55 @@ const ITPAMap = (function () {
   const CONFIG_RASTERS_PROJETOS = {
     nelito: {
       nome: 'Fazenda Nelito',
-      boundsJson: ['./DATA/nelito_bounds.json', 'DATA/nelito_bounds.json'],
+      boundsJson: ['assets/rasters/nelito_bounds.json', 'DATA/nelito_bounds.json'],
       fallbackBounds: [
         [-22.55606067128168, -43.55337196761436],
         [-22.53283148841984, -43.53953093530578]
       ],
-      rgbRecente: './DATA/nelito_rgb_10m.png',
-      ndviRecente: './DATA/nelito_ndvi_2m.png',
-      rgbAnterior: './DATA/nelito_rgb_anterior.png',
-      ndviAnterior: './DATA/nelito_ndvi_anterior.png',
+      rgbRecente: 'assets/rasters/nelito_rgb_10m.png',
+      ndviRecente: 'assets/rasters/nelito_ndvi_2m.png',
+      rgbAnterior: 'assets/rasters/nelito_rgb_anterior.png',
+      ndviAnterior: 'assets/rasters/nelito_ndvi_anterior.png',
+      fallbackRgbRecente: 'DATA/nelito_rgb_10m.png',
+      fallbackNdviRecente: 'DATA/nelito_ndvi_2m.png',
+      fallbackRgbAnterior: 'DATA/nelito_rgb_anterior.png',
+      fallbackNdviAnterior: 'DATA/nelito_ndvi_anterior.png',
       labelRecente: '28/Out (10m)',
       labelAnterior: '09/Set (10m)'
     },
     guanai: {
       nome: 'Fazenda Guanaí',
-      boundsJson: ['./DATA/guanai_bounds.json', 'DATA/guanai_bounds.json'],
+      boundsJson: ['assets/rasters/guanai_bounds.json', 'DATA/guanai_bounds.json'],
       fallbackBounds: [
         [-22.56118214040626, -43.55855722892613],
         [-22.5415121478366, -43.54421380740492]
       ],
-      rgbRecente: './DATA/guanai_rgb_10m.png',
-      ndviRecente: './DATA/guanai_ndvi_2m.png',
-      rgbAnterior: './DATA/guanai_rgb_anterior.png',
-      ndviAnterior: './DATA/guanai_ndvi_anterior.png',
+      rgbRecente: 'assets/rasters/guanai_rgb_10m.png',
+      ndviRecente: 'assets/rasters/guanai_ndvi_2m.png',
+      rgbAnterior: 'assets/rasters/guanai_rgb_anterior.png',
+      ndviAnterior: 'assets/rasters/guanai_ndvi_anterior.png',
+      fallbackRgbRecente: 'DATA/guanai_rgb_10m.png',
+      fallbackNdviRecente: 'DATA/guanai_ndvi_2m.png',
+      fallbackRgbAnterior: 'DATA/guanai_rgb_anterior.png',
+      fallbackNdviAnterior: 'DATA/guanai_ndvi_anterior.png',
       labelRecente: '28/Out (10m)',
       labelAnterior: '09/Set (10m)'
     },
     esec: {
       nome: 'ESEC Guanabara',
-      boundsJson: ['./assets/satelite/bounds_expandido.json', 'assets/satelite/bounds_expandido.json'],
+      boundsJson: ['assets/rasters/esec_bounds.json', 'assets/satelite/bounds_expandido.json', 'DATA/esec_bounds.json'],
       fallbackBounds: [
         [-22.737766, -43.022287],
         [-22.691124, -42.949613]
       ],
-      rgbRecente: './assets/satelite/aoi_rgb_recente_2m.png',
-      ndviRecente: './assets/satelite/aoi_ndvi_recente_2m.png',
-      rgbAnterior: './assets/satelite/aoi_rgb_anterior_2m.png',
-      ndviAnterior: './assets/satelite/aoi_ndvi_anterior_2m.png',
+      rgbRecente: 'assets/rasters/esec_rgb_2m.png',
+      ndviRecente: 'assets/rasters/esec_ndvi_2m.png',
+      rgbAnterior: 'assets/rasters/esec_rgb_anterior.png',
+      ndviAnterior: 'assets/rasters/esec_ndvi_anterior.png',
+      fallbackRgbRecente: 'assets/satelite/aoi_rgb_recente_2m.png',
+      fallbackNdviRecente: 'assets/satelite/aoi_ndvi_recente_2m.png',
+      fallbackRgbAnterior: 'assets/satelite/aoi_rgb_anterior_2m.png',
+      fallbackNdviAnterior: 'assets/satelite/aoi_ndvi_anterior_2m.png',
       labelRecente: '28/Out (2m)',
       labelAnterior: '09/Set (2m)'
     }
@@ -824,6 +836,9 @@ const ITPAMap = (function () {
           } else if (bData && bData.bounds && bData.bounds.length === 2) {
             boundsOverlay = L.latLngBounds(bData.bounds[0], bData.bounds[1]);
             break;
+          } else if (bData && bData[key] && bData[key].leaflet_bounds) {
+            boundsOverlay = L.latLngBounds(bData[key].leaflet_bounds[0], bData[key].leaflet_bounds[1]);
+            break;
           }
         }
       } catch (e) {
@@ -831,9 +846,10 @@ const ITPAMap = (function () {
       }
     }
 
-    // 4. Helper seguro para criar ImageOverlay georreferenciado
-    const criarOverlay = (caminhoImg, paneName = 'leftPane', opacity = 0.95) => {
-      const overlay = L.imageOverlay(caminhoImg, boundsOverlay, {
+    // 4. Helper seguro para criar ImageOverlay georreferenciado com suporte a fallback de URL
+    const criarOverlay = (caminhoImg, caminhoFallback, paneName = 'leftPane', opacity = 0.95) => {
+      let currentSrc = caminhoImg;
+      const overlay = L.imageOverlay(currentSrc, boundsOverlay, {
         opacity: opacity,
         interactive: false,
         pane: paneName,
@@ -841,7 +857,11 @@ const ITPAMap = (function () {
         maxZoom: 22
       });
       overlay.on('error', () => {
-        if (overlay.getElement()) {
+        if (caminhoFallback && currentSrc !== caminhoFallback) {
+          console.warn(`[ITPAMap] Fallback para imagem alternativa: ${caminhoFallback}`);
+          currentSrc = caminhoFallback;
+          overlay.setUrl(caminhoFallback);
+        } else if (overlay.getElement()) {
           overlay.getElement().style.display = 'none';
         }
       });
@@ -851,22 +871,22 @@ const ITPAMap = (function () {
     // 5. Instanciação das novas camadas PNG via L.imageOverlay
     // a) 🌱 NDVI Recente (2m) -> leftPane
     if (layerGroupNdviRecente && config.ndviRecente) {
-      layerGroupNdviRecente.addLayer(criarOverlay(config.ndviRecente, 'leftPane'));
+      layerGroupNdviRecente.addLayer(criarOverlay(config.ndviRecente, config.fallbackNdviRecente, 'leftPane'));
     }
 
     // b) 🛰️ Satélite RGB Recente (10m / 2m) -> leftPane
     if (layerGroupRgbRecente && config.rgbRecente) {
-      layerGroupRgbRecente.addLayer(criarOverlay(config.rgbRecente, 'leftPane'));
+      layerGroupRgbRecente.addLayer(criarOverlay(config.rgbRecente, config.fallbackRgbRecente, 'leftPane'));
     }
 
     // c) 🌱 NDVI Anterior -> rightPane (utilizado pelo Swipe)
     if (layerGroupNdviAnterior && config.ndviAnterior) {
-      layerGroupNdviAnterior.addLayer(criarOverlay(config.ndviAnterior, 'rightPane'));
+      layerGroupNdviAnterior.addLayer(criarOverlay(config.ndviAnterior, config.fallbackNdviAnterior, 'rightPane'));
     }
 
     // d) 🛰️ Satélite RGB Anterior -> rightPane (utilizado pelo Swipe)
     if (layerGroupRgbAnterior && config.rgbAnterior) {
-      layerGroupRgbAnterior.addLayer(criarOverlay(config.rgbAnterior, 'rightPane'));
+      layerGroupRgbAnterior.addLayer(criarOverlay(config.rgbAnterior, config.fallbackRgbAnterior, 'rightPane'));
     }
 
     // 6. Restaura as camadas no mapa se estavam ligadas pelo usuário
@@ -898,7 +918,7 @@ const ITPAMap = (function () {
    * Executa map.flyTo / map.fitBounds, remove o vetor anterior e renderiza o novo GeoJSON da pasta DATA/.
    * @param {string} projetoKey Chave do projeto ('esec', 'nelito', 'guanai')
    */
-  async function selecionarProjeto(projetoKey) {
+  async function selecionarProjeto(projetoKey, syncAudit = true) {
     const projetos = window.PROJETOS || {};
     const projeto = projetos[projetoKey];
 
@@ -915,14 +935,11 @@ const ITPAMap = (function () {
       selectEl.value = projetoKey;
     }
 
-    // Atualização infalível da Auditoria de Crédito
-    if (typeof window.atualizarAuditoria === 'function') {
-      window.atualizarAuditoria(projetoKey);
-    }
-
-    // 0. Injeção dinâmica imediata e síncrona nos campos do painel de auditoria territorial (.card-auditoria / #painel-auditoria)
-    if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
-      window.ITPAAuditoria.definirProjetoAtivo(projetoKey);
+    // Atualização infalível da Auditoria de Crédito sem retroalimentar selecionarProjeto
+    if (syncAudit && typeof window.abrirAuditoriaDoProjeto === 'function') {
+      window.abrirAuditoriaDoProjeto(projetoKey, false);
+    } else if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
+      window.ITPAAuditoria.definirProjetoAtivo(projetoKey, false);
     }
 
     console.log(`[ITPAMap] Alternando para o projeto ativo: ${projeto.nome} (${projetoKey})`);
@@ -1079,11 +1096,21 @@ const ITPAMap = (function () {
     }
 
     // Expande o card de auditoria na tela para visualização imediata dos dados reais do imóvel selecionado
-    const cardAudit = document.getElementById('card-auditoria-cmn');
+    const cardAudit = document.getElementById('card-auditoria') ||
+                      document.getElementById('painel-auditoria') ||
+                      document.getElementById('card-auditoria-cmn') ||
+                      document.querySelector('.card-auditoria');
     if (cardAudit) {
       cardAudit.classList.remove('collapsed');
+      cardAudit.style.display = 'block';
       const pill = document.getElementById('pill-quick-auditoria');
       if (pill) pill.classList.add('active');
+      const btnToggle = document.getElementById('btn-toggle-audit') || document.getElementById('btn-toggle-audit-card');
+      if (btnToggle) {
+        btnToggle.textContent = '−';
+        const icon = btnToggle.querySelector('.toggle-icon');
+        if (icon) icon.textContent = '−';
+      }
     }
   }
 
@@ -1380,11 +1407,40 @@ const ITPAMap = (function () {
       sincronizarEstadosUI();
     }
 
+    function obterBoundsPropriedadeAtiva() {
+      if (talhoesLayer && talhoesLayer.getBounds && talhoesLayer.getBounds().isValid()) {
+        return talhoesLayer.getBounds();
+      }
+      const key = (window.PROJETO_ATIVO_ID || 'nelito').toLowerCase().trim();
+      const cfg = CONFIG_RASTERS_PROJETOS[key] || CONFIG_RASTERS_PROJETOS.nelito;
+      return L.latLngBounds(cfg.fallbackBounds[0], cfg.fallbackBounds[1]);
+    }
+
     // Eventos das Pílulas Rápidas Flutuantes
     if (pillNdvi) {
       pillNdvi.onclick = (e) => {
         e.preventDefault();
-        alternarCamada(layerGroupNdviRecente);
+        const estaAtivo = layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente);
+        if (estaAtivo) {
+          map.removeLayer(layerGroupNdviRecente);
+        } else {
+          // Desativa RGB se estiver ativo para evitar conflito de visualização
+          if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) {
+            map.removeLayer(layerGroupRgbRecente);
+          }
+          // Garante clipPath limpo fora do modo comparador
+          const lp = map.getPane('leftPane');
+          if (lp) { lp.style.clipPath = ''; lp.style.webkitClipPath = ''; }
+          
+          if (layerGroupNdviRecente) {
+            map.addLayer(layerGroupNdviRecente);
+          }
+          const b = obterBoundsPropriedadeAtiva();
+          if (b && b.isValid && b.isValid()) {
+            map.fitBounds(b.pad(0.15), { maxZoom: 16 });
+          }
+        }
+        sincronizarEstadosUI();
       };
     }
 
@@ -1398,7 +1454,27 @@ const ITPAMap = (function () {
     if (pillRgb) {
       pillRgb.onclick = (e) => {
         e.preventDefault();
-        alternarCamada(layerGroupRgbRecente);
+        const estaAtivo = layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente);
+        if (estaAtivo) {
+          map.removeLayer(layerGroupRgbRecente);
+        } else {
+          // Desativa NDVI se estiver ativo para evitar conflito de visualização
+          if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) {
+            map.removeLayer(layerGroupNdviRecente);
+          }
+          // Garante clipPath limpo fora do modo comparador
+          const lp = map.getPane('leftPane');
+          if (lp) { lp.style.clipPath = ''; lp.style.webkitClipPath = ''; }
+          
+          if (layerGroupRgbRecente) {
+            map.addLayer(layerGroupRgbRecente);
+          }
+          const b = obterBoundsPropriedadeAtiva();
+          if (b && b.isValid && b.isValid()) {
+            map.fitBounds(b.pad(0.15), { maxZoom: 16 });
+          }
+        }
+        sincronizarEstadosUI();
       };
     }
 
@@ -1708,9 +1784,10 @@ const ITPAMap = (function () {
       swipeContainer.style.display = 'block';
     }
 
-    // Se fornecido bounds do talhão, aproxima e fecha popup
-    if (bounds && bounds.isValid && bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 17 });
+    // Se fornecido bounds do talhão ou da propriedade ativa, aproxima e fecha popup
+    const targetBounds = (bounds && bounds.isValid && bounds.isValid()) ? bounds : (typeof obterBoundsPropriedadeAtiva === 'function' ? obterBoundsPropriedadeAtiva() : null);
+    if (targetBounds && targetBounds.isValid && targetBounds.isValid()) {
+      map.fitBounds(targetBounds.pad(0.15), { padding: [40, 40], maxZoom: 17 });
       map.closePopup();
     }
 

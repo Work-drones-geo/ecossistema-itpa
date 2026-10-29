@@ -251,13 +251,19 @@ const ITPAAuditoria = (function () {
    */
   function init() {
     const inputUpload = document.getElementById('input-car-upload');
-    const btnToggle = document.getElementById('btn-toggle-audit-card');
+    const btnToggle = document.getElementById('btn-toggle-audit') || document.getElementById('btn-toggle-audit-card');
     const pillAuditoria = document.getElementById('pill-quick-auditoria');
-    const cardAudit = document.getElementById('card-auditoria-cmn');
+    const cardAudit = document.getElementById('card-auditoria') ||
+                      document.getElementById('card-auditoria-cmn') ||
+                      document.querySelector('.card-auditoria');
     const btnGerarLaudo = document.getElementById('btn-gerar-laudo-cmn');
 
     // Alternar visibilidade do card retrátil
-    function toggleCard() {
+    function toggleCard(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       if (typeof window.toggleAuditoria === 'function') {
         window.toggleAuditoria();
         return;
@@ -266,13 +272,16 @@ const ITPAAuditoria = (function () {
       const isCollapsed = cardAudit.classList.toggle('collapsed');
       if (pillAuditoria) pillAuditoria.classList.toggle('active', !isCollapsed);
       if (btnToggle) {
+        btnToggle.textContent = isCollapsed ? '+' : '−';
         const icon = btnToggle.querySelector('.toggle-icon');
         if (icon) icon.textContent = isCollapsed ? '+' : '−';
       }
     }
 
-    if (btnToggle) btnToggle.addEventListener('click', toggleCard);
-    if (pillAuditoria) pillAuditoria.addEventListener('click', toggleCard);
+    if (btnToggle && !btnToggle.hasAttribute('onclick')) {
+      btnToggle.addEventListener('click', toggleCard);
+    }
+    // Pill auditoria já possui onclick="window.toggleAuditoria()" no HTML; evita duplicidade
 
     // Upload real de arquivos GeoJSON ou KML do CAR
     if (inputUpload) {
@@ -416,22 +425,25 @@ const ITPAAuditoria = (function () {
 
     // Atualiza imediatamente os campos do painel (.card-auditoria / #painel-auditoria)
     if (typeof window.atualizarAuditoria === 'function') {
-      window.atualizarAuditoria(projetoKey);
+      window.atualizarAuditoria(projetoKey, false);
     }
     atualizarUI();
 
     // Expande o painel lateral para visibilidade imediata dos dados do imóvel ativo
-    const cardAudit = document.getElementById('painel-auditoria') ||
+    const cardAudit = document.getElementById('card-auditoria') ||
+                      document.getElementById('painel-auditoria') ||
                       document.getElementById('card-auditoria-cmn') ||
                       document.querySelector('.card-auditoria') ||
                       document.querySelector('.map-audit-card');
     if (cardAudit) {
       const outerCard = cardAudit.closest('.map-audit-card') || cardAudit;
       outerCard.classList.remove('collapsed');
+      outerCard.style.display = 'block';
       const pill = document.getElementById('pill-quick-auditoria');
       if (pill) pill.classList.add('active');
-      const btnToggle = document.getElementById('btn-toggle-audit-card');
+      const btnToggle = document.getElementById('btn-toggle-audit') || document.getElementById('btn-toggle-audit-card');
       if (btnToggle) {
+        btnToggle.textContent = '−';
         const icon = btnToggle.querySelector('.toggle-icon');
         if (icon) icon.textContent = '−';
       }

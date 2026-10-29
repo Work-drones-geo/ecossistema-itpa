@@ -1,0 +1,20 @@
+{
+  "lat_min_expandida": -22.737766,
+  "lng_min_expandida": -43.022287,
+  "lat_max_expandida": -22.691124,
+  "lng_max_expandida": -42.949613,
+  "bounds": [
+    [
+      -22.737766,
+      -43.022287
+    ],
+    [
+      -22.691124,
+      -42.949613
+    ]
+  ],
+  "width_px": 3731,
+  "height_px": 2583,
+  "resolution_m": 2.0,
+  "buffer_percent": 18.0
+}
