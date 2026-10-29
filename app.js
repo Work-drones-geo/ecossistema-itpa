@@ -280,6 +280,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       };
     }
 
+    // Ação do botão Salvar no Drive / Acessar Nuvem dentro do modal
+    const btnDrive = document.getElementById('btn-drive-deste-talhao');
+    if (btnDrive) {
+      btnDrive.onclick = (e) => {
+        e.preventDefault();
+        const driveUrl = window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com';
+        showToast('☁️ Abrindo pasta oficial do Google Drive ITPA...', 'info');
+        window.open(driveUrl, '_blank', 'noopener,noreferrer');
+      };
+    }
+
     // Seleciona a aba do gráfico
     alternarAbaModalTalhao('tab-talhao-grafico');
 
@@ -306,16 +317,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Registra o talhão ativo no modal e personaliza os campos
     modalTalhao.setAttribute('data-talhao-ativo', nomeTalhao);
     const docDescricao = document.getElementById('docDescricao');
-    const docLink = document.getElementById('docLink');
     const statusUpload = document.getElementById('statusUpload');
 
     if (docDescricao) {
       docDescricao.value = '';
-      docDescricao.placeholder = 'Ex: Laudo Técnico de Plantio';
-    }
-    if (docLink) {
-      docLink.value = '';
-      docLink.placeholder = 'Cole aqui o link do Google Drive / Nuvem';
+      docDescricao.placeholder = 'Ex: Laudo Técnico de Vistoria, ART, Vôo Drone';
     }
     if (statusUpload) {
       statusUpload.style.display = 'none';
@@ -831,30 +837,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Registo de Documentos do Talhão (100% Firestore / sem Storage)
+  // Registo de Documentos do Talhão (100% Automatizado com Google Drive)
   const btnEnviarDoc = document.getElementById('btnEnviarDoc');
   if (btnEnviarDoc) {
     btnEnviarDoc.addEventListener('click', async () => {
       const talhaoId = modalTalhao ? modalTalhao.getAttribute('data-talhao-ativo') : null;
       const docDescricao = document.getElementById('docDescricao');
-      const docLink = document.getElementById('docLink');
       const statusUpload = document.getElementById('statusUpload');
 
       const titulo = docDescricao ? docDescricao.value.trim() : '';
-      const link = docLink ? docLink.value.trim() : '';
+      // Utiliza automaticamente a URL oficial da Pasta Mestre do Google Drive
+      const link = window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com';
 
       if (!talhaoId) {
         alert('Identificador do talhão não encontrado. Selecione o talhão novamente no mapa.');
         return;
       }
       if (!titulo) {
-        alert('Por favor, informe a descrição/título do documento.');
+        alert('Por favor, informe a descrição ou título do documento.');
         if (docDescricao) docDescricao.focus();
-        return;
-      }
-      if (!link) {
-        alert('Por favor, cole o link do documento (ex: Google Drive, OneDrive ou Nuvem).');
-        if (docLink) docLink.focus();
         return;
       }
 
@@ -862,23 +863,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (statusUpload) {
           statusUpload.style.display = 'block';
           statusUpload.style.color = '#007700';
-          statusUpload.textContent = 'Registando documento no Firestore...';
+          statusUpload.textContent = 'Vinculando documento ao Google Drive...';
         }
         btnEnviarDoc.disabled = true;
 
-        // Gravação direta no Firestore
+        // Gravação direta no Firestore com o link centralizado da pasta do Google Drive
         await window.ITPASync.registrarDocumentoTalhao(talhaoId, titulo, link);
 
         if (statusUpload) {
-          statusUpload.textContent = '✓ Documento registado com sucesso!';
+          statusUpload.textContent = '✓ Documento vinculado ao Google Drive com sucesso!';
         }
 
-        // Limpa os campos de entrada
+        // Limpa o campo de título
         if (docDescricao) docDescricao.value = '';
-        if (docLink) docLink.value = '';
 
         // Recarrega lista imediatamente para exibir o novo documento
         await carregarListaDocumentosTalhao(talhaoId);
+        showToast('✅ Documento vinculado à pasta do Google Drive!', 'success');
 
         setTimeout(() => {
           if (statusUpload && statusUpload.textContent.includes('sucesso')) {
@@ -898,6 +899,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnEnviarDoc.disabled = false;
       }
     });
+  }
+
+  // Atalhos Globais para Acessar a Pasta Mestre do Google Drive
+  const btnAbrirPastaDrive = document.getElementById('btn-abrir-pasta-drive');
+  if (btnAbrirPastaDrive) {
+    btnAbrirPastaDrive.onclick = (e) => {
+      e.preventDefault();
+      const driveUrl = window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com';
+      showToast('☁️ Abrindo pasta oficial do Google Drive ITPA...', 'info');
+      window.open(driveUrl, '_blank', 'noopener,noreferrer');
+    };
+  }
+
+  const btnSettingsOpenDrive = document.getElementById('btn-settings-open-drive');
+  if (btnSettingsOpenDrive) {
+    btnSettingsOpenDrive.onclick = (e) => {
+      e.preventDefault();
+      const driveUrl = window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com';
+      showToast('☁️ Abrindo pasta oficial do Google Drive ITPA...', 'info');
+      window.open(driveUrl, '_blank', 'noopener,noreferrer');
+    };
   }
 
   // ==========================================================================

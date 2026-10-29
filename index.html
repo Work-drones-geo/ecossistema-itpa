@@ -216,6 +216,19 @@
             </div>
           </div>
 
+          <!-- Card de Integração Google Drive -->
+          <div class="ocorrencia-card" style="flex-direction: column;">
+            <h3 style="font-family: var(--font-heading); color: var(--itpa-green-dark); margin-bottom: 8px;">
+              ☁️ Repositório Google Drive (Nuvem Oficial)
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--itpa-text-muted); margin-bottom: 14px;">
+              Pasta mestre compartilhada para armazenamento de relatórios, Fichas Técnicas, ortofotos e laudos do ITPA.
+            </p>
+            <button type="button" class="btn-itpa-pill" id="btn-settings-open-drive" style="align-self: flex-start;">
+              ☁️ Abrir Pasta no Google Drive ↗
+            </button>
+          </div>
+
           <!-- Card de Integração Firebase -->
           <div class="ocorrencia-card" style="flex-direction: column;">
             <h3 style="font-family: var(--font-heading); color: var(--itpa-green-dark); margin-bottom: 8px;">
@@ -448,7 +461,7 @@
             </div>
           </div>
 
-          <!-- Ações Rápidas: Swipe e Exportar Ficha Técnica PDF -->
+          <!-- Ações Rápidas: Swipe, Exportar Ficha Técnica PDF e Google Drive -->
           <div class="talhao-modal-actions-grid" style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <button type="button" class="btn-itpa-pill" id="btn-swipe-deste-talhao" style="justify-content: center; gap: 6px; font-size: 13px;">
               ↔️ Comparar (Swipe)
@@ -457,21 +470,50 @@
               📄 Ficha Técnica (PDF)
             </button>
           </div>
+          <div style="margin-top: 8px;">
+            <button type="button" class="btn-itpa-pill btn-itpa-drive-action" id="btn-drive-deste-talhao" style="width: 100%; justify-content: center; gap: 8px; font-size: 13px;">
+              ☁️ Salvar no Drive / Acessar Nuvem
+            </button>
+          </div>
         </div>
 
-        <!-- Painel 2: Seção de Documentos Técnicos (Firestore) -->
+        <!-- Painel 2: Seção de Documentos Técnicos & Google Drive (Centralizado) -->
         <div class="talhao-tab-content" id="tab-talhao-docs">
           <div class="secao-documentos">
-            <h4>Documentos Anexados</h4>
+            <!-- Banner de Conexão Automática com a Pasta do Google Drive -->
+            <div class="drive-folder-banner">
+              <div class="drive-folder-header">
+                <span class="drive-folder-icon">☁️</span>
+                <div class="drive-folder-info">
+                  <span class="drive-folder-title">Pasta do Google Drive ITPA</span>
+                  <span class="drive-folder-desc">Repositório oficial de laudos, ARTs e fichas</span>
+                </div>
+              </div>
+              <button type="button" class="btn-drive-action" id="btn-abrir-pasta-drive" title="Abrir pasta compartilhada do Google Drive em nova aba">
+                <span>Abrir Pasta no Drive</span>
+                <span class="drive-arrow">↗</span>
+              </button>
+            </div>
+
+            <div class="docs-section-heading">
+              <h4 style="margin: 0; font-size: 14px;">Documentos Vinculados</h4>
+            </div>
+
             <ul id="listaDocumentos">
               <li class="doc-vazio">Nenhum documento anexado ainda.</li>
             </ul>
-            <hr>
-            <h5>Adicionar Novo Documento</h5>
-            <input type="text" id="docDescricao" placeholder="Ex: Laudo Técnico de Plantio">
-            <input type="url" id="docLink" placeholder="Cole aqui o link do Google Drive / Nuvem">
-            <button id="btnEnviarDoc" type="button">Registar Documento</button>
-            <div id="statusUpload" style="display:none; font-size: 12px; color: #007700;">Registando...</div>
+
+            <hr class="doc-divider">
+
+            <div class="novo-doc-box">
+              <h5 style="margin: 0 0 6px 0; font-size: 13px; color: var(--itpa-text-dark);">Registrar Novo Documento</h5>
+              <p style="font-size: 11.5px; color: var(--itpa-text-muted); margin: 0 0 10px 0;">O documento é associado automaticamente à pasta do Google Drive sem necessidade de digitar links.</p>
+              <input type="text" id="docDescricao" placeholder="Ex: Laudo Técnico de Vistoria, ART, Vôo Drone" class="form-input" style="margin-bottom: 8px;">
+              <button id="btnEnviarDoc" type="button" class="btn-itpa-pill" style="width: 100%; justify-content: center; gap: 8px;">
+                📁 Vincular à Nuvem do Projeto
+              </button>
+              <div id="statusUpload" style="display:none; font-size: 12px; margin-top: 8px; font-weight: 600;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -657,6 +699,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <!-- Módulos da Aplicação Ecossistema ITPA -->
+  <script src="js/config.js"></script>
   <script src="js/db.js"></script>
   <script src="js/camera.js"></script>
   <script src="js/map.js"></script>

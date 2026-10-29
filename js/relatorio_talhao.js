@@ -577,7 +577,21 @@
 
       doc.save(nomeArquivo);
 
-      showToast(`✅ Ficha técnica de ${nomeTalhaoLimpo} exportada com sucesso!`, 'success');
+      // Vincula automaticamente a emissão da Ficha Técnica na lista de documentos vinculada ao Google Drive
+      try {
+        if (window.ITPASync && typeof window.ITPASync.registrarDocumentoTalhao === 'function') {
+          const driveUrl = window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com';
+          await window.ITPASync.registrarDocumentoTalhao(
+            nomeTalhaoBruto,
+            `Ficha Tecnica Executiva (${dataArquivoStr})`,
+            driveUrl
+          );
+        }
+      } catch (eSync) {
+        // Silencioso se estiver offline ou Firestore não inicializado
+      }
+
+      showToast(`✅ Ficha técnica de ${nomeTalhaoLimpo} baixada e vinculada ao Drive!`, 'success');
       return { sucesso: true, nomeArquivo };
     } catch (err) {
       console.error('[Ficha Técnica PDF] Erro ao compilar:', err);
