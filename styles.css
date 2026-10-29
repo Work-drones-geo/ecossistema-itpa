@@ -1767,6 +1767,12 @@ iframe[title*="Netlify"] {
   }
 }
 
+/* Ocultar controle nativo duplicado do Leaflet sobreposto aos botões rápidos */
+.leaflet-top.leaflet-right .leaflet-control-layers,
+.leaflet-control-layers:not(.custom-layers-btn) {
+  display: none !important;
+}
+
 /* 2. Barra Flutuante de Atalhos Rápidos na Lateral Direita */
 .map-quick-layer-bar {
   position: absolute;

@@ -110,10 +110,10 @@ const ITPAAuditoria = (function () {
                    document.querySelector('.map-audit-card');
 
     const elBadge = document.getElementById('audit-status-badge') || (elCard && elCard.querySelector('#audit-status-badge, .audit-status-badge'));
-    const elCode = document.getElementById('audit-car-code') || (elCard && elCard.querySelector('#audit-car-code, .audit-car-code, [data-field="car"]'));
-    const elTipo = document.getElementById('audit-property-type') || document.getElementById('audit-tipo-imovel') || (elCard && elCard.querySelector('#audit-property-type, #audit-tipo-imovel, .audit-tipo-imovel, [data-field="tipo"]'));
+    const elCode = document.getElementById('audit-car') || document.getElementById('audit-car-code') || (elCard && elCard.querySelector('#audit-car, #audit-car-code, .audit-car-code, [data-field="car"]'));
+    const elTipo = document.getElementById('audit-tipo') || document.getElementById('audit-property-type') || document.getElementById('audit-tipo-imovel') || (elCard && elCard.querySelector('#audit-tipo, #audit-property-type, #audit-tipo-imovel, .audit-tipo-imovel, [data-field="tipo"]'));
     const elMunicipio = document.getElementById('audit-municipio') || (elCard && elCard.querySelector('#audit-municipio, .audit-municipio, [data-field="municipio"]'));
-    const elArea = document.getElementById('audit-total-area') || document.getElementById('audit-area-total') || (elCard && elCard.querySelector('#audit-total-area, #audit-area-total, .audit-total-area, [data-field="area"]'));
+    const elArea = document.getElementById('audit-area') || document.getElementById('audit-total-area') || document.getElementById('audit-area-total') || (elCard && elCard.querySelector('#audit-area, #audit-total-area, #audit-area-total, .audit-total-area, [data-field="area"]'));
     const elProdes = document.getElementById('audit-prodes-overlap') || (elCard && elCard.querySelector('#audit-prodes-overlap, .audit-prodes-overlap, [data-field="prodes"]'));
     const elStatus = document.getElementById('audit-eligibility-status') || (elCard && elCard.querySelector('#audit-eligibility-status, .audit-eligibility-status, [data-field="status"]'));
 
@@ -340,12 +340,25 @@ const ITPAAuditoria = (function () {
     // Ouvinte imediato e direto no #select-projeto para reatividade instantânea no DOM
     const selectProj = document.getElementById('select-projeto');
     if (selectProj) {
-      selectProj.addEventListener('change', function () {
+      const handlerMudanca = function () {
+        const PROJETOS = window.PROJETOS || {};
+        const p = PROJETOS[this.value];
+        if (p) {
+          const elCar = document.getElementById('audit-car');
+          const elTipo = document.getElementById('audit-tipo');
+          const elMun = document.getElementById('audit-municipio');
+          const elArea = document.getElementById('audit-area');
+
+          if (elCar) { elCar.innerText = p.car; elCar.classList.remove('placeholder'); }
+          if (elTipo) elTipo.innerText = p.tipo;
+          if (elMun) elMun.innerText = p.municipio;
+          if (elArea) elArea.innerText = p.area_registrada;
+        }
         definirProjetoAtivo(this.value);
-      });
-      selectProj.addEventListener('input', function () {
-        definirProjetoAtivo(this.value);
-      });
+      };
+
+      selectProj.addEventListener('change', handlerMudanca);
+      selectProj.addEventListener('input', handlerMudanca);
     }
 
     const projInicial = selectProj ? selectProj.value : (window.PROJETO_ATIVO_ID || 'esec');

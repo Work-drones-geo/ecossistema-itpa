@@ -226,7 +226,8 @@ const ITPAMap = (function () {
       '🚫 Embargos Ambientais (IBAMA)': layerGroupIbama
     };
 
-    layerControl = L.control.layers(baseLayers, overlays, { position: 'topright' }).addTo(map);
+    // Controle nativo de camadas instanciado sem .addTo(map) para não sobrepor o botão de NDVI
+    layerControl = L.control.layers(baseLayers, overlays);
 
     // 7. Controle Dinâmico da Legenda de NDVI (RdYlGn)
     const ndviLegendEl = document.getElementById('ndvi-legend');
@@ -295,6 +296,19 @@ const ITPAMap = (function () {
 
     if (selectProjetoEl) {
       selectProjetoEl.addEventListener('change', function () {
+        const PROJETOS = window.PROJETOS || {};
+        const p = PROJETOS[this.value];
+        if (p) {
+          const elCar = document.getElementById('audit-car') || document.getElementById('audit-car-code');
+          const elTipo = document.getElementById('audit-tipo') || document.getElementById('audit-property-type');
+          const elMun = document.getElementById('audit-municipio');
+          const elArea = document.getElementById('audit-area') || document.getElementById('audit-total-area');
+          
+          if (elCar) { elCar.innerText = p.car; elCar.classList.remove('placeholder'); }
+          if (elTipo) elTipo.innerText = p.tipo;
+          if (elMun) elMun.innerText = p.municipio;
+          if (elArea) elArea.innerText = p.area_registrada;
+        }
         selecionarProjeto(this.value);
       });
     }
@@ -735,6 +749,17 @@ const ITPAMap = (function () {
       selectEl.value = projetoKey;
     }
 
+    // Injeção imediata nos campos do card lateral ("Auditoria de Crédito")
+    const elCar = document.getElementById('audit-car') || document.getElementById('audit-car-code');
+    const elTipo = document.getElementById('audit-tipo') || document.getElementById('audit-property-type');
+    const elMun = document.getElementById('audit-municipio');
+    const elArea = document.getElementById('audit-area') || document.getElementById('audit-total-area');
+
+    if (elCar) { elCar.innerText = projeto.car; elCar.classList.remove('placeholder'); }
+    if (elTipo) elTipo.innerText = projeto.tipo;
+    if (elMun) elMun.innerText = projeto.municipio;
+    if (elArea) elArea.innerText = projeto.area_registrada;
+
     // 0. Injeção dinâmica imediata e síncrona nos campos do painel de auditoria territorial (.card-auditoria / #painel-auditoria)
     if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
       window.ITPAAuditoria.definirProjetoAtivo(projetoKey);
@@ -863,9 +888,28 @@ const ITPAMap = (function () {
               const btnAudit = document.querySelector('.btn-abrir-auditoria-proj');
               if (btnAudit) {
                 btnAudit.onclick = () => {
-                  const card = document.getElementById('card-auditoria-cmn');
+                  const selectEl = document.getElementById('select-projeto');
+                  const p = (window.PROJETOS && selectEl) ? window.PROJETOS[selectEl.value] : projeto;
+                  if (p) {
+                    const elCar = document.getElementById('audit-car') || document.getElementById('audit-car-code');
+                    const elTipo = document.getElementById('audit-tipo') || document.getElementById('audit-property-type');
+                    const elMun = document.getElementById('audit-municipio');
+                    const elArea = document.getElementById('audit-area') || document.getElementById('audit-total-area');
+
+                    if (elCar) { elCar.innerText = p.car; elCar.classList.remove('placeholder'); }
+                    if (elTipo) elTipo.innerText = p.tipo;
+                    if (elMun) elMun.innerText = p.municipio;
+                    if (elArea) elArea.innerText = p.area_registrada;
+                  }
+
+                  if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
+                    window.ITPAAuditoria.definirProjetoAtivo(projetoKey);
+                  }
+
+                  const card = document.getElementById('painel-auditoria') || document.getElementById('card-auditoria-cmn');
                   if (card) {
-                    card.classList.remove('collapsed');
+                    const outerCard = card.closest('.map-audit-card') || card;
+                    outerCard.classList.remove('collapsed');
                     const pill = document.getElementById('pill-quick-auditoria');
                     if (pill) pill.classList.add('active');
                   }
