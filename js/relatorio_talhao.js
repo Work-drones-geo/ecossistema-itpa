@@ -4,10 +4,38 @@
  * contendo metadados oficiais, coordenadas SIRGAS 2000 / UTM 23S,
  * imagens de satélite 2m (RGB e NDVI RdYlGn), tabela zonal de parâmetros,
  * gráfico multitemporal e campo para vistoria técnica / CREA.
+ * 
+ * Otimizado com codificação estrita WinAnsi/ASCII para jsPDF (sem emojis
+ * ou caracteres especiais não suportados que causem glifos corrompidos).
  */
 
 (function (window) {
   'use strict';
+
+  /**
+   * Sanitiza strings para o padrão de fontes internas do jsPDF (WinAnsi/ASCII)
+   * Removendo emojis, caracteres multibyte que quebram o parser do PDF
+   * e normalizando caracteres acentuados para suas formas compatíveis sem glifos corrompidos.
+   * @param {string} str Texto original
+   * @returns {string} Texto limpo e seguro para renderização no PDF
+   */
+  function sanitizarTextoPdf(str) {
+    if (!str && str !== 0) return '';
+    return String(str)
+      // Remove emojis Unicode (ex: 🛰️, 🌱, 📈, etc.)
+      .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F100}-\u{1F1FF}\u{1F200}-\u{1F2FF}\u{FE00}-\u{FE0F}]/gu, '')
+      // Substitui símbolos especiais comuns por equivalentes ASCII
+      .replace(/[•●]/g, '-')
+      .replace(/[°º]/g, ' ')
+      .replace(/[–—]/g, '-')
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      // Normalização NFD para decompor e remover diacríticos (acentos/cedilhas)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 
   /**
    * Converte coordenadas geográficas decimais (WGS84 / SIRGAS 2000)
@@ -148,7 +176,7 @@
       data: {
         labels: labels,
         datasets: [{
-          label: 'NDVI Médio',
+          label: 'NDVI Medio',
           data: dados,
           borderColor: '#16a34a',
           backgroundColor: gradient,
@@ -225,8 +253,9 @@
       showToast('📄 Compilando Ficha Técnica Executiva em alta resolução...', 'info');
 
       // 1. Extração e sanitização dos dados do talhão
-      const nomeTalhao = props.Name || props.nome || props.Nome || props.talhao || 'Talhão Florestal ITPA';
-      const talhaoId = extrairTalhaoId(props, nomeTalhao);
+      const nomeTalhaoBruto = props.Name || props.nome || props.Nome || props.talhao || 'Talhao Florestal ITPA';
+      const nomeTalhaoLimpo = sanitizarTextoPdf(nomeTalhaoBruto);
+      const talhaoId = extrairTalhaoId(props, nomeTalhaoLimpo);
       const areaHa = props.area_ha !== undefined ? Number(props.area_ha) : 0;
       const perimetroM = props.perimetro_m !== undefined ? Number(props.perimetro_m) : 0;
       const ndviMean = props.ndvi_mean !== undefined ? Number(props.ndvi_mean) : 0;
@@ -234,7 +263,7 @@
       const ndviMax = props.ndvi_max !== undefined ? Number(props.ndvi_max) : 0;
       const ndviStd = props.ndvi_std !== undefined ? Number(props.ndvi_std) : 0;
       const ndviPixels = props.ndvi_pixels !== undefined ? Number(props.ndvi_pixels) : 0;
-      const ndviClasse = props.ndvi_classe || 'Vigor Moderado (Transição)';
+      const ndviClasseLimpa = sanitizarTextoPdf(props.ndvi_classe || 'Vigor Moderado (Transicao)');
 
       // 2. Coordenadas Geográficas e UTM 23S
       const centroide = extrairCentroide(props, bounds);
@@ -264,7 +293,7 @@
       const contentWidth = pageWidth - marginLeft - marginRight; // 182 mm
 
       // -----------------------------------------------------------------------
-      // A. CABEÇALHO INSTITUCIONAL OFICIAL ITPA
+      // A. CABEÇALHO INSTITUCIONAL OFICIAL ITPA (TEXTO LIMPO / SEM EMOJIS)
       // -----------------------------------------------------------------------
       // Faixa Verde Floresta
       doc.setFillColor(39, 77, 30); // #274D1E
@@ -278,21 +307,21 @@
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(13);
-      doc.text('ECOSSISTEMA ITPA - MONITORAMENTO E RESTAURAÇÃO FLORESTAL', marginLeft, 11);
+      doc.text('ECOSSISTEMA ITPA - MONITORAMENTO E RESTAURACAO FLORESTAL', marginLeft, 11);
 
       // Subtítulo Operacional
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.2);
       doc.setTextColor(227, 242, 212); // #E3F2D4
-      doc.text('Instituto Terra de Preservação Ambiental • Operações de Geoprocessamento & Sensoriamento Remoto', marginLeft, 17);
+      doc.text('Instituto Terra de Preservacao Ambiental | Geoprocessamento e Sensoriamento Remoto', marginLeft, 17);
 
-      // Badge "FICHA TÉCNICA" no canto direito
+      // Badge "FICHA TECNICA" no canto direito
       doc.setFillColor(130, 195, 37);
       doc.roundedRect(pageWidth - marginRight - 46, 6, 46, 12, 2, 2, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
-      doc.text('FICHA TÉCNICA', pageWidth - marginRight - 43, 11);
+      doc.text('FICHA TECNICA', pageWidth - marginRight - 43, 11);
       doc.setFontSize(6.8);
       doc.text('SENTINEL-2 L2A (2m)', pageWidth - marginRight - 43, 15);
 
@@ -309,7 +338,7 @@
       doc.setTextColor(39, 77, 30);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(13);
-      doc.text(`${nomeTalhao}`, marginLeft + 4, cursorY + 7);
+      doc.text(nomeTalhaoLimpo.toUpperCase(), marginLeft + 4, cursorY + 7);
 
       // Data e Hora da Emissão
       const dataHoraStr = new Date().toLocaleString('pt-BR', {
@@ -319,16 +348,16 @@
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.8);
       doc.setTextColor(100, 116, 95);
-      doc.text(`Emissão Técnica: ${dataHoraStr} | Status: Ativo em Monitoramento`, marginLeft + 4, cursorY + 12);
+      doc.text(`Emissao Tecnica: ${dataHoraStr} | Status: Ativo em Monitoramento`, marginLeft + 4, cursorY + 12);
 
-      // Linha de Coordenadas
+      // Linha de Coordenadas (Sem símbolos especiais que quebrem o WinAnsi)
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(39, 77, 30);
       doc.text('Coordenadas Centrais:', marginLeft + 4, cursorY + 17);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(60, 75, 55);
       doc.text(
-        `Lat: ${centroide.lat.toFixed(6)}° S | Long: ${centroide.lng.toFixed(6)}° W   •   SIRGAS 2000 / UTM 23S: E ${utm.easting.toLocaleString('pt-BR')} m, N ${utm.northing.toLocaleString('pt-BR')} m`,
+        `Lat: ${centroide.lat.toFixed(6)} S | Long: ${centroide.lng.toFixed(6)} W   |   SIRGAS 2000 UTM 23S: E ${utm.easting.toLocaleString('pt-BR')} m, N ${utm.northing.toLocaleString('pt-BR')} m`,
         marginLeft + 36,
         cursorY + 17
       );
@@ -336,12 +365,12 @@
       cursorY += 24;
 
       // -----------------------------------------------------------------------
-      // C. PAINEL VISUAL: SATÉLITE COR VERDADEIRA (RGB 2m) & VIGOR (NDVI 2m)
+      // C. PAINEL VISUAL: RECORTE RGB & MAPA DE VIGOR NDVI (TEXTOS ASCII LIMPOS)
       // -----------------------------------------------------------------------
       const cardWidth = (contentWidth - 6) / 2; // ~88 mm
       const cardHeight = 48; // mm
 
-      // Moldura 1: Esquerda - Cor Verdadeira (ou Captura do Mapa)
+      // Moldura 1: Esquerda - Cor Verdadeira (RGB)
       doc.setFillColor(245, 247, 243);
       doc.setDrawColor(215, 225, 210);
       doc.roundedRect(marginLeft, cursorY, cardWidth, cardHeight, 2, 2, 'FD');
@@ -352,7 +381,7 @@
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.2);
-      doc.text('🛰️ RECORTE RGB (COR VERDADEIRA - 2M)', marginLeft + 3, cursorY + 4.2);
+      doc.text('RECORTE RGB (COR VERDADEIRA - 2M)', marginLeft + 3, cursorY + 4.2);
 
       const imgLeftSrc = imgRgb || mapScreenshot;
       if (imgLeftSrc) {
@@ -364,7 +393,7 @@
       } else {
         doc.setTextColor(140, 150, 135);
         doc.setFontSize(8);
-        doc.text('Imagem RGB não disponível', marginLeft + 18, cursorY + 26);
+        doc.text('Imagem RGB nao disponivel', marginLeft + 18, cursorY + 26);
       }
 
       // Moldura 2: Direita - Mapa de Vigor Vegetativo NDVI 2m
@@ -379,7 +408,7 @@
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.2);
-      doc.text('🌱 MAPA DE VIGOR VEGETATIVO (NDVI 2M)', rightX + 3, cursorY + 4.2);
+      doc.text('MAPA DE VIGOR VEGETATIVO (NDVI 2M)', rightX + 3, cursorY + 4.2);
 
       if (imgNdvi) {
         try {
@@ -390,28 +419,28 @@
       } else {
         doc.setTextColor(140, 150, 135);
         doc.setFontSize(8);
-        doc.text('Imagem NDVI não disponível', rightX + 18, cursorY + 26);
+        doc.text('Imagem NDVI nao disponivel', rightX + 18, cursorY + 26);
       }
 
       cursorY += cardHeight + 4;
 
       // -----------------------------------------------------------------------
-      // D. TABELA ANALÍTICA DE MÉTRICAS ZONAIS (AUTOTABLE)
+      // D. TABELA ANALÍTICA DE MÉTRICAS ZONAIS (AUTOTABLE COM TEXTO LIMPO)
       // -----------------------------------------------------------------------
       const dadosTabela = [
-        ['Identificador Operacional', talhaoId.toUpperCase(), 'Código único no cadastro ITPA'],
-        ['Área Líquida Projetada', `${areaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha  (${Math.round(areaHa * 10000).toLocaleString('pt-BR')} m²)`, 'Projeção Cartográfica UTM Zona 23S'],
-        ['Perímetro Territorial', `${Math.round(perimetroM).toLocaleString('pt-BR')} metros`, 'Polígono vetorial georreferenciado'],
-        ['NDVI Médio do Dossel', ndviMean.toFixed(3), 'Sentinel-2 L2A Super-resolvido (Synapse-SR)'],
-        ['Intervalo de Vigor (Mín - Máx)', `${ndviMin.toFixed(3)}  até  ${ndviMax.toFixed(3)}`, 'Gradiente espectral de reflectância'],
-        ['Classificação Fitossanitária', ndviClasse, 'Escala padrão RdYlGn de vigor florestal']
+        ['Identificador Operacional', sanitizarTextoPdf(talhaoId.toUpperCase()), 'Codigo unico no cadastro ITPA'],
+        ['Area Liquida Projetada', `${areaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha  (${Math.round(areaHa * 10000).toLocaleString('pt-BR')} m2)`, 'Projecao Cartografica UTM Zona 23S'],
+        ['Perimetro Territorial', `${Math.round(perimetroM).toLocaleString('pt-BR')} metros`, 'Poligono vetorial georreferenciado'],
+        ['NDVI Medio do Dossel', ndviMean.toFixed(3), 'Sentinel-2 L2A Super-resolvido (Synapse-SR)'],
+        ['Intervalo de Vigor (Min - Max)', `${ndviMin.toFixed(3)}  ate  ${ndviMax.toFixed(3)}`, 'Gradiente espectral de reflectancia'],
+        ['Classificacao Fitossanitaria', ndviClasseLimpa, 'Escala padrao RdYlGn de vigor florestal']
       ];
 
       if (typeof doc.autoTable === 'function') {
         doc.autoTable({
           startY: cursorY,
           margin: { left: marginLeft, right: marginRight },
-          head: [['Parâmetro Técnico Avaliado', 'Valor Apurado', 'Referência / Metodologia']],
+          head: [['Parametro Tecnico Avaliado', 'Valor Apurado', 'Referencia / Metodologia']],
           body: dadosTabela,
           theme: 'grid',
           headStyles: {
@@ -441,22 +470,28 @@
       }
 
       // -----------------------------------------------------------------------
-      // E. GRÁFICO MULTITEMPORAL DE EVOLUÇÃO DO NDVI
+      // E. GRÁFICO MULTITEMPORAL DE EVOLUÇÃO DO NDVI (COM SINALIZAÇÃO PROVISÓRIA)
       // -----------------------------------------------------------------------
       const chartBoxHeight = 46;
       doc.setFillColor(250, 252, 249);
       doc.setDrawColor(218, 228, 214);
       doc.roundedRect(marginLeft, cursorY, contentWidth, chartBoxHeight, 2, 2, 'FD');
 
-      // Título do Box do Gráfico
+      // Título do Box do Gráfico (Texto limpo)
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.8);
       doc.setTextColor(39, 77, 30);
-      doc.text('📈 EVOLUÇÃO TEMPORAL DE VIGOR (SENTINEL-2 L2A - ÚLTIMOS 90 DIAS)', marginLeft + 4, cursorY + 5.5);
+      doc.text('EVOLUCAO TEMPORAL DE VIGOR (SENTINEL-2 L2A)', marginLeft + 4, cursorY + 5.2);
+
+      // Subtítulo sinalizando série histórica provisória / calibrada
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 95);
+      doc.text('(Serie historica em integracao - dados da passagem atual calibrados)', marginLeft + 4, cursorY + 9);
 
       if (chartImg) {
         try {
-          doc.addImage(chartImg, 'PNG', marginLeft + 3, cursorY + 7, contentWidth - 6, chartBoxHeight - 9);
+          doc.addImage(chartImg, 'PNG', marginLeft + 3, cursorY + 10.5, contentWidth - 6, chartBoxHeight - 12);
         } catch (e) {
           console.warn('[PDF] Erro ao desenhar gráfico:', e);
         }
@@ -472,18 +507,18 @@
       doc.setDrawColor(210, 222, 205);
       doc.roundedRect(marginLeft, cursorY, contentWidth, obsHeight, 2.5, 2.5, 'FD');
 
-      // Título da seção
+      // Título da seção (Texto limpo)
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(39, 77, 30);
-      doc.text('AVALIAÇÃO TÉCNICA DE CAMPO & REGISTRO AGRONÔMICO', marginLeft + 4, cursorY + 5.5);
+      doc.text('AVALIACAO TECNICA DE CAMPO & REGISTRO AGRONOMICO', marginLeft + 4, cursorY + 5.5);
 
       // Checklist de Vistoria
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.2);
       doc.setTextColor(70, 85, 65);
       doc.text(
-        '[  ] Vistoria de Campo Realizada     [  ] Estresse Hídrico     [  ] Falhas de Plantio / Replantio     [  ] Dossel em Formação',
+        '[  ] Vistoria de Campo Concluida     [  ] Estresse Hidrico     [  ] Falhas de Plantio / Replantio     [  ] Dossel em Formacao',
         marginLeft + 4,
         cursorY + 11
       );
@@ -498,7 +533,7 @@
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.2);
       doc.setTextColor(45, 65, 40);
-      doc.text('Responsável Técnico:', marginLeft + 4, cursorY + 30);
+      doc.text('Responsavel Tecnico:', marginLeft + 4, cursorY + 30);
       doc.setFont('helvetica', 'normal');
       doc.text('___________________________________________', marginLeft + 34, cursorY + 30);
 
@@ -518,7 +553,7 @@
       doc.text('____________________', marginLeft + 128, cursorY + 37);
 
       // -----------------------------------------------------------------------
-      // G. RODAPÉ INSTITUCIONAL
+      // G. RODAPÉ INSTITUCIONAL (SEM CARACTERES QUEBRADOS)
       // -----------------------------------------------------------------------
       doc.setDrawColor(210, 220, 205);
       doc.setLineWidth(0.3);
@@ -528,11 +563,11 @@
       doc.setFontSize(7.2);
       doc.setTextColor(110, 125, 105);
       doc.text(
-        'Instituto Terra de Preservação Ambiental (ITPA) & Work Drones Geo • Sistema WebGIS de Monitoramento Florestal',
+        'Instituto Terra de Preservacao Ambiental (ITPA) & Work Drones Geo | WebGIS de Monitoramento Florestal',
         marginLeft,
         pageHeight - 7
       );
-      doc.text('Página 1 de 1', pageWidth - marginRight - 18, pageHeight - 7);
+      doc.text('Pagina 1 de 1', pageWidth - marginRight - 18, pageHeight - 7);
 
       // -----------------------------------------------------------------------
       // H. DOWNLOAD DO PDF (TOUCH-FRIENDLY & OFFLINE)
@@ -542,7 +577,7 @@
 
       doc.save(nomeArquivo);
 
-      showToast(`✅ Ficha técnica de ${nomeTalhao} exportada com sucesso!`, 'success');
+      showToast(`✅ Ficha técnica de ${nomeTalhaoLimpo} exportada com sucesso!`, 'success');
       return { sucesso: true, nomeArquivo };
     } catch (err) {
       console.error('[Ficha Técnica PDF] Erro ao compilar:', err);
@@ -555,7 +590,8 @@
   window.ITPARelatorioTalhao = {
     exportarFichaTecnica,
     latLonToUtm23S,
-    extrairTalhaoId
+    extrairTalhaoId,
+    sanitizarTextoPdf
   };
 
 })(window);
