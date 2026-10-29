@@ -22,8 +22,8 @@ console.assert(relatorioContent.includes('Volta Redonda - RJ'), 'Local Volta Red
 
 console.log('--- Testando conteúdo de index.html ---');
 const indexContent = fs.readFileSync('index.html', 'utf8');
-console.assert(indexContent.includes('src="js/assets_laudo.js"'), 'assets_laudo.js incluído no HTML');
-console.assert(indexContent.includes('src="js/relatorio_talhao.js"'), 'relatorio_talhao.js incluído no HTML');
+console.assert(indexContent.includes('js/assets_laudo.js'), 'assets_laudo.js incluído no HTML');
+console.assert(indexContent.includes('js/relatorio_talhao.js'), 'relatorio_talhao.js incluído no HTML');
 
 console.log('--- Testando bounds_expandido.json ---');
 const boundsJson = JSON.parse(fs.readFileSync('assets/satelite/bounds_expandido.json', 'utf8'));

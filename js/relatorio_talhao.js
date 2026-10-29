@@ -479,7 +479,7 @@
 
       const dadosTabela = [
         ['Identificador Operacional', sanitizarTextoPdf(talhaoId.toUpperCase()), 'Codigo unico no cadastro ITPA'],
-        ['Area Liquida Projetada', `${areaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha  (${Math.round(areaHa * 10000).toLocaleString('pt-BR')} m2)`, 'Projecao Cartografica UTM Zona 23S'],
+        ['Area Registrada no CAR', `${areaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha  (${Math.round(areaHa * 10000).toLocaleString('pt-BR')} m2)`, 'Projecao Cartografica UTM Zona 23S'],
         ['Perimetro Territorial', `${Math.round(perimetroM).toLocaleString('pt-BR')} metros`, 'Poligono vetorial georreferenciado'],
         ['NDVI Medio Recente (28/Out)', ndviMean.toFixed(3), 'Sentinel-2 L2A Super-resolvido (2m)'],
         ['NDVI Anterior (09/Set)', antValStr, 'Passagem real Sentinel-2 L2A (09/Set - 2m)'],
@@ -749,8 +749,8 @@
 
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.text('LAUDO PERICIAL DE REGULARIDADE SOCIOAMBIENTAL', marginLeft, 40);
+      doc.setFontSize(10.5);
+      doc.text('LAUDO DE AUDITORIA TERRITORIAL E CONFORMIDADE AMBIENTAL - IMOVEL RURAL', marginLeft, 40);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.6);
@@ -787,7 +787,7 @@
       doc.text(`Municipio / UF: ${municipio}`, marginLeft + 105, cursorY + 11.2);
 
       doc.text(`Codigo do CAR Oficial: ${codigo_car}`, marginLeft + 4, cursorY + 16.5);
-      doc.text(`Area Registrada: ${area_total_ha}`, marginLeft + 105, cursorY + 16.5);
+      doc.text(`Area Registrada no CAR: ${area_total_ha}`, marginLeft + 105, cursorY + 16.5);
 
       const emissaoData = new Date().toLocaleDateString('pt-BR');
       doc.text(`Data da Auditoria Espacial: ${emissaoData}`, marginLeft + 4, cursorY + 21.8);

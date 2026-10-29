@@ -101,7 +101,7 @@
 
         <!-- Barra de Acesso Rápido de Camadas (Estilo 'Dados Fazenda' Touch-Friendly) -->
         <div class="map-quick-layer-bar" id="map-quick-layer-bar">
-          <button type="button" class="map-quick-pill" id="pill-quick-ndvi" title="Alternar Talhões NDVI 2m">
+          <button type="button" class="map-quick-pill" id="pill-quick-ndvi" title="Alternar NDVI 2m">
             <span class="pill-dot"></span>
             <span>🌱 NDVI 2m</span>
           </button>
@@ -378,16 +378,20 @@
           <input type="hidden" id="ocorrencia-tipo" value="muda_danificada" required>
         </div>
 
-        <!-- 2. Título & Talhão -->
+        <!-- 2. Título & Imóvel Auditado -->
         <div class="form-group">
           <label class="form-label" for="ocorrencia-titulo">Título / Identificação</label>
-          <input type="text" id="ocorrencia-titulo" class="form-input" placeholder="Ex: Mudas secas por estiagem no setor Norte" required>
+          <input type="text" id="ocorrencia-titulo" class="form-input" placeholder="Ex: Vistoria de conformidade ambiental" required>
         </div>
 
         <div style="display: flex; gap: 12px;">
           <div class="form-group" style="flex: 1;">
-            <label class="form-label" for="ocorrencia-talhao">Talhão / Área</label>
-            <input type="text" id="ocorrencia-talhao" class="form-input" placeholder="Ex: Talhão T-04">
+            <label class="form-label" for="ocorrencia-talhao">Imóvel / Projeto Auditado</label>
+            <select id="ocorrencia-talhao" class="form-select">
+              <option value="Fazenda Nelito" selected>Fazenda Nelito</option>
+              <option value="Fazenda Guanaí">Fazenda Guanaí</option>
+              <option value="ESEC Guanabara">ESEC Guanabara</option>
+            </select>
           </div>
           <div class="form-group" style="flex: 1;">
             <label class="form-label" for="ocorrencia-severidade">Severidade</label>
@@ -475,15 +479,15 @@
     </div>
   </div>
 
-  <!-- Modal: Detalhes do Talhão, Gráfico Multitemporal & Documentos -->
+  <!-- Modal: Detalhes do Imóvel, Gráfico Multitemporal & Documentos -->
   <div class="modal-overlay" id="modal-talhao">
     <div class="modal-sheet talhao-modal-large">
       <div class="modal-top-bar">
-        <h3 class="modal-title" id="talhao-modal-titulo">Painel do Talhão</h3>
+        <h3 class="modal-title" id="talhao-modal-titulo">Painel do Imóvel / Área de Manejo</h3>
         <button class="btn-close-modal" id="btn-close-modal-talhao">&times;</button>
       </div>
 
-      <!-- Abas de Navegação do Talhão -->
+      <!-- Abas de Navegação do Imóvel -->
       <div class="talhao-sheet-tabs">
         <button type="button" class="talhao-tab-btn active" data-tab-pane="tab-talhao-grafico">
           📈 Evolução NDVI
@@ -570,7 +574,7 @@
             <!-- Formulário: Solicita apenas Nome/Descrição -->
             <div class="novo-doc-box">
               <h5 style="margin: 0 0 6px 0; font-size: 13px; color: var(--itpa-text-dark);">Registar Novo Documento</h5>
-              <p style="font-size: 11.5px; color: var(--itpa-text-muted); margin: 0 0 10px 0;">O registo fica associado a este talhão e direcionado para a pasta oficial do Google Drive.</p>
+              <p style="font-size: 11.5px; color: var(--itpa-text-muted); margin: 0 0 10px 0;">O registro fica associado a este imóvel e direcionado para a pasta oficial do Google Drive.</p>
               <div class="form-group" style="margin-bottom: 10px;">
                 <input type="text" id="docDescricao" placeholder="Ex.: Laudo de Plantio - Outubro" class="form-input" style="width: 100%;">
               </div>
@@ -678,12 +682,12 @@
               </label>
             </div>
 
-            <!-- Talhões NDVI 2m -->
+            <!-- NDVI Satélite 2m -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
                 <span class="sheet-choice-emoji">🌱</span>
                 <div class="sheet-choice-text">
-                  <span class="sheet-choice-label">Talhões NDVI 2m</span>
+                  <span class="sheet-choice-label">NDVI Satélite 2m</span>
                   <span class="sheet-choice-sub">Vigor vegetativo super-resolvido (Recente)</span>
                 </div>
               </div>
@@ -693,12 +697,12 @@
               </label>
             </div>
 
-            <!-- Talhões RGB 2m -->
+            <!-- Satélite RGB 2m -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
                 <span class="sheet-choice-emoji">🛰️</span>
                 <div class="sheet-choice-text">
-                  <span class="sheet-choice-label">Talhões RGB 2m</span>
+                  <span class="sheet-choice-label">Satélite RGB 2m</span>
                   <span class="sheet-choice-sub">Cor verdadeira super-resolvida (Recente)</span>
                 </div>
               </div>
@@ -723,12 +727,12 @@
               </label>
             </div>
 
-            <!-- Talhões RGB - Passagem Anterior (2m) -->
+            <!-- Satélite RGB - Passagem Anterior (2m) -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
                 <span class="sheet-choice-emoji">🛰️</span>
                 <div class="sheet-choice-text">
-                  <span class="sheet-choice-label">Talhões RGB - Passagem Anterior (2m)</span>
+                  <span class="sheet-choice-label">Satélite RGB - Passagem Anterior (2m)</span>
                   <span class="sheet-choice-sub">Cor verdadeira super-resolvida (09/Set)</span>
                 </div>
               </div>
@@ -738,20 +742,6 @@
               </label>
             </div>
 
-            <!-- Limites dos Talhões -->
-            <div class="sheet-switch-row">
-              <div class="sheet-switch-left">
-                <span class="sheet-choice-emoji">🟩</span>
-                <div class="sheet-choice-text">
-                  <span class="sheet-choice-label">Limites dos Talhões</span>
-                  <span class="sheet-choice-sub">Polígonos vetoriais das áreas de plantio</span>
-                </div>
-              </div>
-              <label class="ios-toggle" for="sheet-toggle-talhoes">
-                <input type="checkbox" id="sheet-toggle-talhoes" checked>
-                <span class="ios-toggle-track"></span>
-              </label>
-            </div>
           </div>
         </div>
 
@@ -762,6 +752,21 @@
             <span class="sheet-section-badge">Auditoria</span>
           </div>
           <div class="sheet-switches-list">
+            <!-- Limites Territoriais Oficiais / Perímetro Imóvel vs CAR -->
+            <div class="sheet-switch-row">
+              <div class="sheet-switch-left">
+                <span class="sheet-choice-emoji">🟩</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Limites Territoriais Oficiais</span>
+                  <span class="sheet-choice-sub">Perímetro Imóvel vs CAR</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-talhoes">
+                <input type="checkbox" id="sheet-toggle-talhoes" checked>
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+
             <!-- Base CAR (Polígono Oficial) -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">

@@ -117,7 +117,7 @@
 
       return {
         id: slug || 'talhao',
-        nome: propsFallback.Name || propsFallback.nome || 'Talhão Florestal',
+        nome: propsFallback.Name || propsFallback.nome || 'Área de Monitoramento',
         area_ha: propsFallback.area_ha || 0,
         perimetro_m: propsFallback.perimetro_m || 0,
         datas: ['20/Ago', '09/Set (Anterior)', '24/Set', '14/Out', '28/Out (Recente 2m)'],

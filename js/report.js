@@ -165,12 +165,12 @@
 
     doc.text(`Severidade:  ${textoSeveridades}`, marginLeft + 5, cursorY + 13);
 
-    // Linha 2 de resumo: Talhões e Fotos
+    // Linha 2 de resumo: Imóveis e Fotos
     const listaTalhoes = talhoesUnicos.size > 0 
       ? Array.from(talhoesUnicos).slice(0, 8).join(', ') + (talhoesUnicos.size > 8 ? ` (+${talhoesUnicos.size - 8})` : '')
-      : 'Nenhum talhão formal atribuído';
+      : 'Nenhum imóvel específico atribuído';
 
-    doc.text(`Talhões identificados (${talhoesUnicos.size}):  ${listaTalhoes}`, marginLeft + 5, cursorY + 19);
+    doc.text(`Imóveis / Áreas auditadas (${talhoesUnicos.size}):  ${listaTalhoes}`, marginLeft + 5, cursorY + 19);
     doc.text(`Registros Fotográficos Anexados:  ${totalFotos} foto(s) geolocalizada(s)`, marginLeft + 5, cursorY + 24);
 
     cursorY += 32;
@@ -190,7 +190,7 @@
       const sevKey = (item.severidade || 'media').toLowerCase();
       const sevInfo = SEVERIDADES_INFO[sevKey] || SEVERIDADES_INFO.media;
       const dataHoraTxt = formatarDataHora(item.timestamp);
-      const talhaoTxt = item.talhao && item.talhao.trim() ? item.talhao.trim() : 'Sem talhão';
+      const talhaoTxt = item.talhao && item.talhao.trim() ? item.talhao.trim() : 'Sem imóvel associado';
       const latLngTxt = (item.latitude && item.longitude)
         ? `Lat: ${Number(item.latitude).toFixed(6)}°  |  Long: ${Number(item.longitude).toFixed(6)}°  (Precisão: ±${Math.round(item.precisaoGps || 0)}m)`
         : 'Coordenadas não disponíveis';
@@ -248,11 +248,11 @@
 
       itemY += 5;
 
-      // Linha 1: Tipo | Talhão | Data/Hora
+      // Linha 1: Tipo | Imóvel | Data/Hora
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(60, 75, 60);
-      doc.text(`Tipo: ${tipoTxt}   •   Talhão: ${talhaoTxt}   •   Data: ${dataHoraTxt}`, marginLeft + 7, itemY);
+      doc.text(`Tipo: ${tipoTxt}   •   Imóvel: ${talhaoTxt}   •   Data: ${dataHoraTxt}`, marginLeft + 7, itemY);
 
       itemY += 4.5;
 

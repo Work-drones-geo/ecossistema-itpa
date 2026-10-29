@@ -217,10 +217,10 @@ const ITPAMap = (function () {
 
     const overlays = {
       '📸 Ortofoto Drone (Alta Resolução)': ortofotoLayer,
-      '🌱 Talhões - NDVI (Recente 2m)': layerGroupNdviRecente,
-      '🛰️ Talhões - RGB (Recente 2m)': layerGroupRgbRecente,
-      '🌱 Talhões - NDVI (Anterior 09/Set - 2m)': layerGroupNdviAnterior,
-      '🛰️ Talhões RGB - Passagem Anterior (2m)': layerGroupRgbAnterior,
+      '🌱 NDVI de Alta Resolução (Recente 2m)': layerGroupNdviRecente,
+      '🛰️ Satélite RGB (Recente 2m)': layerGroupRgbRecente,
+      '🌱 NDVI - Passagem Anterior (09/Set - 2m)': layerGroupNdviAnterior,
+      '🛰️ Satélite RGB - Passagem Anterior (2m)': layerGroupRgbAnterior,
       '🏛️ Base CAR (Polígono Oficial)': layerGroupCar,
       '🚨 Alertas PRODES (> 31/07/2019)': layerGroupProdes,
       '🚫 Embargos Ambientais (IBAMA)': layerGroupIbama
@@ -254,6 +254,25 @@ const ITPAMap = (function () {
     map.on('overlayadd overlayremove', (e) => {
       if (e.name && e.name.includes('NDVI')) {
         atualizarVisibilidadeLegendaNdvi();
+      }
+    });
+
+    // Listener global de popup para garantir que o botão 'Ver Auditoria Territorial' funcione em qualquer dispositivo
+    map.on('popupopen', (e) => {
+      const popupEl = e.popup ? e.popup.getElement() : null;
+      if (!popupEl) return;
+      const btnAudit = popupEl.querySelector('.btn-abrir-auditoria-proj');
+      if (btnAudit) {
+        L.DomEvent.disableClickPropagation(btnAudit);
+        L.DomEvent.on(btnAudit, 'click', (ev) => {
+          L.DomEvent.stopPropagation(ev);
+          L.DomEvent.preventDefault(ev);
+          const pKey = btnAudit.getAttribute('data-projeto') || window.PROJETO_ATIVO_ID || 'nelito';
+          if (typeof window.abrirAuditoriaDoProjeto === 'function') {
+            window.abrirAuditoriaDoProjeto(pKey);
+          }
+          map.closePopup();
+        });
       }
     });
 
@@ -516,7 +535,7 @@ const ITPAMap = (function () {
         },
         onEachFeature: function (feature, layer) {
           const props = feature.properties || {};
-          const nomeTalhao = props.Name || props.nome || props.Nome || props.talhao || 'Talhão Florestal';
+          const nomeTalhao = props.Name || props.nome || props.Nome || props.talhao || 'Área de Monitoramento';
           const layerOrigem = props.layer || '';
           const descricao = props.description || '';
           const codigo = props.id || props.codigo || '';
@@ -568,7 +587,7 @@ const ITPAMap = (function () {
           const popupHtml = `
             <div class="itpa-popup-card talhao-analytic-popup">
               <div class="talhao-popup-header">
-                <span class="talhao-badge">🌱 TALHÃO FLORESTAL</span>
+                <span class="talhao-badge">🌱 ÁREA DE MANEJO FLORESTAL</span>
                 ${codigo ? `<span class="talhao-code-pill">${codigo}</span>` : ''}
               </div>
 
@@ -696,7 +715,7 @@ const ITPAMap = (function () {
         talhoesLayer.addTo(map);
 
         if (layerControl) {
-          layerControl.addOverlay(talhoesLayer, '🌱 Limites e Talhões (ITPA)');
+          layerControl.addOverlay(talhoesLayer, '🟩 Limites Territoriais Oficiais (ITPA)');
         }
 
         // Ajuste automático do enquadramento com folga bounds.pad(0.15) para englobar todos os talhões sem cortes
@@ -832,37 +851,24 @@ const ITPAMap = (function () {
             });
 
             const popupHtml = `
-              <div class="itpa-popup-card talhao-analytic-popup">
-                <div class="talhao-popup-header">
-                  <span class="talhao-badge">🏛️ PROJETO ATIVO</span>
-                  <span class="talhao-code-pill">${projetoKey.toUpperCase()}</span>
+              <div class="itpa-popup-card imovel-analytic-popup" style="padding: 12px 14px; min-width: 250px; font-family: inherit;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+                  <span style="background: #eef7e6; color: #274D1E; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">🏛️ PROJETO ATIVO</span>
+                  <span style="background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${projetoKey}</span>
                 </div>
-                <div class="talhao-popup-body">
-                  <h3 class="talhao-popup-title">${projeto.nome}</h3>
-                  <span class="talhao-popup-layer">Município: ${projeto.municipio || 'Miguel Pereira - RJ'}</span>
-                  <div class="talhao-popup-metrics" style="grid-template-columns: 1fr; margin-top: 8px;">
-                    <div class="metric-chip">
-                      <span class="metric-chip-label">Área Registrada</span>
-                      <span class="metric-chip-val">${projeto.area_registrada || projeto.area}</span>
-                    </div>
-                    <div class="metric-chip" style="margin-top: 4px;">
-                      <span class="metric-chip-label">Código do CAR</span>
-                      <span class="metric-chip-val" style="font-size: 11px; word-break: break-all;">${projeto.car}</span>
-                    </div>
-                    <div class="metric-chip" style="margin-top: 4px;">
-                      <span class="metric-chip-label">Conformidade CMN</span>
-                      <span class="metric-chip-val" style="font-size: 11px; color: #15803d; font-weight: 700;">${projeto.cmn_status || 'CONFORME'}</span>
-                    </div>
-                    <div class="metric-chip" style="margin-top: 4px;">
-                      <span class="metric-chip-label">Elegibilidade Crédito</span>
-                      <span class="metric-chip-val" style="font-size: 11px; color: #15803d; font-weight: 700;">${projeto.elegibilidade_credito || 'ELEGÍVEL'}</span>
-                    </div>
-                  </div>
-                  <div style="margin-top: 10px; display: flex; gap: 6px;">
-                    <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" data-projeto="${projetoKey}" onclick="window.abrirAuditoriaDoProjeto('${projetoKey}')" style="width: 100%; justify-content: center; font-size: 12px; padding: 8px 12px; cursor: pointer; background: #82C325; color: #fff; font-weight: 700; border: none; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
-                      ⚖️ Ver Auditoria Territorial
-                    </button>
-                  </div>
+                
+                <h3 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 800; color: #0f172a; line-height: 1.25;">${projeto.nome}</h3>
+                
+                <div style="font-size: 12px; line-height: 1.5; color: #334155;">
+                  <p style="margin: 3px 0;"><strong>Código CAR:</strong> <span style="font-family: monospace; font-size: 11px; word-break: break-all; color: #0f172a;">${projeto.car}</span></p>
+                  <p style="margin: 3px 0;"><strong>Área Total:</strong> <span style="font-weight: 700; color: #047857;">${projeto.area_registrada || projeto.area}</span></p>
+                  <p style="margin: 3px 0;"><strong>Status:</strong> <span style="font-weight: 700; color: #16a34a;">CONFORME CMN nº 5.303/2026</span></p>
+                </div>
+                
+                <div style="margin-top: 10px;">
+                  <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" data-projeto="${projetoKey}" onclick="window.abrirAuditoriaDoProjeto('${projetoKey}')" style="width: 100%; justify-content: center; font-size: 12px; padding: 8px 12px; cursor: pointer; background: #82C325; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 6px;">
+                    ⚖️ Ver Auditoria Territorial
+                  </button>
                 </div>
               </div>
             `;
@@ -870,19 +876,20 @@ const ITPAMap = (function () {
 
             layer.on('popupopen', (e) => {
               const popupEl = e.popup ? e.popup.getElement() : document.querySelector('.itpa-leaflet-popup');
-              const btnAudit = popupEl ? popupEl.querySelector('.btn-abrir-auditoria-proj') : document.querySelector('.btn-abrir-auditoria-proj');
-              if (btnAudit) {
-                btnAudit.onclick = (ev) => {
-                  if (ev) {
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                  }
-                  if (typeof window.abrirAuditoriaDoProjeto === 'function') {
-                    window.abrirAuditoriaDoProjeto(projetoKey);
-                  } else if (typeof window.atualizarAuditoria === 'function') {
-                    window.atualizarAuditoria(projetoKey);
-                  }
-                };
+              if (popupEl) {
+                const btnAudit = popupEl.querySelector('.btn-abrir-auditoria-proj');
+                if (btnAudit) {
+                  L.DomEvent.disableClickPropagation(btnAudit);
+                  L.DomEvent.on(btnAudit, 'click', (ev) => {
+                    L.DomEvent.stopPropagation(ev);
+                    L.DomEvent.preventDefault(ev);
+                    const pKey = btnAudit.getAttribute('data-projeto') || projetoKey;
+                    if (typeof window.abrirAuditoriaDoProjeto === 'function') {
+                      window.abrirAuditoriaDoProjeto(pKey);
+                    }
+                    if (map) map.closePopup();
+                  });
+                }
               }
             });
           }
@@ -891,7 +898,7 @@ const ITPAMap = (function () {
         if (map) {
           talhoesLayer.addTo(map);
           if (layerControl) {
-            layerControl.addOverlay(talhoesLayer, `🌱 Limites: ${projeto.nome}`);
+            layerControl.addOverlay(talhoesLayer, `🟩 Limites Territoriais Oficiais: ${projeto.nome}`);
           }
           if (talhoesLayer.getBounds().isValid()) {
             map.fitBounds(talhoesLayer.getBounds().pad(0.15), {
@@ -988,7 +995,7 @@ const ITPAMap = (function () {
             ${statusBadge}
           </div>
           <h4 class="popup-title">${item.titulo}</h4>
-          ${item.talhao ? `<p class="popup-meta"><strong>Talhão:</strong> ${item.talhao}</p>` : ''}
+          ${item.talhao ? `<p class="popup-meta"><strong>Imóvel:</strong> ${item.talhao}</p>` : ''}
           ${item.descricao ? `<p class="popup-desc">${item.descricao.substring(0, 110)}${item.descricao.length > 110 ? '...' : ''}</p>` : ''}
           <p class="popup-date">${dataFormatada}</p>
           <div class="popup-actions">

@@ -104,6 +104,9 @@ window.abrirAuditoriaDoProjeto = function(projetoKey) {
   cards.forEach(card => {
     card.classList.remove('collapsed');
     card.style.display = 'block';
+    card.classList.remove('audit-card-highlight');
+    void card.offsetWidth; // Força reflow para reiniciar animação visual de destaque
+    card.classList.add('audit-card-highlight');
   });
 
   const bodies = document.querySelectorAll('#auditoria-body, #painel-auditoria, .card-body, .audit-card-body');
@@ -118,9 +121,32 @@ window.abrirAuditoriaDoProjeto = function(projetoKey) {
     if (icon) icon.innerText = '−';
   });
 
+  // Sincroniza também o seletor de imóvel no formulário de ocorrências
+  const selOcorrencia = document.getElementById('ocorrencia-talhao');
+  if (selOcorrencia) {
+    const mapaNomes = {
+      nelito: 'Fazenda Nelito',
+      guanai: 'Fazenda Guanaí',
+      esec: 'ESEC Guanabara'
+    };
+    if (mapaNomes[key]) selOcorrencia.value = mapaNomes[key];
+  }
+
   // Ativa o pill rápido do mapa
   const pill = document.getElementById('pill-quick-auditoria');
   if (pill) pill.classList.add('active');
+
+  // Fecha qualquer pop-up no mapa para dar visão desobstruída do painel lateral
+  if (window.ITPAMap && typeof window.ITPAMap.getMapInstance === 'function') {
+    const m = window.ITPAMap.getMapInstance();
+    if (m) m.closePopup();
+  }
+
+  // Se o usuário estiver em outra aba (Registros/Ajustes), retorna à vista do Mapa
+  const navMapBtn = document.querySelector('[data-view="map-view"]');
+  if (navMapBtn && !navMapBtn.classList.contains('active')) {
+    navMapBtn.click();
+  }
 
   // 5. Atualiza o estado da auditoria em js/auditoria.js se disponível
   if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
@@ -133,7 +159,7 @@ window.abrirAuditoriaDoProjeto = function(projetoKey) {
 
   // 6. Toast informativo
   if (typeof window.showToast === 'function') {
-    window.showToast(`⚖️ Auditoria: ${p.nome}`, 'success');
+    window.showToast(`⚖️ Auditoria: ${p.nome} • CONFORME CMN nº 5.303/2026`, 'success');
   }
 };
 

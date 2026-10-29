@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Atualiza cabeçalho
     const tituloModal = document.getElementById('talhao-modal-titulo');
     if (tituloModal) {
-      tituloModal.innerHTML = `Painel do Talhão: <span style="color: var(--itpa-green);">${nomeTalhao}</span>`;
+      tituloModal.innerHTML = `Painel do Imóvel / Área de Manejo: <span style="color: var(--itpa-green);">${nomeTalhao}</span>`;
     }
 
     modalTalhao.setAttribute('data-talhao-ativo', nomeTalhao);
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Atualiza cabeçalho com o nome ou identificador do talhão ativo
     const tituloModal = document.getElementById('talhao-modal-titulo');
     if (tituloModal) {
-      tituloModal.innerHTML = `Painel do Talhão: <span style="color: var(--itpa-green);">${nomeTalhao}</span>`;
+      tituloModal.innerHTML = `Painel do Imóvel / Área de Manejo: <span style="color: var(--itpa-green);">${nomeTalhao}</span>`;
     }
 
     // 2. Registra o talhão ativo no modal e personaliza os campos
@@ -732,7 +732,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
             ${statusBadge}
           </div>
-          ${item.talhao ? `<span class="ocorrencia-talhao">Talhão: ${item.talhao}</span>` : ''}
+          ${item.talhao ? `<span class="ocorrencia-talhao">Imóvel: ${item.talhao}</span>` : ''}
           <p class="ocorrencia-desc">${item.descricao || 'Sem observações adicionais.'}</p>
           <div class="ocorrencia-footer">
             <span>📅 ${dataStr}</span>
@@ -798,7 +798,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ${item.titulo}
       </h3>
 
-      ${item.talhao ? `<p style="font-size: 0.85rem; color: var(--itpa-text-muted); margin-bottom: 8px;"><strong>Talhão / Setor:</strong> ${item.talhao}</p>` : ''}
+      ${item.talhao ? `<p style="font-size: 0.85rem; color: var(--itpa-text-muted); margin-bottom: 8px;"><strong>Imóvel / Projeto Auditado:</strong> ${item.talhao}</p>` : ''}
       <p style="font-size: 0.85rem; color: var(--itpa-text-muted); margin-bottom: 8px;"><strong>Severidade:</strong> ${item.severidade.toUpperCase()}</p>
       
       <div style="background: var(--itpa-mint-light); padding: 12px; border-radius: var(--radius-md); margin: 12px 0;">
@@ -876,7 +876,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const link = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
 
       if (!talhaoId) {
-        alert('Identificador do talhão não encontrado. Selecione o talhão novamente no mapa.');
+        alert('Identificador do imóvel/área não encontrado. Selecione o imóvel novamente no mapa.');
         return;
       }
       if (!titulo) {
@@ -889,7 +889,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (statusUpload) {
           statusUpload.style.display = 'block';
           statusUpload.style.color = '#007700';
-          statusUpload.textContent = 'Guardando registo do documento associado ao talhão...';
+          statusUpload.textContent = 'Guardando registro do documento associado ao imóvel...';
         }
         btnEnviarDoc.disabled = true;
 
