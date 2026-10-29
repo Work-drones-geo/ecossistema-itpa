@@ -49,27 +49,34 @@ const ITPAMap = (function () {
   function init(containerId = 'map') {
     if (map) return map;
 
-    // 1. Camadas base
+    // 1. Camadas base com suporte a zoom ampliado (10 a 22)
     osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
+      minZoom: 10,
+      maxZoom: 22,
+      maxNativeZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | ITPA'
     });
 
     esriSatLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
+      minZoom: 10,
+      maxZoom: 22,
+      maxNativeZoom: 19,
       attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics | ITPA'
     });
 
     cartoVoyagerLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
+      minZoom: 10,
+      maxZoom: 22,
+      maxNativeZoom: 19,
       attribution: '&copy; CartoDB | ITPA'
     });
 
-    // 2. Instanciação do mapa
+    // 2. Instanciação do mapa com limites de zoom de 10 a 22
     map = L.map(containerId, {
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
-      maxZoom: 21,
+      minZoom: 10,
+      maxZoom: 22,
       layers: [esriSatLayer], // Padrão: Imagem de satélite para trabalho em campo com drones e reflorestamento
       zoomControl: false // Adicionaremos em posição customizada
     });
@@ -121,10 +128,11 @@ const ITPAMap = (function () {
     layerGroupNdviAnterior = L.layerGroup();
     layerGroupRgbAnterior = L.layerGroup();
 
-    // 5. Camada de Ortofoto Local (Drone / Voo de Alta Resolução)
+    // 5. Camada de Ortofoto Local (Drone / Voo de Alta Resolução) com reescalonamento no zoom reduzido
     ortofotoLayer = L.tileLayer('./assets/tiles/ortofoto/{z}/{x}/{y}.png', {
-      minZoom: 15,
-      maxZoom: 20,
+      minZoom: 10,
+      maxZoom: 22,
+      minNativeZoom: 10,
       maxNativeZoom: 20,
       attribution: 'Ortofoto Drone &copy; Work Drones / ITPA'
     });
@@ -319,12 +327,14 @@ const ITPAMap = (function () {
 
               const talhaoId = extrairTalhaoId(feature, nomeTalhao);
 
-              // Helper para criar ImageOverlay georreferenciado com opacidade e pane dedicado
+              // Helper para criar ImageOverlay georreferenciado com limites de zoom (10 a 22)
               const criarSateliteOverlay = (caminhoRelativo, paneName = 'leftPane') => {
                 const overlay = L.imageOverlay(caminhoRelativo, exactBounds, {
-                  opacity: 0.92,
+                  opacity: 0.95,
                   interactive: false,
-                  pane: paneName
+                  pane: paneName,
+                  minZoom: 10,
+                  maxZoom: 22
                 });
                 overlay.on('error', () => {
                   if (overlay.getElement()) {
@@ -390,9 +400,9 @@ const ITPAMap = (function () {
           const ndviMax = props.ndvi_max !== undefined ? Number(props.ndvi_max) : null;
           const ndviClasse = props.ndvi_classe || 'Vigor Vegetativo';
 
-          // Posicionamento percentual na escala RdYlGn (de -0.10 a 0.85)
+          // Posicionamento percentual na escala RdYlGn fixa (de 0.10 a 0.80)
           const ndviPct = ndviMean !== null 
-            ? Math.max(3, Math.min(97, ((ndviMean - (-0.10)) / (0.85 - (-0.10))) * 100))
+            ? Math.max(3, Math.min(97, ((ndviMean - 0.10) / (0.80 - 0.10)) * 100))
             : 50;
 
           const areaTexto = areaHa !== null 
@@ -451,9 +461,9 @@ const ITPAMap = (function () {
                     <div class="ndvi-progress-pin" style="left: ${ndviPct}%;" title="Média: ${ndviMeanTexto}"></div>
                   </div>
                   <div class="ndvi-progress-scale-labels">
-                    <span>Baixo (0.1)</span>
+                    <span>Solo (0.1)</span>
                     <span>Médio (0.4)</span>
-                    <span>Alto (0.85)</span>
+                    <span>Dossel (0.8)</span>
                   </div>
                 </div>
 
@@ -542,13 +552,14 @@ const ITPAMap = (function () {
           layerControl.addOverlay(talhoesLayer, '🌱 Limites e Talhões (ITPA)');
         }
 
-        // Ajuste automático do enquadramento do mapa para os limites da área
+        // Ajuste automático do enquadramento com folga para englobar todos os talhões (inclusive o talhão sul)
         if (talhoesLayer.getBounds().isValid()) {
-          map.fitBounds(talhoesLayer.getBounds(), {
-            padding: [30, 30],
+          const totalBoundsFolga = talhoesLayer.getBounds().pad(0.08);
+          map.fitBounds(totalBoundsFolga, {
+            padding: [40, 40],
             maxZoom: 16
           });
-          console.log('[ITPAMap] Auto-fit aplicado aos limites dos talhões:', talhoesLayer.getBounds());
+          console.log('[ITPAMap] Auto-fit aplicado aos limites dos talhões com folga sul/norte:', totalBoundsFolga);
         }
       }
 
@@ -1244,12 +1255,18 @@ const ITPAMap = (function () {
     window.addEventListener('mouseup', stopDrag);
 
     if (map) {
-      map.on('resize move moveend zoomend viewreset', () => {
-        if (swipeAtivo) {
-          atualizarPosicaoSwipe(swipePctAtual);
-        }
-      });
+      // Recalcula e redesenha os panes ('leftPane' e 'rightPane') sem perder o corte nem as imagens no zoom
+      map.on('zoomend moveend', updateSwipeClip);
+      map.on('resize viewreset', updateSwipeClip);
     }
+  }
+
+  /**
+   * Recalcula e redesenha os panes ('leftPane' e 'rightPane') sem perder o corte nem as imagens
+   */
+  function updateSwipeClip() {
+    if (!map || !swipeAtivo) return;
+    atualizarPosicaoSwipe(swipePctAtual);
   }
 
   function getMapInstance() {

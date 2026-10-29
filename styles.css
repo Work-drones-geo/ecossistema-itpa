@@ -2676,3 +2676,10 @@ iframe[title*="Netlify"] {
   backface-visibility: hidden;
   will-change: clip-path;
 }
+
+/* Preservação e nitidez de imagens raster nos overlays Leaflet */
+.leaflet-image-layer {
+  pointer-events: none;
+  max-width: none !important;
+  image-rendering: auto;
+}
