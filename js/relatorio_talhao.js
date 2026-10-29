@@ -675,6 +675,8 @@
       ]);
 
       // 1. Variáveis prontas estruturadas com fallback seguro para traço (--)
+      const nome_imovel = sanitizarTextoPdf(dados.nome_imovel) || 'ESEC Guanabara';
+      const tipo_imovel = sanitizarTextoPdf(dados.tipo_imovel) || 'Unidade de Conservacao Federal';
       const codigo_car = sanitizarTextoPdf(dados.codigo_car) || '--';
       const area_total_ha = (dados.area_total_ha !== null && dados.area_total_ha !== undefined && !isNaN(dados.area_total_ha) && Number(dados.area_total_ha) > 0)
         ? `${Number(dados.area_total_ha).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`
@@ -764,25 +766,28 @@
       // B. BLOCO DE IDENTIFICAÇÃO DO IMÓVEL (CAR)
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(marginLeft, cursorY, contentWidth, 23, 2.5, 2.5, 'FD');
+      doc.roundedRect(marginLeft, cursorY, contentWidth, 27, 2.5, 2.5, 'FD');
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.8);
       doc.setTextColor(15, 23, 42);
-      doc.text('1. DADOS DO IMOVEL RURAL AUDITADO', marginLeft + 4, cursorY + 6.2);
+      doc.text('1. DADOS DO IMOVEL RURAL AUDITADO', marginLeft + 4, cursorY + 6.0);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.8);
+      doc.setFontSize(7.6);
       doc.setTextColor(51, 65, 85);
 
-      doc.text(`Codigo do CAR Oficial: ${codigo_car}`, marginLeft + 4, cursorY + 12.5);
-      doc.text(`Area Total Auditada: ${area_total_ha}`, marginLeft + 105, cursorY + 12.5);
+      doc.text(`Imovel: ${nome_imovel}`, marginLeft + 4, cursorY + 11.5);
+      doc.text(`Tipo: ${tipo_imovel}`, marginLeft + 105, cursorY + 11.5);
+
+      doc.text(`Codigo do CAR Oficial: ${codigo_car}`, marginLeft + 4, cursorY + 17.0);
+      doc.text(`Area Total Auditada: ${area_total_ha}`, marginLeft + 105, cursorY + 17.0);
 
       const emissaoData = new Date().toLocaleDateString('pt-BR');
-      doc.text(`Data da Auditoria Espacial: ${emissaoData}`, marginLeft + 4, cursorY + 18.5);
-      doc.text('Referencial Geodesico: SIRGAS 2000 / UTM Fuso 23S (EPSG:31983)', marginLeft + 105, cursorY + 18.5);
+      doc.text(`Data da Auditoria Espacial: ${emissaoData}`, marginLeft + 4, cursorY + 22.5);
+      doc.text('Referencial Geodesico: SIRGAS 2000 / UTM Fuso 23S (EPSG:31983)', marginLeft + 105, cursorY + 22.5);
 
-      cursorY += 27;
+      cursorY += 31;
 
       // C. TABELA DE VERIFICAÇÃO DE REQUISITOS CMN 5.303
       const tabelaRequisitos = [

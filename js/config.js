@@ -146,7 +146,40 @@
     }
   };
 
+  // Catálogo de Metadados da Arquitetura Multi-Projetos
+  const PROJETOS = {
+    esec: {
+      nome: "ESEC Guanabara",
+      tipo: "Unidade de Conservação Federal",
+      car: "Regime Público (CNUC / ICMBio)",
+      area: "3.200 ha",
+      geojson: "DATA/esec_poligono.geojson",
+      coords: [-22.705, -43.030],
+      zoom: 14
+    },
+    nelito: {
+      nome: "Fazenda Nelito",
+      tipo: "Imóvel Rural Privado",
+      car: "RJ-3302908-AE983FB03BAE42A9B32833247D8CCD4D",
+      area: "246,116 ha",
+      geojson: "DATA/nelito.geojson",
+      coords: [-22.540, -43.545],
+      zoom: 15
+    },
+    guanai: {
+      nome: "Fazenda Guanaí",
+      tipo: "Imóvel Rural Privado",
+      car: "RJ-3302908-D52C6812F1464345885FE14360B005CE",
+      area: "615,808 ha",
+      geojson: "DATA/guanai.geojson",
+      coords: [-22.552, -43.558],
+      zoom: 15
+    }
+  };
+
   // Exportação em escopo global para acesso universal
+  window.PROJETOS = PROJETOS;
+  window.PROJETO_ATIVO_ID = 'esec';
   window.ITPA_DRIVE_FOLDER_URL = ITPA_DRIVE_FOLDER_URL;
   window.ITPA_DRIVE_FOLDER_ID = ITPA_DRIVE_FOLDER_ID;
   window.GOOGLE_DRIVE_FOLDER_URL = ITPA_DRIVE_FOLDER_URL;

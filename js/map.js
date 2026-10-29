@@ -288,8 +288,16 @@ const ITPAMap = (function () {
       }
     });
 
-    // 6. Leitura assíncrona dos talhões da área (GeoJSON relativo)
-    carregarTalhoesGeoJSON('./DATA/KMLs.geojson');
+    // 6. Inicialização do Projeto Ativo no WebGIS (Arquitetura Multi-Projetos)
+    const selectProjetoEl = document.getElementById('select-projeto');
+    const projetoInicial = selectProjetoEl ? selectProjetoEl.value : 'esec';
+    selecionarProjeto(projetoInicial);
+
+    if (selectProjetoEl) {
+      selectProjetoEl.addEventListener('change', function () {
+        selecionarProjeto(this.value);
+      });
+    }
 
     // 7. Leitura assíncrona das camadas de Conformidade e Crédito (CMN 5.303/2026)
     carregarCamadasAuditoria();
@@ -702,6 +710,177 @@ const ITPAMap = (function () {
     } catch (err) {
       console.warn('[ITPAMap] Falha ao carregar GeoJSON dos talhões:', err);
       return null;
+    }
+  }
+
+  /**
+   * Alterna dinamicamente o projeto ativo no WebGIS (Arquitetura Multi-Projetos).
+   * Executa map.flyTo / map.fitBounds, remove o vetor anterior e renderiza o novo GeoJSON da pasta DATA/.
+   * @param {string} projetoKey Chave do projeto ('esec', 'nelito', 'guanai')
+   */
+  async function selecionarProjeto(projetoKey) {
+    const projetos = window.PROJETOS || {};
+    const projeto = projetos[projetoKey];
+
+    if (!projeto) {
+      console.warn(`[ITPAMap] Projeto '${projetoKey}' não encontrado no catálogo PROJETOS.`);
+      return;
+    }
+
+    window.PROJETO_ATIVO_ID = projetoKey;
+
+    // Sincroniza o seletor HTML caso a chamada tenha vindo via script
+    const selectEl = document.getElementById('select-projeto');
+    if (selectEl && selectEl.value !== projetoKey) {
+      selectEl.value = projetoKey;
+    }
+
+    console.log(`[ITPAMap] Alternando para o projeto ativo: ${projeto.nome} (${projetoKey})`);
+
+    // 1. Remove vetor anterior do projeto se existir
+    if (talhoesLayer && map) {
+      map.removeLayer(talhoesLayer);
+      if (layerControl) {
+        layerControl.removeLayer(talhoesLayer);
+      }
+      talhoesLayer = null;
+    }
+
+    // 2. Se for a ESEC Guanabara (Guapimirim / APA)
+    if (projetoKey === 'esec') {
+      await carregarTalhoesGeoJSON(projeto.geojson || './DATA/esec_poligono.geojson');
+      if (map) {
+        map.flyTo(projeto.coords, projeto.zoom, { duration: 1.5 });
+      }
+    } else {
+      // 3. Fazenda Nelito ou Fazenda Guanaí (Miguel Pereira - RJ)
+      // Oculta camadas de satélite específicas da ESEC Guanabara que pertencem a outra região geográfica
+      if (map) {
+        if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
+        if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
+        if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
+        if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
+        if (ortofotoLayer && map.hasLayer(ortofotoLayer)) map.removeLayer(ortofotoLayer);
+      }
+
+      // Caminhos candidatos para o GeoJSON oficial do projeto
+      const caminhos = [
+        './' + projeto.geojson,
+        projeto.geojson,
+        './DATA/' + projeto.geojson.split('/').pop(),
+        './data/' + projeto.geojson.split('/').pop()
+      ];
+
+      let geojsonData = null;
+      let urlSucesso = '';
+
+      for (const caminho of caminhos) {
+        try {
+          const resp = await fetch(caminho);
+          if (resp.ok) {
+            geojsonData = await resp.json();
+            urlSucesso = caminho;
+            break;
+          }
+        } catch (e) {}
+      }
+
+      if (geojsonData) {
+        console.log(`[ITPAMap] Polígono do projeto ${projeto.nome} carregado de: ${urlSucesso}`);
+
+        talhoesLayer = L.geoJSON(geojsonData, {
+          style: function () {
+            return {
+              color: '#16a34a',       // Verde vibrante de propriedade rural
+              weight: 3.0,
+              opacity: 1.0,
+              fillColor: '#22c55e',
+              fillOpacity: 0.16
+            };
+          },
+          onEachFeature: function (feature, layer) {
+            const props = feature.properties || {};
+            const nomeImovel = props.Name || props.nome || projeto.nome;
+
+            layer.on({
+              mouseover: function (e) {
+                e.target.setStyle({ weight: 4.5, color: '#15803d', fillOpacity: 0.28 });
+                if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) e.target.bringToFront();
+              },
+              mouseout: function (e) {
+                talhoesLayer.resetStyle(e.target);
+              }
+            });
+
+            const popupHtml = `
+              <div class="itpa-popup-card talhao-analytic-popup">
+                <div class="talhao-popup-header">
+                  <span class="talhao-badge">🏛️ PROJETO ATIVO</span>
+                  <span class="talhao-code-pill">${projetoKey.toUpperCase()}</span>
+                </div>
+                <div class="talhao-popup-body">
+                  <h3 class="talhao-popup-title">${projeto.nome}</h3>
+                  <span class="talhao-popup-layer">Tipo: ${projeto.tipo}</span>
+                  <div class="talhao-popup-metrics" style="grid-template-columns: 1fr; margin-top: 8px;">
+                    <div class="metric-chip">
+                      <span class="metric-chip-label">Área Oficial</span>
+                      <span class="metric-chip-val">${projeto.area}</span>
+                    </div>
+                    <div class="metric-chip" style="margin-top: 4px;">
+                      <span class="metric-chip-label">Código do CAR</span>
+                      <span class="metric-chip-val" style="font-size: 11px; word-break: break-all;">${projeto.car}</span>
+                    </div>
+                  </div>
+                  <div style="margin-top: 10px; display: flex; gap: 6px;">
+                    <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" style="width: 100%; justify-content: center; font-size: 11.5px; padding: 6px 10px;">
+                      ⚖️ Ver Auditoria Territorial
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+            layer.bindPopup(popupHtml, { maxWidth: 320, className: 'itpa-leaflet-popup' });
+
+            layer.on('popupopen', () => {
+              const btnAudit = document.querySelector('.btn-abrir-auditoria-proj');
+              if (btnAudit) {
+                btnAudit.onclick = () => {
+                  const card = document.getElementById('card-auditoria-cmn');
+                  if (card) {
+                    card.classList.remove('collapsed');
+                    const pill = document.getElementById('pill-quick-auditoria');
+                    if (pill) pill.classList.add('active');
+                  }
+                };
+              }
+            });
+          }
+        });
+
+        if (map) {
+          talhoesLayer.addTo(map);
+          if (layerControl) {
+            layerControl.addOverlay(talhoesLayer, `🌱 Limites: ${projeto.nome}`);
+          }
+          if (talhoesLayer.getBounds().isValid()) {
+            map.fitBounds(talhoesLayer.getBounds().pad(0.15), {
+              padding: [40, 40],
+              maxZoom: 16
+            });
+          } else {
+            map.flyTo(projeto.coords, projeto.zoom, { duration: 1.5 });
+          }
+        }
+      } else {
+        if (map) {
+          map.flyTo(projeto.coords, projeto.zoom, { duration: 1.5 });
+        }
+      }
+    }
+
+    // 4. Notifica o módulo de auditoria territorial para atualizar o CAR e área oficiais
+    if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
+      window.ITPAAuditoria.definirProjetoAtivo(projetoKey);
     }
   }
 
@@ -1535,6 +1714,7 @@ const ITPAMap = (function () {
   return {
     init,
     carregarTalhoesGeoJSON,
+    selecionarProjeto,
     setupTouchLayerControls,
     ativarModoSwipe,
     desativarModoSwipe,

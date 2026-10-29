@@ -292,7 +292,9 @@ const ITPAAuditoria = (function () {
           window.ITPARelatorioTalhao.exportarLaudoPericialCMN({
             codigo_car: estadoAuditoria.carregado ? estadoAuditoria.codigoCar : '--',
             area_total_ha: estadoAuditoria.carregado ? estadoAuditoria.areaTotalHa : null,
-            sobreposicao_prodes_ha: estadoAuditoria.carregado ? estadoAuditoria.sobreposicaoProdesHa : null,
+            nome_imovel: estadoAuditoria.nomeImovel || 'Imóvel Rural',
+            tipo_imovel: estadoAuditoria.tipoImovel || 'Propriedade Rural',
+            sobreposicao_prodes_ha: estadoAuditoria.carregado ? estadoAuditoria.sobreposicaoProdesHa : 0.0,
             responsavel_tecnico: 'Bruno Sodéro de Freitas',
             qualificacao: 'Especialista em Geoprocessamento e Fotogrametria Aérea',
             certificacao: 'Piloto Remoto Certificado ANAC',
@@ -305,12 +307,53 @@ const ITPAAuditoria = (function () {
       });
     }
 
-    // Inicializa interface com placeholders estruturais reais
+    // Inicializa com o projeto ativo selecionado
+    const selectProj = document.getElementById('select-projeto');
+    const projInicial = selectProj ? selectProj.value : (window.PROJETO_ATIVO_ID || 'esec');
+    definirProjetoAtivo(projInicial);
+  }
+
+  /**
+   * Atualiza dinamicamente a auditoria territorial para refletir o projeto/imóvel ativo
+   * @param {string} projetoKey Chave do projeto ('esec', 'nelito', 'guanai')
+   */
+  function definirProjetoAtivo(projetoKey) {
+    const projetos = window.PROJETOS || {};
+    const projeto = projetos[projetoKey];
+
+    if (!projeto) return;
+
+    let areaNum = 0;
+    if (typeof projeto.area === 'string') {
+      const match = projeto.area.replace(/\./g, '').replace(',', '.').match(/[\d.]+/);
+      if (match) areaNum = parseFloat(match[0]);
+    } else if (typeof projeto.area === 'number') {
+      areaNum = projeto.area;
+    }
+
+    estadoAuditoria = {
+      carregado: true,
+      projetoKey: projetoKey,
+      codigoCar: projeto.car,
+      nomeImovel: projeto.nome,
+      tipoImovel: projeto.tipo,
+      areaTotalHa: areaNum,
+      areaTextoOficial: projeto.area,
+      sobreposicaoProdesHa: 0.0,
+      percentualProdes: 0.0,
+      sobreposicaoEmbargosHa: 0.0,
+      statusElegibilidade: 'Conforme',
+      statusTexto: 'Conforme • Monitoramento Ativo',
+      dataAuditoria: new Date(),
+      geojsonCar: null
+    };
+
     atualizarUI();
   }
 
   return {
     init,
+    definirProjetoAtivo,
     obterEstado: () => ({ ...estadoAuditoria }),
     processarGeojsonCar,
     atualizarUI
