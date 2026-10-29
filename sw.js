@@ -3,19 +3,23 @@
  * Fornece caching robusto do App Shell, bibliotecas Leaflet e recursos estáticos.
  */
 
-const CACHE_NAME = 'itpa-ecossistema-v4';
+const CACHE_NAME = 'itpa-ecossistema-v5';
 
 const STATIC_ASSETS = [
   './',
   './index.html',
   './styles.css',
   './manifest.json',
+  './script.js',
   './app.js',
+  './js/config.js',
   './js/db.js',
   './js/camera.js',
   './js/map.js',
   './js/sync.js',
   './js/report.js',
+  './js/auditoria.js',
+  './js/relatorio_talhao.js',
   './DATA/KMLs.geojson',
   './assets/logo.jpg',
   './assets/icons/favicon.png',

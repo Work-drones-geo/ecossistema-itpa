@@ -859,7 +859,7 @@ const ITPAMap = (function () {
                     </div>
                   </div>
                   <div style="margin-top: 10px; display: flex; gap: 6px;">
-                    <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" onclick="window.atualizarAuditoria(document.getElementById('select-projeto').value)" style="width: 100%; justify-content: center; font-size: 11.5px; padding: 6px 10px;">
+                    <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" data-projeto="${projetoKey}" onclick="window.abrirAuditoriaDoProjeto('${projetoKey}')" style="width: 100%; justify-content: center; font-size: 12px; padding: 8px 12px; cursor: pointer; background: #82C325; color: #fff; font-weight: 700; border: none; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
                       ⚖️ Ver Auditoria Territorial
                     </button>
                   </div>
@@ -868,17 +868,19 @@ const ITPAMap = (function () {
             `;
             layer.bindPopup(popupHtml, { maxWidth: 320, className: 'itpa-leaflet-popup' });
 
-            layer.on('popupopen', () => {
-              const btnAudit = document.querySelector('.btn-abrir-auditoria-proj');
+            layer.on('popupopen', (e) => {
+              const popupEl = e.popup ? e.popup.getElement() : document.querySelector('.itpa-leaflet-popup');
+              const btnAudit = popupEl ? popupEl.querySelector('.btn-abrir-auditoria-proj') : document.querySelector('.btn-abrir-auditoria-proj');
               if (btnAudit) {
-                btnAudit.onclick = () => {
-                  const selectEl = document.getElementById('select-projeto');
-                  const currentProjKey = selectEl ? selectEl.value : projetoKey;
-                  if (typeof window.atualizarAuditoria === 'function') {
-                    window.atualizarAuditoria(currentProjKey);
+                btnAudit.onclick = (ev) => {
+                  if (ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
                   }
-                  if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
-                    window.ITPAAuditoria.definirProjetoAtivo(currentProjKey);
+                  if (typeof window.abrirAuditoriaDoProjeto === 'function') {
+                    window.abrirAuditoriaDoProjeto(projetoKey);
+                  } else if (typeof window.atualizarAuditoria === 'function') {
+                    window.atualizarAuditoria(projetoKey);
                   }
                 };
               }

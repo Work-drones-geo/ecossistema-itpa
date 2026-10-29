@@ -3093,4 +3093,30 @@ iframe[title*="Netlify"] {
   padding-bottom: 4px;
 }
 
+.card-auditoria:not(.collapsed) .card-body,
+.card-auditoria:not(.collapsed) .audit-card-body,
+.card-auditoria:not(.collapsed) #auditoria-body,
+.map-audit-card:not(.collapsed) .card-body,
+.map-audit-card:not(.collapsed) .audit-card-body,
+.map-audit-card:not(.collapsed) #auditoria-body {
+  display: block !important;
+}
+
+.map-audit-card.collapsed,
+.card-auditoria.collapsed {
+  width: auto;
+  max-width: 240px;
+}
+
+.map-audit-card.collapsed .audit-card-body,
+.card-auditoria.collapsed .audit-card-body,
+.map-audit-card.collapsed .card-body,
+.card-auditoria.collapsed .card-body,
+.map-audit-card.collapsed #painel-auditoria,
+.card-auditoria.collapsed #painel-auditoria,
+.map-audit-card.collapsed #auditoria-body,
+.card-auditoria.collapsed #auditoria-body {
+  display: none !important;
+}
+
 .leaflet-control-layers { display: none !important; }
