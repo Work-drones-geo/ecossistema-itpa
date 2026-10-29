@@ -106,6 +106,10 @@
             <span class="pill-dot"></span>
             <span>↔️ Comparar</span>
           </button>
+          <button type="button" class="map-quick-pill" id="pill-quick-auditoria" title="Auditoria de Crédito (CMN 5.303/2026)">
+            <span class="pill-dot"></span>
+            <span>⚖️ Auditoria</span>
+          </button>
           <button type="button" class="btn-quick-layers" id="btn-open-layers-sheet" title="Abrir Menu Completo de Camadas" aria-label="Camadas">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
@@ -135,6 +139,62 @@
           <div class="swipe-divider-line" id="swipe-divider-line">
             <div class="swipe-handle-circle" id="swipe-handle" title="Arraste para comparar">
               <span>↔</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Widget de Diagnóstico Territorial: Auditoria de Crédito Rural (CMN nº 5.303/2026) -->
+        <div class="map-audit-card collapsed" id="card-auditoria-cmn">
+          <div class="audit-card-header">
+            <div class="audit-header-title-wrap">
+              <span class="audit-header-icon">⚖️</span>
+              <div>
+                <h4 class="audit-card-title">Auditoria de Crédito</h4>
+                <span class="audit-card-subtitle">Resolução CMN nº 5.303/2026</span>
+              </div>
+            </div>
+            <button type="button" class="btn-toggle-audit-card" id="btn-toggle-audit-card" title="Recolher / Expandir Painel">
+              <span class="toggle-icon">+</span>
+            </button>
+          </div>
+
+          <div class="audit-card-body" id="audit-card-body">
+            <!-- Status Inicial Padrão (Sem dados fictícios) -->
+            <div class="audit-status-badge-box">
+              <span class="audit-status-label">Status da Análise:</span>
+              <span class="audit-status-badge pending" id="audit-status-badge">Aguardando validação espacial</span>
+            </div>
+
+            <!-- Campos estruturais prontos para interpolação dinâmica -->
+            <div class="audit-fields-grid">
+              <div class="audit-field-item">
+                <span class="audit-field-name">Código do CAR</span>
+                <span class="audit-field-value placeholder" id="audit-car-code">[Aguardando arquivo]</span>
+              </div>
+              <div class="audit-field-item">
+                <span class="audit-field-name">Área Total Auditada</span>
+                <span class="audit-field-value" id="audit-total-area">-- ha</span>
+              </div>
+              <div class="audit-field-item">
+                <span class="audit-field-name">Sobreposição PRODES pós-2019</span>
+                <span class="audit-field-value" id="audit-prodes-overlap">-- ha (0.00%)</span>
+              </div>
+              <div class="audit-field-item">
+                <span class="audit-field-name">Status de Elegibilidade</span>
+                <span class="audit-field-value status-pendente" id="audit-eligibility-status">Pendente</span>
+              </div>
+            </div>
+
+            <!-- Ações do Módulo de Auditoria -->
+            <div class="audit-card-actions">
+              <label class="btn-itpa-pill secondary btn-audit-action" for="input-car-upload">
+                📥 Importar GeoJSON / CAR
+              </label>
+              <input type="file" id="input-car-upload" accept=".geojson,.kml,.json" style="display: none;">
+              
+              <button type="button" class="btn-itpa-pill outline btn-audit-action" id="btn-gerar-laudo-cmn" title="Exportar Laudo Pericial de Regularidade Socioambiental em PDF">
+                📄 Laudo Pericial (PDF)
+              </button>
             </div>
           </div>
         </div>
@@ -689,6 +749,60 @@
             </div>
           </div>
         </div>
+
+        <!-- 3. Conformidade e Auditoria (CMN 5.303/2026) -->
+        <div class="sheet-section">
+          <div class="sheet-section-header">
+            <span class="sheet-section-title">Conformidade e Auditoria (CMN 5.303/2026)</span>
+            <span class="sheet-section-badge">Auditoria</span>
+          </div>
+          <div class="sheet-switches-list">
+            <!-- Base CAR (Polígono Oficial) -->
+            <div class="sheet-switch-row">
+              <div class="sheet-switch-left">
+                <span class="sheet-choice-emoji">📑</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Base CAR (Polígono Oficial)</span>
+                  <span class="sheet-choice-sub">Imóvel rural cadastrado (SICAR)</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-car">
+                <input type="checkbox" id="sheet-toggle-car">
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+
+            <!-- Alertas PRODES (> 31/07/2019) -->
+            <div class="sheet-switch-row">
+              <div class="sheet-switch-left">
+                <span class="sheet-choice-emoji">🚨</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Alertas PRODES (&gt; 31/07/2019)</span>
+                  <span class="sheet-choice-sub">Desmatamento pós-marco temporal CMN</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-prodes">
+                <input type="checkbox" id="sheet-toggle-prodes">
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+
+            <!-- Embargos Ambientais (IBAMA) -->
+            <div class="sheet-switch-row">
+              <div class="sheet-switch-left">
+                <span class="sheet-choice-emoji">🛑</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Embargos Ambientais (IBAMA)</span>
+                  <span class="sheet-choice-sub">Áreas embargadas pelo órgão federal</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-ibama">
+                <input type="checkbox" id="sheet-toggle-ibama">
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -721,6 +835,7 @@
   <script src="js/sync.js"></script>
   <script src="js/report.js"></script>
   <script src="js/relatorio_talhao.js"></script>
+  <script src="js/auditoria.js"></script>
   <script src="app.js"></script>
 
 </body>

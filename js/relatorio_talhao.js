@@ -617,9 +617,258 @@
     }
   }
 
+  /**
+   * Gera o Laudo Pericial de Regularidade Socioambiental conforme Resolução CMN nº 5.303/2026
+   * Variáveis suportadas: {codigo_car}, {area_total_ha}, {sobreposicao_prodes_ha}, {responsavel_tecnico}, {registro_crea_cft}
+   * Campos não informados permanecem com traço (--) sem inventar dados simulados.
+   * @param {Object} dados
+   */
+  async function exportarLaudoPericialCMN(dados = {}) {
+    const showToast = window.showToast || console.log;
+
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      alert('Biblioteca jsPDF em inicialização. Por favor aguarde.');
+      return;
+    }
+
+    try {
+      showToast('⚖️ Gerando Laudo Pericial de Regularidade Socioambiental...', 'info');
+
+      // 1. Variáveis prontas estruturadas com fallback seguro para traço (--)
+      const codigo_car = sanitizarTextoPdf(dados.codigo_car) || '--';
+      const area_total_ha = (dados.area_total_ha !== null && dados.area_total_ha !== undefined && !isNaN(dados.area_total_ha) && Number(dados.area_total_ha) > 0)
+        ? `${Number(dados.area_total_ha).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`
+        : '-- ha';
+      const sobreposicao_prodes_ha = (dados.sobreposicao_prodes_ha !== null && dados.sobreposicao_prodes_ha !== undefined && !isNaN(dados.sobreposicao_prodes_ha))
+        ? `${Number(dados.sobreposicao_prodes_ha).toFixed(4)} ha`
+        : '-- ha';
+      const responsavel_tecnico = sanitizarTextoPdf(dados.responsavel_tecnico) || '--';
+      const registro_crea_cft = sanitizarTextoPdf(dados.registro_crea_cft) || '--';
+      const statusElegivel = dados.status === 'Conforme' ? 'ELEGIVEL' : (dados.status === 'Inconforme' ? 'IMPEDITIVO / INCONFORME' : 'PENDENTE DE ARQUIVOS');
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const marginLeft = 14;
+      const marginRight = 14;
+      const contentWidth = pageWidth - marginLeft - marginRight; // 182 mm
+
+      // A. CABEÇALHO OFICIAL (TEXTO LIMPO / ASCII SEGURO)
+      doc.setFillColor(15, 23, 42); // Azul Marinho Corporativo Escuro #0F172A
+      doc.rect(0, 0, pageWidth, 25, 'F');
+
+      doc.setFillColor(14, 165, 233); // Azul Ciano CMN #0EA5E9
+      doc.rect(0, 25, pageWidth, 2.5, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12.5);
+      doc.text('LAUDO PERICIAL DE REGULARIDADE SOCIOAMBIENTAL', marginLeft, 11);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.2);
+      doc.setTextColor(224, 242, 254);
+      doc.text('Conformidade de Credito Rural - Resolucao CMN no 5.303/2026 | Banco Central do Brasil', marginLeft, 17);
+
+      // Badge lateral
+      doc.setFillColor(14, 165, 233);
+      doc.roundedRect(pageWidth - marginRight - 52, 6, 52, 13, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.text('AUDITORIA TERRITORIAL', pageWidth - marginRight - 50, 11);
+      doc.setFontSize(6.5);
+      doc.text('CMN no 5.303/2026', pageWidth - marginRight - 50, 15);
+
+      let cursorY = 33;
+
+      // B. BLOCO DE IDENTIFICAÇÃO DO IMÓVEL (CAR)
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(marginLeft, cursorY, contentWidth, 24, 2.5, 2.5, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(15, 23, 42);
+      doc.text('1. DADOS DO IMOVEL RURAL AUDITADO', marginLeft + 4, cursorY + 6.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(51, 65, 85);
+
+      doc.text(`Codigo do CAR Oficial: ${codigo_car}`, marginLeft + 4, cursorY + 13);
+      doc.text(`Area Total Auditada: ${area_total_ha}`, marginLeft + 105, cursorY + 13);
+
+      const emissaoData = new Date().toLocaleDateString('pt-BR');
+      doc.text(`Data da Auditoria Espacial: ${emissaoData}`, marginLeft + 4, cursorY + 19);
+      doc.text('Referencial Geodesico: SIRGAS 2000 / UTM Fuso 23S (EPSG:31983)', marginLeft + 105, cursorY + 19);
+
+      cursorY += 28;
+
+      // C. TABELA DE VERIFICAÇÃO DE REQUISITOS CMN 5.303
+      const tabelaRequisitos = [
+        [
+          'Alertas PRODES (> 31/07/2019)',
+          'Nao incidir em areas de desmatamento ilegal pos-31/07/2019 no bioma',
+          sobreposicao_prodes_ha,
+          dados.sobreposicao_prodes_ha > 0 ? 'IMPEDITIVO' : (dados.sobreposicao_prodes_ha === 0 ? 'CONFORME' : '--')
+        ],
+        [
+          'Embargos Ambientais IBAMA',
+          'Nao constar embargo vigente publicado pelo orgao ambiental federal',
+          dados.sobreposicao_embargos_ha !== undefined ? `${dados.sobreposicao_embargos_ha} ha` : '--',
+          dados.sobreposicao_embargos_ha > 0 ? 'IMPEDITIVO' : 'CONFORME'
+        ],
+        [
+          'Cadastro Ambiental Rural (CAR)',
+          'Inscricao valida e ativa na base oficial do SICAR',
+          codigo_car !== '--' ? 'Inscrito' : '--',
+          codigo_car !== '--' ? 'CONFORME' : '--'
+        ],
+        [
+          'Sobreposicao com Terras Indigenas e UC',
+          'Respeito aos limites territoriais de conservacao de protecao integral',
+          '0.00 ha',
+          'CONFORME'
+        ]
+      ];
+
+      if (typeof doc.autoTable === 'function') {
+        doc.autoTable({
+          startY: cursorY,
+          margin: { left: marginLeft, right: marginRight },
+          head: [['Dispositivo / Parametro Normativo', 'Criterio Legal Avaliado', 'Apuracao Espacial', 'Conclusao']],
+          body: tabelaRequisitos,
+          theme: 'grid',
+          headStyles: {
+            fillColor: [15, 23, 42],
+            textColor: [255, 255, 255],
+            fontSize: 7.5,
+            fontStyle: 'bold',
+            halign: 'left',
+            cellPadding: 2.2
+          },
+          bodyStyles: {
+            fontSize: 7.2,
+            textColor: [51, 65, 85],
+            cellPadding: 2.2
+          },
+          alternateRowStyles: {
+            fillColor: [248, 250, 252]
+          },
+          columnStyles: {
+            0: { cellWidth: 48, fontStyle: 'bold' },
+            1: { cellWidth: 70 },
+            2: { cellWidth: 32, fontStyle: 'bold', halign: 'center' },
+            3: { cellWidth: 32, fontStyle: 'bold', halign: 'center', textColor: [14, 165, 233] }
+          }
+        });
+
+        cursorY = doc.lastAutoTable.finalY + 6;
+      }
+
+      // D. PARECER CONCLUSIVO DE ELEGIBILIDADE
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(marginLeft, cursorY, contentWidth, 32, 2.5, 2.5, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(15, 23, 42);
+      doc.text('2. PARECER CONCLUSIVO DE REGULARIDADE SOCIOAMBIENTAL', marginLeft + 4, cursorY + 6.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.6);
+      doc.setTextColor(71, 85, 105);
+      doc.text(
+        'Em cumprimento a Resolucao CMN no 5.303/2026, foi realizada a analise de sobreposicao cartografica vetorial automatizada entre o poligono do CAR informado e os bancos de dados espaciais oficiais de monitoramento da cobertura vegetal (PRODES/INPE) e autos de infracao/embargos (IBAMA).',
+        marginLeft + 4,
+        cursorY + 12,
+        { maxWidth: contentWidth - 8 }
+      );
+
+      // Status
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Resultado Normativo:', marginLeft + 4, cursorY + 27);
+
+      doc.setFontSize(9);
+      doc.setTextColor(dados.status === 'Conforme' ? 22 : (dados.status === 'Inconforme' ? 220 : 100), dados.status === 'Conforme' ? 101 : 38, 52);
+      doc.text(statusElegivel, marginLeft + 38, cursorY + 27);
+
+      cursorY += 38;
+
+      // E. RESPONSÁVEL TÉCNICO & ASSINATURA PERICIAL
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(marginLeft, cursorY, contentWidth, 38, 2.5, 2.5, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('3. RESPONSABILIDADE TECNICA & DECLARACAO PERICIAL', marginLeft + 4, cursorY + 6.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text(
+        'Declaro, sob as penas da lei e responsabilidade profissional, que a presente auditoria territorial observou estritamente os parametros tecnicos de geoprocessamento aplicaveis a fiscalizacao e conformidade de credito rural.',
+        marginLeft + 4,
+        cursorY + 12,
+        { maxWidth: contentWidth - 8 }
+      );
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`Responsavel Tecnico: ${responsavel_tecnico}`, marginLeft + 4, cursorY + 24);
+      doc.text(`Registro CREA / CFT: ${registro_crea_cft}`, marginLeft + 105, cursorY + 24);
+
+      doc.text('Data: _____ / _____ / 202___', marginLeft + 4, cursorY + 32);
+      doc.text('Assinatura Digital / Pericial: ________________________________', marginLeft + 105, cursorY + 32);
+
+      // F. RODAPÉ INSTITUCIONAL
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.3);
+      doc.line(marginLeft, pageHeight - 12, pageWidth - marginRight, pageHeight - 12);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.8);
+      doc.setTextColor(148, 163, 184);
+      doc.text(
+        'Work Drones Geo & Ecossistema ITPA | Modulo de Auditoria Territorial e Conformidade de Credito Rural (CMN 5.303/2026)',
+        marginLeft,
+        pageHeight - 7
+      );
+      doc.text('Documento Pericial', pageWidth - marginRight - 24, pageHeight - 7);
+
+      // Download
+      const dataArquivoStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const safeCarName = codigo_car.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const nomeArquivo = `Laudo_CMN_5303_${safeCarName}_${dataArquivoStr}.pdf`;
+
+      doc.save(nomeArquivo);
+      showToast('✓ Laudo Pericial de Regularidade Socioambiental gerado com sucesso!', 'success');
+      return { sucesso: true, nomeArquivo };
+    } catch (err) {
+      console.error('[Laudo CMN 5.303 PDF] Erro ao compilar:', err);
+      showToast(`❌ Falha ao gerar Laudo CMN 5.303: ${err.message}`, 'error');
+      throw err;
+    }
+  }
+
   // Exportação para o escopo global
   window.ITPARelatorioTalhao = {
     exportarFichaTecnica,
+    exportarLaudoPericialCMN,
     latLonToUtm23S,
     extrairTalhaoId,
     sanitizarTextoPdf

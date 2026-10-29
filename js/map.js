@@ -20,6 +20,11 @@ const ITPAMap = (function () {
   let layerGroupNdviAnterior = null;
   let layerGroupRgbAnterior = null;
 
+  // Camadas de Conformidade e Auditoria de Crédito (Resolução CMN nº 5.303/2026)
+  let layerGroupCar = null;
+  let layerGroupProdes = null;
+  let layerGroupIbama = null;
+
   // Camadas Base Globais
   let osmLayer = null;
   let esriSatLayer = null;
@@ -128,6 +133,69 @@ const ITPAMap = (function () {
     layerGroupNdviAnterior = L.layerGroup();
     layerGroupRgbAnterior = L.layerGroup();
 
+    // 4b. Instanciação das Camadas de Conformidade e Auditoria (CMN nº 5.303/2026)
+    layerGroupCar = L.geoJSON(null, {
+      style: {
+        color: '#0284c7', // Azul Ciano Oficial CAR
+        weight: 2.2,
+        fillColor: '#38bdf8',
+        fillOpacity: 0.08
+      },
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties || {};
+        const cod = props.cod_imovel || props.COD_IMOVEL || props.car || props.id || 'Imóvel Rural';
+        const area = props.area_ha || props.num_area || '--';
+        layer.bindPopup(`
+          <div class="itpa-popup-card">
+            <h4 style="margin:0 0 4px 0; color:#0284c7;">🏛️ Base CAR Oficial</h4>
+            <p style="margin:0; font-size:12px;"><strong>Código:</strong> ${cod}</p>
+            <p style="margin:0; font-size:12px;"><strong>Área:</strong> ${area} ha</p>
+          </div>
+        `);
+      }
+    });
+
+    layerGroupProdes = L.geoJSON(null, {
+      style: {
+        color: '#dc2626', // Contorno vermelho sem preenchimento opaco
+        weight: 2.5,
+        fillOpacity: 0.0,
+        dashArray: '5, 5'
+      },
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties || {};
+        const ano = props.year || props.ano || props.date || '> 31/07/2019';
+        const area = props.area_ha || props.area || '--';
+        layer.bindPopup(`
+          <div class="itpa-popup-card">
+            <h4 style="margin:0 0 4px 0; color:#dc2626;">🚨 Alerta PRODES (> 31/07/2019)</h4>
+            <p style="margin:0; font-size:12px;"><strong>Ano / Data:</strong> ${ano}</p>
+            <p style="margin:0; font-size:12px;"><strong>Área:</strong> ${area} ha</p>
+            <p style="margin:0; font-size:11px; color:#dc2626;"><strong>Impeditivo CMN 5.303/2026</strong></p>
+          </div>
+        `);
+      }
+    });
+
+    layerGroupIbama = L.geoJSON(null, {
+      style: {
+        color: '#b91c1c',
+        weight: 2.5,
+        fillColor: '#ef4444',
+        fillOpacity: 0.15
+      },
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties || {};
+        const termo = props.num_termo || props.termo || props.id || '--';
+        layer.bindPopup(`
+          <div class="itpa-popup-card">
+            <h4 style="margin:0 0 4px 0; color:#b91c1c;">🚫 Embargo Ambiental IBAMA</h4>
+            <p style="margin:0; font-size:12px;"><strong>Termo:</strong> ${termo}</p>
+          </div>
+        `);
+      }
+    });
+
     // 5. Camada de Ortofoto Local (Drone / Voo de Alta Resolução) com reescalonamento no zoom reduzido
     ortofotoLayer = L.tileLayer('./assets/tiles/ortofoto/{z}/{x}/{y}.png', {
       minZoom: 10,
@@ -152,7 +220,10 @@ const ITPAMap = (function () {
       '🌱 Talhões - NDVI (Recente 2m)': layerGroupNdviRecente,
       '🛰️ Talhões - RGB (Recente 2m)': layerGroupRgbRecente,
       '🌱 Talhões - NDVI (Anterior 09/Set - 2m)': layerGroupNdviAnterior,
-      '🛰️ Talhões RGB - Passagem Anterior (2m)': layerGroupRgbAnterior
+      '🛰️ Talhões RGB - Passagem Anterior (2m)': layerGroupRgbAnterior,
+      '🏛️ Base CAR (Polígono Oficial)': layerGroupCar,
+      '🚨 Alertas PRODES (> 31/07/2019)': layerGroupProdes,
+      '🚫 Embargos Ambientais (IBAMA)': layerGroupIbama
     };
 
     layerControl = L.control.layers(baseLayers, overlays, { position: 'topright' }).addTo(map);
@@ -220,7 +291,64 @@ const ITPAMap = (function () {
     // 6. Leitura assíncrona dos talhões da área (GeoJSON relativo)
     carregarTalhoesGeoJSON('./DATA/KMLs.geojson');
 
+    // 7. Leitura assíncrona das camadas de Conformidade e Crédito (CMN 5.303/2026)
+    carregarCamadasAuditoria();
+
     return map;
+  }
+
+  /**
+   * Faz a leitura assíncrona das camadas oficiais de conformidade territorial e crédito
+   * (Resolução CMN nº 5.303/2026). Se os arquivos estiverem vazios ([]), as camadas permanecem
+   * invisíveis sem nenhum erro no console.
+   */
+  async function carregarCamadasAuditoria() {
+    const carregarCamadaGeoJson = async (caminhos, layerGroup, nomeCamada) => {
+      const listaCaminhos = Array.isArray(caminhos) ? caminhos : [caminhos];
+      for (const caminho of listaCaminhos) {
+        try {
+          const resp = await fetch(caminho);
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data && Array.isArray(data.features) && data.features.length > 0 && layerGroup) {
+              layerGroup.clearLayers();
+              layerGroup.addData(data);
+              console.log(`[ITPAMap] Camada ${nomeCamada} carregada com ${data.features.length} feições de: ${caminho}`);
+            }
+            break;
+          }
+        } catch (err) {
+          // Silencioso se o arquivo estiver vazio ou ausente
+        }
+      }
+    };
+
+    await Promise.all([
+      carregarCamadaGeoJson(['./DATA/car_oficial.geojson', './data/car_oficial.geojson'], layerGroupCar, 'Base CAR'),
+      carregarCamadaGeoJson(['./DATA/prodes_alertas.geojson', './data/prodes_alertas.geojson'], layerGroupProdes, 'PRODES Alertas'),
+      carregarCamadaGeoJson(['./DATA/ibama_embargos.geojson', './data/ibama_embargos.geojson'], layerGroupIbama, 'Embargos IBAMA')
+    ]);
+  }
+
+  /**
+   * Carrega dinamicamente o perímetro do CAR importado pelo usuário no mapa Leaflet
+   * @param {Object} geojson Objeto GeoJSON válido do CAR
+   */
+  function carregarCarNoMapa(geojson) {
+    if (!layerGroupCar || !map) return;
+    layerGroupCar.clearLayers();
+    layerGroupCar.addData(geojson);
+
+    if (!map.hasLayer(layerGroupCar)) {
+      map.addLayer(layerGroupCar);
+    }
+
+    if (layerGroupCar.getBounds && layerGroupCar.getBounds().isValid()) {
+      map.fitBounds(layerGroupCar.getBounds().pad(0.06), { maxZoom: 16 });
+    }
+
+    const toggleCar = document.getElementById('sheet-toggle-car');
+    if (toggleCar) toggleCar.checked = true;
   }
 
   /**
@@ -778,6 +906,9 @@ const ITPAMap = (function () {
     const toggleNdviAnt = document.getElementById('sheet-toggle-ndvi-ant');
     const toggleRgbAnt = document.getElementById('sheet-toggle-rgb-ant');
     const toggleTalhoes = document.getElementById('sheet-toggle-talhoes');
+    const toggleCar = document.getElementById('sheet-toggle-car');
+    const toggleProdes = document.getElementById('sheet-toggle-prodes');
+    const toggleIbama = document.getElementById('sheet-toggle-ibama');
 
     // Sincroniza o estado das pílulas e interruptores com o mapa Leaflet
     function sincronizarEstadosUI() {
@@ -809,6 +940,16 @@ const ITPAMap = (function () {
       // 5. Limites dos Talhões
       const talhoesAtivo = talhoesLayer && map.hasLayer(talhoesLayer);
       if (toggleTalhoes) toggleTalhoes.checked = !!talhoesAtivo;
+
+      // 5b. Conformidade e Auditoria de Crédito (CMN nº 5.303/2026)
+      const carAtivo = layerGroupCar && map.hasLayer(layerGroupCar);
+      if (toggleCar) toggleCar.checked = !!carAtivo;
+
+      const prodesAtivo = layerGroupProdes && map.hasLayer(layerGroupProdes);
+      if (toggleProdes) toggleProdes.checked = !!prodesAtivo;
+
+      const ibamaAtivo = layerGroupIbama && map.hasLayer(layerGroupIbama);
+      if (toggleIbama) toggleIbama.checked = !!ibamaAtivo;
 
       // 6. Mapas Base
       if (baseRadios && baseRadios.length) {
@@ -995,6 +1136,39 @@ const ITPAMap = (function () {
           if (talhoesLayer && !map.hasLayer(talhoesLayer)) map.addLayer(talhoesLayer);
         } else {
           if (talhoesLayer && map.hasLayer(talhoesLayer)) map.removeLayer(talhoesLayer);
+        }
+        sincronizarEstadosUI();
+      };
+    }
+
+    if (toggleCar) {
+      toggleCar.onchange = () => {
+        if (toggleCar.checked) {
+          if (layerGroupCar && !map.hasLayer(layerGroupCar)) map.addLayer(layerGroupCar);
+        } else {
+          if (layerGroupCar && map.hasLayer(layerGroupCar)) map.removeLayer(layerGroupCar);
+        }
+        sincronizarEstadosUI();
+      };
+    }
+
+    if (toggleProdes) {
+      toggleProdes.onchange = () => {
+        if (toggleProdes.checked) {
+          if (layerGroupProdes && !map.hasLayer(layerGroupProdes)) map.addLayer(layerGroupProdes);
+        } else {
+          if (layerGroupProdes && map.hasLayer(layerGroupProdes)) map.removeLayer(layerGroupProdes);
+        }
+        sincronizarEstadosUI();
+      };
+    }
+
+    if (toggleIbama) {
+      toggleIbama.onchange = () => {
+        if (toggleIbama.checked) {
+          if (layerGroupIbama && !map.hasLayer(layerGroupIbama)) map.addLayer(layerGroupIbama);
+        } else {
+          if (layerGroupIbama && map.hasLayer(layerGroupIbama)) map.removeLayer(layerGroupIbama);
         }
         sincronizarEstadosUI();
       };
@@ -1358,6 +1532,10 @@ const ITPAMap = (function () {
     getLayerGroupRgbRecente: () => layerGroupRgbRecente,
     getLayerGroupNdviAnterior: () => layerGroupNdviAnterior,
     getLayerGroupRgbAnterior: () => layerGroupRgbAnterior,
+    getLayerGroupCar: () => layerGroupCar,
+    getLayerGroupProdes: () => layerGroupProdes,
+    getLayerGroupIbama: () => layerGroupIbama,
+    carregarCarNoMapa,
     carregarOcorrencias,
     obterLocalizacaoAtual,
     ativarModoSelecaoPonto,
