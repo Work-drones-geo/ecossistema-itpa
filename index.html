@@ -70,7 +70,7 @@
       <!-- Seletor Suspenso de Arquitetura Multi-Projetos -->
       <div class="project-selector-wrapper">
         <label for="select-projeto">PROJETO ATIVO:</label>
-        <select id="select-projeto" class="custom-select">
+        <select id="select-projeto" class="custom-select" onchange="window.atualizarAuditoria(this.value)">
           <option value="esec" selected>ESEC Guanabara (Guapimirim / APA)</option>
           <option value="nelito">Fazenda Nelito (Miguel Pereira - RJ)</option>
           <option value="guanai">Fazenda Guanaí (Miguel Pereira - RJ)</option>
@@ -117,7 +117,7 @@
             <span class="pill-dot"></span>
             <span>↔️ Comparar</span>
           </button>
-          <button type="button" class="map-quick-pill" id="pill-quick-auditoria" title="Auditoria de Crédito (CMN 5.303/2026)">
+          <button type="button" class="map-quick-pill" id="pill-quick-auditoria" title="Auditoria de Crédito (CMN 5.303/2026)" onclick="window.toggleAuditoria()">
             <span class="pill-dot"></span>
             <span>⚖️ Auditoria</span>
           </button>
@@ -155,64 +155,26 @@
         </div>
 
         <!-- Widget de Diagnóstico Territorial: Auditoria de Crédito Rural (CMN nº 5.303/2026) -->
-        <div class="map-audit-card collapsed card-auditoria" id="card-auditoria-cmn">
-          <div class="audit-card-header">
-            <div class="audit-header-title-wrap">
-              <span class="audit-header-icon">⚖️</span>
-              <div>
-                <h4 class="audit-card-title">Auditoria de Crédito</h4>
-                <span class="audit-card-subtitle">Resolução CMN nº 5.303/2026</span>
-              </div>
-            </div>
-            <button type="button" class="btn-toggle-audit-card" id="btn-toggle-audit-card" title="Recolher / Expandir Painel">
-              <span class="toggle-icon">+</span>
-            </button>
+        <div id="card-auditoria" class="card-auditoria">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleAuditoria()">
+            <span>Auditoria de Crédito</span>
+            <button type="button" id="btn-toggle-audit" style="background:none;border:none;font-size:18px;font-weight:bold;cursor:pointer;">−</button>
           </div>
-
-          <div class="audit-card-body card-auditoria" id="painel-auditoria">
-            <!-- Status Inicial Padrão (Sem dados fictícios) -->
-            <div class="audit-status-badge-box">
-              <span class="audit-status-label">Status da Análise:</span>
-              <span class="audit-status-badge pending" id="audit-status-badge">Aguardando validação espacial</span>
-            </div>
-
-            <!-- Campos estruturais prontos para interpolação dinâmica -->
-            <div class="audit-fields-grid">
-              <div class="audit-field-item">
-                <span class="audit-field-name">Código do CAR</span>
-                <span class="audit-field-value placeholder" id="audit-car" data-field="car">[Aguardando arquivo]</span>
-              </div>
-              <div class="audit-field-item">
-                <span class="audit-field-name">Tipo de Imóvel</span>
-                <span class="audit-field-value" id="audit-tipo" data-field="tipo">Unidade de Conservação Federal</span>
-              </div>
-              <div class="audit-field-item">
-                <span class="audit-field-name">Município / UF</span>
-                <span class="audit-field-value" id="audit-municipio" data-field="municipio">Guapimirim / APA - RJ</span>
-              </div>
-              <div class="audit-field-item">
-                <span class="audit-field-name">Área Total Auditada</span>
-                <span class="audit-field-value" id="audit-area" data-field="area">3.200 ha</span>
-              </div>
-              <div class="audit-field-item">
-                <span class="audit-field-name">Sobreposição PRODES pós-2019</span>
-                <span class="audit-field-value" id="audit-prodes-overlap" data-field="prodes">0,00 ha (0.00%)</span>
-              </div>
-              <div class="audit-field-item">
-                <span class="audit-field-name">Status de Elegibilidade</span>
-                <span class="audit-field-value status-pendente" id="audit-eligibility-status" data-field="status">Pendente</span>
-              </div>
-            </div>
-
-            <!-- Ações do Módulo de Auditoria -->
-            <div class="audit-card-actions">
-              <label class="btn-itpa-pill secondary btn-audit-action" for="input-car-upload">
-                📥 Importar GeoJSON / CAR
+          <div id="auditoria-body" class="card-body" style="display: block;">
+            <p><strong>Status:</strong> <span id="audit-status" style="color:#2ecc71;font-weight:bold;">CONFORME</span></p>
+            <p><strong>Código CAR:</strong> <span id="audit-car">RJ-3302908-D52C6812F1464345885FE14360B005CE</span></p>
+            <p><strong>Tipo:</strong> <span id="audit-tipo">Imóvel Rural Privado</span></p>
+            <p><strong>Município:</strong> <span id="audit-municipio">Miguel Pereira - RJ</span></p>
+            <p><strong>Área Auditada:</strong> <span id="audit-area">615,808 ha</span></p>
+            <p><strong>PRODES pós-2008:</strong> <span>0.00 ha (0.0%)</span></p>
+            <p><strong>Elegibilidade:</strong> <span style="color:#2ecc71;font-weight:bold;">ELEGÍVEL (Resolução CMN nº 5.303/2026)</span></p>
+            <div class="audit-card-actions" style="margin-top: 10px; display: flex; gap: 8px;">
+              <label class="btn-itpa-pill secondary btn-audit-action" for="input-car-upload" style="cursor: pointer; font-size: 0.75rem; padding: 6px 10px;">
+                📥 Importar CAR
               </label>
               <input type="file" id="input-car-upload" accept=".geojson,.kml,.json" style="display: none;">
-              
-              <button type="button" class="btn-itpa-pill outline btn-audit-action" id="btn-gerar-laudo-cmn" title="Exportar Laudo Pericial de Regularidade Socioambiental em PDF">
-                📄 Laudo Pericial (PDF)
+              <button type="button" class="btn-itpa-pill outline btn-audit-action" id="btn-gerar-laudo-cmn" title="Exportar Laudo Pericial em PDF" style="cursor: pointer; font-size: 0.75rem; padding: 6px 10px;">
+                📄 Laudo PDF
               </button>
             </div>
           </div>
@@ -847,6 +809,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <!-- Módulos da Aplicação Ecossistema ITPA -->
+  <script src="script.js"></script>
   <script src="js/config.js"></script>
   <script src="js/db.js"></script>
   <script src="js/camera.js"></script>

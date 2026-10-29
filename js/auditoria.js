@@ -258,6 +258,10 @@ const ITPAAuditoria = (function () {
 
     // Alternar visibilidade do card retrátil
     function toggleCard() {
+      if (typeof window.toggleAuditoria === 'function') {
+        window.toggleAuditoria();
+        return;
+      }
       if (!cardAudit) return;
       const isCollapsed = cardAudit.classList.toggle('collapsed');
       if (pillAuditoria) pillAuditoria.classList.toggle('active', !isCollapsed);
@@ -411,6 +415,9 @@ const ITPAAuditoria = (function () {
     };
 
     // Atualiza imediatamente os campos do painel (.card-auditoria / #painel-auditoria)
+    if (typeof window.atualizarAuditoria === 'function') {
+      window.atualizarAuditoria(projetoKey);
+    }
     atualizarUI();
 
     // Expande o painel lateral para visibilidade imediata dos dados do imóvel ativo

@@ -226,8 +226,8 @@ const ITPAMap = (function () {
       '🚫 Embargos Ambientais (IBAMA)': layerGroupIbama
     };
 
-    // Controle nativo de camadas instanciado sem .addTo(map) para não sobrepor o botão de NDVI
-    layerControl = L.control.layers(baseLayers, overlays);
+    // Controle nativo de camadas eliminado para evitar ícone quadrado duplicado sobre o NDVI
+    // L.control.layers(baseLayers, overlays);
 
     // 7. Controle Dinâmico da Legenda de NDVI (RdYlGn)
     const ndviLegendEl = document.getElementById('ndvi-legend');
@@ -296,18 +296,8 @@ const ITPAMap = (function () {
 
     if (selectProjetoEl) {
       selectProjetoEl.addEventListener('change', function () {
-        const PROJETOS = window.PROJETOS || {};
-        const p = PROJETOS[this.value];
-        if (p) {
-          const elCar = document.getElementById('audit-car') || document.getElementById('audit-car-code');
-          const elTipo = document.getElementById('audit-tipo') || document.getElementById('audit-property-type');
-          const elMun = document.getElementById('audit-municipio');
-          const elArea = document.getElementById('audit-area') || document.getElementById('audit-total-area');
-          
-          if (elCar) { elCar.innerText = p.car; elCar.classList.remove('placeholder'); }
-          if (elTipo) elTipo.innerText = p.tipo;
-          if (elMun) elMun.innerText = p.municipio;
-          if (elArea) elArea.innerText = p.area_registrada;
+        if (typeof window.atualizarAuditoria === 'function') {
+          window.atualizarAuditoria(this.value);
         }
         selecionarProjeto(this.value);
       });
@@ -749,16 +739,10 @@ const ITPAMap = (function () {
       selectEl.value = projetoKey;
     }
 
-    // Injeção imediata nos campos do card lateral ("Auditoria de Crédito")
-    const elCar = document.getElementById('audit-car') || document.getElementById('audit-car-code');
-    const elTipo = document.getElementById('audit-tipo') || document.getElementById('audit-property-type');
-    const elMun = document.getElementById('audit-municipio');
-    const elArea = document.getElementById('audit-area') || document.getElementById('audit-total-area');
-
-    if (elCar) { elCar.innerText = projeto.car; elCar.classList.remove('placeholder'); }
-    if (elTipo) elTipo.innerText = projeto.tipo;
-    if (elMun) elMun.innerText = projeto.municipio;
-    if (elArea) elArea.innerText = projeto.area_registrada;
+    // Atualização infalível da Auditoria de Crédito
+    if (typeof window.atualizarAuditoria === 'function') {
+      window.atualizarAuditoria(projetoKey);
+    }
 
     // 0. Injeção dinâmica imediata e síncrona nos campos do painel de auditoria territorial (.card-auditoria / #painel-auditoria)
     if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
@@ -875,7 +859,7 @@ const ITPAMap = (function () {
                     </div>
                   </div>
                   <div style="margin-top: 10px; display: flex; gap: 6px;">
-                    <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" style="width: 100%; justify-content: center; font-size: 11.5px; padding: 6px 10px;">
+                    <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" onclick="window.atualizarAuditoria(document.getElementById('select-projeto').value)" style="width: 100%; justify-content: center; font-size: 11.5px; padding: 6px 10px;">
                       ⚖️ Ver Auditoria Territorial
                     </button>
                   </div>
@@ -889,29 +873,12 @@ const ITPAMap = (function () {
               if (btnAudit) {
                 btnAudit.onclick = () => {
                   const selectEl = document.getElementById('select-projeto');
-                  const p = (window.PROJETOS && selectEl) ? window.PROJETOS[selectEl.value] : projeto;
-                  if (p) {
-                    const elCar = document.getElementById('audit-car') || document.getElementById('audit-car-code');
-                    const elTipo = document.getElementById('audit-tipo') || document.getElementById('audit-property-type');
-                    const elMun = document.getElementById('audit-municipio');
-                    const elArea = document.getElementById('audit-area') || document.getElementById('audit-total-area');
-
-                    if (elCar) { elCar.innerText = p.car; elCar.classList.remove('placeholder'); }
-                    if (elTipo) elTipo.innerText = p.tipo;
-                    if (elMun) elMun.innerText = p.municipio;
-                    if (elArea) elArea.innerText = p.area_registrada;
+                  const currentProjKey = selectEl ? selectEl.value : projetoKey;
+                  if (typeof window.atualizarAuditoria === 'function') {
+                    window.atualizarAuditoria(currentProjKey);
                   }
-
                   if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
-                    window.ITPAAuditoria.definirProjetoAtivo(projetoKey);
-                  }
-
-                  const card = document.getElementById('painel-auditoria') || document.getElementById('card-auditoria-cmn');
-                  if (card) {
-                    const outerCard = card.closest('.map-audit-card') || card;
-                    outerCard.classList.remove('collapsed');
-                    const pill = document.getElementById('pill-quick-auditoria');
-                    if (pill) pill.classList.add('active');
+                    window.ITPAAuditoria.definirProjetoAtivo(currentProjKey);
                   }
                 };
               }
