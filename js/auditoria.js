@@ -293,7 +293,9 @@ const ITPAAuditoria = (function () {
             codigo_car: estadoAuditoria.carregado ? estadoAuditoria.codigoCar : '--',
             area_total_ha: estadoAuditoria.carregado ? estadoAuditoria.areaTotalHa : null,
             sobreposicao_prodes_ha: estadoAuditoria.carregado ? estadoAuditoria.sobreposicaoProdesHa : null,
-            responsavel_tecnico: '--',
+            responsavel_tecnico: 'Bruno Sodéro de Freitas',
+            qualificacao: 'Especialista em Geoprocessamento e Fotogrametria Aérea',
+            certificacao: 'Piloto Remoto Certificado ANAC',
             registro_crea_cft: '--',
             status: estadoAuditoria.statusElegibilidade
           });

@@ -116,6 +116,40 @@
   }
 
   /**
+   * Obtém a imagem em formato Data URL (Base64) de forma resiliente.
+   * Prioriza o cache oficial em window.ITPA_ASSETS_LAUDO e realiza fallback dinâmico via fetch/Canvas.
+   * @param {string} chaveCache Chave em ITPA_ASSETS_LAUDO (ex: 'LOGO_WORK_DRONES')
+   * @param {string|Array<string>} caminhos Caminho(s) relativo(s) para fallback
+   * @returns {Promise<string|null>}
+   */
+  async function obterImagemDataUrl(chaveCache, caminhos) {
+    if (window.ITPA_ASSETS_LAUDO && window.ITPA_ASSETS_LAUDO[chaveCache]) {
+      return window.ITPA_ASSETS_LAUDO[chaveCache];
+    }
+    const lista = Array.isArray(caminhos) ? caminhos : [caminhos];
+    for (const p of lista) {
+      try {
+        const resp = await fetch(p);
+        if (resp.ok) {
+          const blob = await resp.blob();
+          const base64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+          if (base64) return base64;
+        }
+      } catch (e) {
+        // Fallback para Canvas
+      }
+      const b64Canvas = await carregarImagemComoBase64(p);
+      if (b64Canvas) return b64Canvas;
+    }
+    return null;
+  }
+
+  /**
    * Tenta capturar o container do mapa via html2canvas (se disponível)
    */
   async function capturarMapaCanvas() {
@@ -634,6 +668,12 @@
     try {
       showToast('⚖️ Gerando Laudo Pericial de Regularidade Socioambiental...', 'info');
 
+      // 0. Carregamento dos Assets Visuais Oficiais (Logo Work Drones e QR Code ANAC)
+      const [logoBase64, qrcodeBase64] = await Promise.all([
+        obterImagemDataUrl('LOGO_WORK_DRONES', ['./assets/logo-work-drones.jpeg', 'assets/logo-work-drones.jpeg']),
+        obterImagemDataUrl('QRCODE_ANAC', ['./assets/qrcode-anac.jpeg', 'assets/qrcode-anac.jpeg'])
+      ]);
+
       // 1. Variáveis prontas estruturadas com fallback seguro para traço (--)
       const codigo_car = sanitizarTextoPdf(dados.codigo_car) || '--';
       const area_total_ha = (dados.area_total_ha !== null && dados.area_total_ha !== undefined && !isNaN(dados.area_total_ha) && Number(dados.area_total_ha) > 0)
@@ -642,7 +682,11 @@
       const sobreposicao_prodes_ha = (dados.sobreposicao_prodes_ha !== null && dados.sobreposicao_prodes_ha !== undefined && !isNaN(dados.sobreposicao_prodes_ha))
         ? `${Number(dados.sobreposicao_prodes_ha).toFixed(4)} ha`
         : '-- ha';
-      const responsavel_tecnico = sanitizarTextoPdf(dados.responsavel_tecnico) || '--';
+      
+      // Dados Oficiais de Emissão Pericial
+      const responsavel_tecnico = sanitizarTextoPdf(dados.responsavel_tecnico) || 'Bruno Sodero de Freitas';
+      const qualificacao_tecnica = sanitizarTextoPdf(dados.qualificacao) || 'Especialista em Geoprocessamento e Fotogrametria Aerea';
+      const certificacao_anac = sanitizarTextoPdf(dados.certificacao) || 'Piloto Remoto Certificado ANAC';
       const registro_crea_cft = sanitizarTextoPdf(dados.registro_crea_cft) || '--';
       const statusElegivel = dados.status === 'Conforme' ? 'ELEGIVEL' : (dados.status === 'Inconforme' ? 'IMPEDITIVO / INCONFORME' : 'PENDENTE DE ARQUIVOS');
 
@@ -660,57 +704,85 @@
       const marginRight = 14;
       const contentWidth = pageWidth - marginLeft - marginRight; // 182 mm
 
-      // A. CABEÇALHO OFICIAL (TEXTO LIMPO / ASCII SEGURO)
+      // A. CABEÇALHO INSTITUCIONAL & IDENTIDADE VISUAL WORK DRONES GEO
+      // 1. Logo Oficial (Redimensionamento proporcional: 24mm x 24mm, máx. 25mm de altura)
+      if (logoBase64) {
+        try {
+          doc.addImage(logoBase64, 'JPEG', marginLeft, 6, 24, 24);
+        } catch (e) {
+          console.warn('[PDF] Falha ao renderizar logo-work-drones:', e);
+        }
+      }
+
+      // 2. Textos do Cabeçalho Institucional
+      const xInst = logoBase64 ? (marginLeft + 28) : marginLeft;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.2);
+      doc.setTextColor(15, 23, 42); // Azul Marinho Corporativo Escuro #0F172A
+      doc.text('WORK DRONES GEO - Inteligencia Geografica e Aerofotogrametria', xInst, 12);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.0);
+      doc.setTextColor(71, 85, 105); // Slate 600
+      doc.text('CNPJ: 35.410.458/0001-01 | Atuacao desde 2016', xInst, 18);
+      doc.text('Volta Redonda - RJ | WhatsApp: (24) 99929-3101 | workdrones.contato@gmail.com', xInst, 23.5);
+
+      // Linha divisória sutil
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.3);
+      doc.line(marginLeft, 31, pageWidth - marginRight, 31);
+
+      // 3. Faixa Oficial do Laudo Pericial (Resolução CMN nº 5.303/2026)
       doc.setFillColor(15, 23, 42); // Azul Marinho Corporativo Escuro #0F172A
-      doc.rect(0, 0, pageWidth, 25, 'F');
+      doc.rect(0, 33, pageWidth, 16.5, 'F');
 
       doc.setFillColor(14, 165, 233); // Azul Ciano CMN #0EA5E9
-      doc.rect(0, 25, pageWidth, 2.5, 'F');
+      doc.rect(0, 49.5, pageWidth, 2.2, 'F');
 
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12.5);
-      doc.text('LAUDO PERICIAL DE REGULARIDADE SOCIOAMBIENTAL', marginLeft, 11);
+      doc.setFontSize(11);
+      doc.text('LAUDO PERICIAL DE REGULARIDADE SOCIOAMBIENTAL', marginLeft, 40);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.2);
+      doc.setFontSize(7.6);
       doc.setTextColor(224, 242, 254);
-      doc.text('Conformidade de Credito Rural - Resolucao CMN no 5.303/2026 | Banco Central do Brasil', marginLeft, 17);
+      doc.text('Conformidade de Credito Rural - Resolucao CMN no 5.303/2026 | Banco Central do Brasil', marginLeft, 45.5);
 
       // Badge lateral
       doc.setFillColor(14, 165, 233);
-      doc.roundedRect(pageWidth - marginRight - 52, 6, 52, 13, 2, 2, 'F');
+      doc.roundedRect(pageWidth - marginRight - 50, 35, 50, 12, 2, 2, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.2);
-      doc.text('AUDITORIA TERRITORIAL', pageWidth - marginRight - 50, 11);
-      doc.setFontSize(6.5);
-      doc.text('CMN no 5.303/2026', pageWidth - marginRight - 50, 15);
+      doc.setFontSize(7);
+      doc.text('AUDITORIA TERRITORIAL', pageWidth - marginRight - 48, 39.8);
+      doc.setFontSize(6.4);
+      doc.text('CMN no 5.303/2026', pageWidth - marginRight - 48, 44);
 
-      let cursorY = 33;
+      let cursorY = 56;
 
       // B. BLOCO DE IDENTIFICAÇÃO DO IMÓVEL (CAR)
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(marginLeft, cursorY, contentWidth, 24, 2.5, 2.5, 'FD');
+      doc.roundedRect(marginLeft, cursorY, contentWidth, 23, 2.5, 2.5, 'FD');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
+      doc.setFontSize(8.8);
       doc.setTextColor(15, 23, 42);
-      doc.text('1. DADOS DO IMOVEL RURAL AUDITADO', marginLeft + 4, cursorY + 6.5);
+      doc.text('1. DADOS DO IMOVEL RURAL AUDITADO', marginLeft + 4, cursorY + 6.2);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
+      doc.setFontSize(7.8);
       doc.setTextColor(51, 65, 85);
 
-      doc.text(`Codigo do CAR Oficial: ${codigo_car}`, marginLeft + 4, cursorY + 13);
-      doc.text(`Area Total Auditada: ${area_total_ha}`, marginLeft + 105, cursorY + 13);
+      doc.text(`Codigo do CAR Oficial: ${codigo_car}`, marginLeft + 4, cursorY + 12.5);
+      doc.text(`Area Total Auditada: ${area_total_ha}`, marginLeft + 105, cursorY + 12.5);
 
       const emissaoData = new Date().toLocaleDateString('pt-BR');
-      doc.text(`Data da Auditoria Espacial: ${emissaoData}`, marginLeft + 4, cursorY + 19);
-      doc.text('Referencial Geodesico: SIRGAS 2000 / UTM Fuso 23S (EPSG:31983)', marginLeft + 105, cursorY + 19);
+      doc.text(`Data da Auditoria Espacial: ${emissaoData}`, marginLeft + 4, cursorY + 18.5);
+      doc.text('Referencial Geodesico: SIRGAS 2000 / UTM Fuso 23S (EPSG:31983)', marginLeft + 105, cursorY + 18.5);
 
-      cursorY += 28;
+      cursorY += 27;
 
       // C. TABELA DE VERIFICAÇÃO DE REQUISITOS CMN 5.303
       const tabelaRequisitos = [
@@ -771,69 +843,107 @@
           }
         });
 
-        cursorY = doc.lastAutoTable.finalY + 6;
+        cursorY = doc.lastAutoTable.finalY + 5;
       }
 
       // D. PARECER CONCLUSIVO DE ELEGIBILIDADE
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(marginLeft, cursorY, contentWidth, 32, 2.5, 2.5, 'FD');
+      doc.roundedRect(marginLeft, cursorY, contentWidth, 28, 2.5, 2.5, 'FD');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
+      doc.setFontSize(8.8);
       doc.setTextColor(15, 23, 42);
-      doc.text('2. PARECER CONCLUSIVO DE REGULARIDADE SOCIOAMBIENTAL', marginLeft + 4, cursorY + 6.5);
+      doc.text('2. PARECER CONCLUSIVO DE REGULARIDADE SOCIOAMBIENTAL', marginLeft + 4, cursorY + 6.2);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.6);
+      doc.setFontSize(7.4);
       doc.setTextColor(71, 85, 105);
       doc.text(
         'Em cumprimento a Resolucao CMN no 5.303/2026, foi realizada a analise de sobreposicao cartografica vetorial automatizada entre o poligono do CAR informado e os bancos de dados espaciais oficiais de monitoramento da cobertura vegetal (PRODES/INPE) e autos de infracao/embargos (IBAMA).',
         marginLeft + 4,
-        cursorY + 12,
+        cursorY + 11.5,
         { maxWidth: contentWidth - 8 }
       );
 
       // Status
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8.2);
       doc.setTextColor(15, 23, 42);
-      doc.text('Resultado Normativo:', marginLeft + 4, cursorY + 27);
+      doc.text('Resultado Normativo:', marginLeft + 4, cursorY + 23.5);
 
-      doc.setFontSize(9);
+      doc.setFontSize(8.8);
       doc.setTextColor(dados.status === 'Conforme' ? 22 : (dados.status === 'Inconforme' ? 220 : 100), dados.status === 'Conforme' ? 101 : 38, 52);
-      doc.text(statusElegivel, marginLeft + 38, cursorY + 27);
+      doc.text(statusElegivel, marginLeft + 38, cursorY + 23.5);
 
-      cursorY += 38;
+      cursorY += 33;
 
-      // E. RESPONSÁVEL TÉCNICO & ASSINATURA PERICIAL
+      // E. RESPONSABILIDADE TÉCNICA, DECLARAÇÃO & EMISSÃO PERICIAL
       doc.setFillColor(255, 255, 255);
       doc.setDrawColor(203, 213, 225);
-      doc.roundedRect(marginLeft, cursorY, contentWidth, 38, 2.5, 2.5, 'FD');
+      doc.roundedRect(marginLeft, cursorY, contentWidth, 48, 2.5, 2.5, 'FD');
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.5);
       doc.setTextColor(15, 23, 42);
-      doc.text('3. RESPONSABILIDADE TECNICA & DECLARACAO PERICIAL', marginLeft + 4, cursorY + 6.5);
+      doc.text('3. RESPONSABILIDADE TECNICA & EMISSAO PERICIAL', marginLeft + 4, cursorY + 6.2);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
+      doc.setFontSize(7.1);
       doc.setTextColor(100, 116, 139);
       doc.text(
         'Declaro, sob as penas da lei e responsabilidade profissional, que a presente auditoria territorial observou estritamente os parametros tecnicos de geoprocessamento aplicaveis a fiscalizacao e conformidade de credito rural.',
         marginLeft + 4,
-        cursorY + 12,
-        { maxWidth: contentWidth - 8 }
+        cursorY + 11.2,
+        { maxWidth: contentWidth - 38 }
       );
 
+      // Identificação Técnica Oficial
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
-      doc.setTextColor(51, 65, 85);
-      doc.text(`Responsavel Tecnico: ${responsavel_tecnico}`, marginLeft + 4, cursorY + 24);
-      doc.text(`Registro CREA / CFT: ${registro_crea_cft}`, marginLeft + 105, cursorY + 24);
+      doc.setTextColor(30, 41, 59);
+      doc.text(`Responsavel Tecnico: ${responsavel_tecnico}`, marginLeft + 4, cursorY + 19.5);
 
-      doc.text('Data: _____ / _____ / 202___', marginLeft + 4, cursorY + 32);
-      doc.text('Assinatura Digital / Pericial: ________________________________', marginLeft + 105, cursorY + 32);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.2);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`Qualificacao: ${qualificacao_tecnica}`, marginLeft + 4, cursorY + 24.5);
+      doc.text(`Certificacao: ${certificacao_anac}`, marginLeft + 4, cursorY + 29.5);
+
+      // Data e Local: Volta Redonda - RJ, {data_atual}
+      const mesesPt = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+      const dataHoje = new Date();
+      const dataAtualFormatada = `${dataHoje.getDate()} de ${mesesPt[dataHoje.getMonth()]} de ${dataHoje.getFullYear()}`;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.3);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`Local e Data: Volta Redonda - RJ, ${dataAtualFormatada}`, marginLeft + 4, cursorY + 36.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.0);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Assinatura Digital / Pericial: _____________________________________________', marginLeft + 4, cursorY + 42.5);
+
+      // Inserção do QR Code ANAC no canto direito da seção de assinatura
+      const xQr = pageWidth - marginRight - 30; // 166mm
+      const yQr = cursorY + 11.5;
+      const qrSize = 22;
+
+      if (qrcodeBase64) {
+        try {
+          doc.addImage(qrcodeBase64, 'JPEG', xQr, yQr, qrSize, qrSize);
+        } catch (e) {
+          console.warn('[PDF] Falha ao renderizar qrcode-anac:', e);
+        }
+      }
+
+      // Legenda oficial: "Validação de Registro Operacional ANAC"
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.6);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Validacao de Registro', xQr + (qrSize / 2), yQr + qrSize + 3.2, { align: 'center' });
+      doc.text('Operacional ANAC', xQr + (qrSize / 2), yQr + qrSize + 5.8, { align: 'center' });
 
       // F. RODAPÉ INSTITUCIONAL
       doc.setDrawColor(226, 232, 240);

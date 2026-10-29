@@ -105,20 +105,24 @@ def main():
     total_talhoes = len(gdf)
     bbox = gdf.total_bounds  # [minx, miny, maxx, maxy] em EPSG:4326
 
-    # 2. Buffer Geográfico de 18% (entre 15% e 20% conforme instrução)
-    width_deg = bbox[2] - bbox[0]
-    buffer_deg = width_deg * 0.18
+    # 2. Buffer Geográfico com bounds.pad(0.15) no envelope dos talhões
+    # Assegura que o topo dos polígonos fique 100% preenchido pela imagem de satélite/NDVI em qualquer nível de zoom
+    lat_span = float(bbox[3] - bbox[1])
+    lon_span = float(bbox[2] - bbox[0])
+    pad_lat = lat_span * 0.15
+    pad_lon = lon_span * 0.15
+
     bbox_expandido = [
-        float(bbox[0] - buffer_deg),
-        float(bbox[1] - buffer_deg),
-        float(bbox[2] + buffer_deg),
-        float(bbox[3] + buffer_deg)
+        float(bbox[0] - pad_lon),
+        float(bbox[1] - pad_lat),
+        float(bbox[2] + pad_lon),
+        float(bbox[3] + pad_lat * 1.35)  # Estende a latitude norte com folga generosa
     ]
     lng_min_exp, lat_min_exp, lng_max_exp, lat_max_exp = bbox_expandido
 
-    print(f"\n[1/6] Bounding Box dos Talhões e Expansão:")
+    print(f"\n[1/6] Bounding Box dos Talhões e Expansão (bounds.pad(0.15)):")
     print(f"  - BBox Original : minX={bbox[0]:.6f}, minY={bbox[1]:.6f}, maxX={bbox[2]:.6f}, maxY={bbox[3]:.6f}")
-    print(f"  - Buffer (18%)  : {buffer_deg:.6f}° (~{buffer_deg * 110750:.1f} metros)")
+    print(f"  - Buffer (15%+) : {pad_lat:.6f}° lat / {pad_lon:.6f}° lon (~{pad_lat * 110750:.1f} metros)")
     print(f"  - BBox Expandido: minX={lng_min_exp:.6f}, minY={lat_min_exp:.6f}, maxX={lng_max_exp:.6f}, maxY={lat_max_exp:.6f}")
     print(f"  - Sobra Norte   : {lat_max_exp - bbox[3]:.6f}° (~{(lat_max_exp - bbox[3]) * 110750:.1f} m acima do talhão norte)")
 
@@ -133,10 +137,11 @@ def main():
     print(f"  - Dimensões : {out_width} x {out_height} pixels (2.0 metros/pixel)")
     print(f"  - Transform : {dst_transform}")
 
-    # Cria máscara vetorial unificada de todos os talhões
-    geoms = [geom for geom in gdf.geometry if geom and not geom.is_empty]
-    mask_talhoes = geometry_mask(geoms, out_shape=(out_height, out_width), transform=dst_transform, invert=True, all_touched=True)
-    print(f"  - Pixels dentro dos talhões: {np.count_nonzero(mask_talhoes)} pixels")
+    # Cria máscara vetorial unificada com folga de segurança (15 metros)
+    # assegurando cobertura 100% no topo e bordas sem recortes retos em nenhum nível de zoom
+    geoms_buffer = [geom.buffer(0.00015) for geom in gdf.geometry if geom and not geom.is_empty]
+    mask_talhoes = geometry_mask(geoms_buffer, out_shape=(out_height, out_width), transform=dst_transform, invert=True, all_touched=True)
+    print(f"  - Pixels dentro dos talhões (com folga protetiva): {np.count_nonzero(mask_talhoes)} pixels")
 
     # Colormap NDVI Fixo [0.10, 0.80] RdYlGn
     vmin = 0.10
@@ -278,11 +283,18 @@ def main():
             continue
 
         minx, miny, maxx, maxy = geom.bounds
-        t_width = max(1, int(round((maxx - minx) / res_lon_deg)))
-        t_height = max(1, int(round((maxy - miny) / res_lat_deg)))
-        t_transform = rasterio.transform.from_bounds(minx, miny, maxx, maxy, t_width, t_height)
+        w_pad = (maxx - minx) * 0.15
+        h_pad = (maxy - miny) * 0.15
+        t_minx = minx - w_pad
+        t_miny = miny - h_pad
+        t_maxx = maxx + w_pad
+        t_maxy = maxy + h_pad * 1.35  # Estende a latitude norte com folga bounds.pad(0.15)
+        t_width = max(1, int(round((t_maxx - t_minx) / res_lon_deg)))
+        t_height = max(1, int(round((t_maxy - t_miny) / res_lat_deg)))
+        t_transform = rasterio.transform.from_bounds(t_minx, t_miny, t_maxx, t_maxy, t_width, t_height)
 
-        t_mask = geometry_mask([geom], out_shape=(t_height, t_width), transform=t_transform, invert=True, all_touched=True)
+        geom_folga = geom.buffer(0.00015)
+        t_mask = geometry_mask([geom_folga], out_shape=(t_height, t_width), transform=t_transform, invert=True, all_touched=True)
 
         # Helper para recortar qualquer array mestre
         def extrair_talhao_rgba(r_master, g_master, b_master, is_ndvi=False, ndvi_raw=None):

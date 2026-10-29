@@ -424,12 +424,25 @@ const ITPAMap = (function () {
       if (layerGroupNdviAnterior) layerGroupNdviAnterior.clearLayers();
       if (layerGroupRgbAnterior) layerGroupRgbAnterior.clearLayers();
 
-      // Coordenadas exatas do bbox_expandido (buffer geográfico de 18% para cobrir todo o Norte sem cortes)
-      // bbox expandido: minX=-43.023964, minY=-22.742655, maxX=-42.947936, maxY=-22.688045
-      const boundsSateliteExpandido = L.latLngBounds(
-        [-22.742655, -43.023964], // [lat_min_expandida, lng_min_expandida]
-        [-22.688045, -42.947936]  // [lat_max_expandida, lng_max_expandida]
+      // Coordenadas exatas do bbox_expandido (buffer geográfico com bounds.pad(0.15) para estender latitude norte)
+      // bbox expandido: minX=-43.022287, minY=-22.737766, maxX=-42.949613, maxY=-22.691124
+      let boundsSateliteExpandido = L.latLngBounds(
+        [-22.737766, -43.022287], // [lat_min_expandida, lng_min_expandida]
+        [-22.691124, -42.949613]  // [lat_max_expandida, lng_max_expandida]
       );
+
+      // Se talhões já carregados, assegura extensão bounds.pad(0.15) no envelope
+      try {
+        const respBounds = await fetch('./assets/satelite/bounds_expandido.json');
+        if (respBounds.ok) {
+          const bJson = await respBounds.json();
+          if (bJson && bJson.bounds && bJson.bounds.length === 2) {
+            boundsSateliteExpandido = L.latLngBounds(bJson.bounds[0], bJson.bounds[1]);
+          }
+        }
+      } catch (e) {
+        // Fallback para bounds expandido padrão
+      }
 
       // Helper para criar ImageOverlay georreferenciado da AOI completa com limites de zoom (10 a 22)
       const criarAoiOverlay = (caminhoRelativo, paneName = 'leftPane') => {
@@ -674,14 +687,14 @@ const ITPAMap = (function () {
           layerControl.addOverlay(talhoesLayer, '🌱 Limites e Talhões (ITPA)');
         }
 
-        // Ajuste automático do enquadramento com folga para englobar todos os talhões (inclusive o talhão sul)
+        // Ajuste automático do enquadramento com folga bounds.pad(0.15) para englobar todos os talhões sem cortes
         if (talhoesLayer.getBounds().isValid()) {
-          const totalBoundsFolga = talhoesLayer.getBounds().pad(0.08);
+          const totalBoundsFolga = talhoesLayer.getBounds().pad(0.15);
           map.fitBounds(totalBoundsFolga, {
             padding: [40, 40],
             maxZoom: 16
           });
-          console.log('[ITPAMap] Auto-fit aplicado aos limites dos talhões com folga sul/norte:', totalBoundsFolga);
+          console.log('[ITPAMap] Auto-fit aplicado com bounds.pad(0.15) estendendo latitude norte:', totalBoundsFolga);
         }
       }
 
