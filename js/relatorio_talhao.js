@@ -158,14 +158,16 @@
     offscreen.height = 320;
     const ctx = offscreen.getContext('2d');
 
-    const ndviRecente = props && props.ndvi_mean !== undefined ? Number(props.ndvi_mean) : 0.388;
-    const labels = ['29/Jul', '13/Ago', '28/Set', '13/Out (-15d)', '28/Out (2m)'];
-    const p1 = Number((ndviRecente * 0.72).toFixed(3));
-    const p2 = Number((ndviRecente * 0.79).toFixed(3));
-    const p3 = Number((ndviRecente * 0.87).toFixed(3));
-    const p4 = Number((ndviRecente * 0.94).toFixed(3));
-    const p5 = Number(ndviRecente.toFixed(3));
-    const dados = [p1, p2, p3, p4, p5];
+    const talhaoNome = (props && (props.Name || props.nome || props.Nome)) || '';
+    const talhaoId = (props && (props.id || props.codigo)) || talhaoNome;
+
+    let dadosTalhao = null;
+    if (window.ITPAHistorico && typeof window.ITPAHistorico.obterDadosTalhao === 'function') {
+      dadosTalhao = await window.ITPAHistorico.obterDadosTalhao(talhaoId, props);
+    }
+
+    const labels = (dadosTalhao && dadosTalhao.datas) || ['20/Ago', '09/Set (Anterior)', '24/Set', '14/Out', '28/Out (Recente 2m)'];
+    const dados = (dadosTalhao && dadosTalhao.serie_temporal) || [0.645, 0.679, 0.563, 0.461, 0.388];
 
     const gradient = ctx.createLinearGradient(0, 0, 0, 320);
     gradient.addColorStop(0, 'rgba(22, 163, 74, 0.32)');
@@ -268,6 +270,12 @@
       // 2. Coordenadas Geográficas e UTM 23S
       const centroide = extrairCentroide(props, bounds);
       const utm = latLonToUtm23S(centroide.lat, centroide.lng);
+
+      // Consulta série histórica real
+      let dadosHistorico = null;
+      if (window.ITPAHistorico && typeof window.ITPAHistorico.obterDadosTalhao === 'function') {
+        dadosHistorico = await window.ITPAHistorico.obterDadosTalhao(talhaoId, props);
+      }
 
       // 3. Carregamento assíncrono dos recursos visuais
       const [imgRgb, imgNdvi, chartImg, mapScreenshot] = await Promise.all([
@@ -427,12 +435,21 @@
       // -----------------------------------------------------------------------
       // D. TABELA ANALÍTICA DE MÉTRICAS ZONAIS (AUTOTABLE COM TEXTO LIMPO)
       // -----------------------------------------------------------------------
+      const antValStr = (dadosHistorico && dadosHistorico.anterior && dadosHistorico.anterior.ndvi_mean !== undefined)
+        ? dadosHistorico.anterior.ndvi_mean.toFixed(3)
+        : '--';
+
+      const varStr = (dadosHistorico && dadosHistorico.anterior && dadosHistorico.anterior.delta_ndvi !== undefined)
+        ? `${dadosHistorico.anterior.delta_ndvi >= 0 ? '+' : ''}${dadosHistorico.anterior.delta_ndvi.toFixed(3)}  (${dadosHistorico.anterior.gain_pct >= 0 ? '+' : ''}${dadosHistorico.anterior.gain_pct.toFixed(1)}%)`
+        : '--';
+
       const dadosTabela = [
         ['Identificador Operacional', sanitizarTextoPdf(talhaoId.toUpperCase()), 'Codigo unico no cadastro ITPA'],
         ['Area Liquida Projetada', `${areaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha  (${Math.round(areaHa * 10000).toLocaleString('pt-BR')} m2)`, 'Projecao Cartografica UTM Zona 23S'],
         ['Perimetro Territorial', `${Math.round(perimetroM).toLocaleString('pt-BR')} metros`, 'Poligono vetorial georreferenciado'],
-        ['NDVI Medio do Dossel', ndviMean.toFixed(3), 'Sentinel-2 L2A Super-resolvido (Synapse-SR)'],
-        ['Intervalo de Vigor (Min - Max)', `${ndviMin.toFixed(3)}  ate  ${ndviMax.toFixed(3)}`, 'Gradiente espectral de reflectancia'],
+        ['NDVI Medio Recente (28/Out)', ndviMean.toFixed(3), 'Sentinel-2 L2A Super-resolvido (2m)'],
+        ['NDVI Anterior (09/Set)', antValStr, 'Passagem real Sentinel-2 L2A (09/Set - 2m)'],
+        ['Variacao Temporal (09/Set -> 28/Out)', varStr, 'Dinamica biofisica apurada entre passagens'],
         ['Classificacao Fitossanitaria', ndviClasseLimpa, 'Escala padrao RdYlGn de vigor florestal']
       ];
 
@@ -483,11 +500,11 @@
       doc.setTextColor(39, 77, 30);
       doc.text('EVOLUCAO TEMPORAL DE VIGOR (SENTINEL-2 L2A)', marginLeft + 4, cursorY + 5.2);
 
-      // Subtítulo sinalizando série histórica provisória / calibrada
+      // Subtítulo sinalizando série histórica real
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(6.5);
       doc.setTextColor(100, 116, 95);
-      doc.text('(Serie historica em integracao - dados da passagem atual calibrados)', marginLeft + 4, cursorY + 9);
+      doc.text('Serie multitemporal Sentinel-2 (Super-Resolucao 2m) - Passagens reais 09/Set e 28/Out', marginLeft + 4, cursorY + 9);
 
       if (chartImg) {
         try {

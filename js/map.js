@@ -117,10 +117,10 @@ const ITPAMap = (function () {
 
     const overlays = {
       '📸 Ortofoto Drone (Alta Resolução)': ortofotoLayer,
-      '🌱 Talhões - NDVI (Recente)': layerGroupNdviRecente,
-      '🛰️ Talhões - RGB (Recente)': layerGroupRgbRecente,
-      '🌱 Talhões - NDVI (Passagem Anterior -15d)': layerGroupNdviAnterior,
-      '🛰️ Talhões - RGB (Passagem Anterior -15d)': layerGroupRgbAnterior
+      '🌱 Talhões - NDVI (Recente 2m)': layerGroupNdviRecente,
+      '🛰️ Talhões - RGB (Recente 2m)': layerGroupRgbRecente,
+      '🌱 Talhões - NDVI (Anterior 09/Set - 2m)': layerGroupNdviAnterior,
+      '🛰️ Talhões - RGB (Anterior 09/Set - 2m)': layerGroupRgbAnterior
     };
 
     layerControl = L.control.layers(baseLayers, overlays, { position: 'topright' }).addTo(map);

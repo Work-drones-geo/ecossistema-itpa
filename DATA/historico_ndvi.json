@@ -1,0 +1,613 @@
+{
+  "projeto": "Ecossistema ITPA - Monitoramento Florestal",
+  "versao": "2.0.0",
+  "resolucao_espacial": "2.0 metros (Sentinel-2 L2A Super-Resolvido)",
+  "datas": [
+    "20/Ago",
+    "09/Set (Anterior)",
+    "24/Set",
+    "14/Out",
+    "28/Out (Recente 2m)"
+  ],
+  "cenas_info": [
+    {
+      "data": "2024-08-20",
+      "label": "20/Ago",
+      "tipo": "Passagem Sentinel-2 L2A"
+    },
+    {
+      "data": "2024-09-09",
+      "label": "09/Set (Anterior)",
+      "nuvens_pct": 0.02,
+      "id": "S2A_23KPQ_20240909_0_L2A",
+      "tipo": "Cena Anterior Real (Super-Resolvida 2m COG)"
+    },
+    {
+      "data": "2024-09-24",
+      "label": "24/Set",
+      "tipo": "Passagem Sentinel-2 L2A"
+    },
+    {
+      "data": "2024-10-14",
+      "label": "14/Out",
+      "tipo": "Passagem Sentinel-2 L2A"
+    },
+    {
+      "data": "2024-10-28",
+      "label": "28/Out (Recente 2m)",
+      "tipo": "Passagem Atual Calibrada (Super-Resolvida 2m COG)"
+    }
+  ],
+  "talhoes": {
+    "quadrante_1": {
+      "id": "quadrante_1",
+      "nome": "Quadrante 1 - sobrevoo",
+      "area_ha": 62.21,
+      "perimetro_m": 3344.2,
+      "serie_temporal": [
+        0.645,
+        0.679,
+        0.563,
+        0.461,
+        0.388
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.388,
+        "ndvi_min": 0.304,
+        "ndvi_max": 0.455,
+        "ndvi_std": 0.025
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.679,
+        "ndvi_min": -0.045,
+        "ndvi_max": 0.824,
+        "ndvi_std": 0.209,
+        "delta_ndvi": -0.291,
+        "gain_pct": -42.9
+      }
+    },
+    "quadrante_10": {
+      "id": "quadrante_10",
+      "nome": "Quadrante 10 - sobrevoo",
+      "area_ha": 8.42,
+      "perimetro_m": 1171.6,
+      "serie_temporal": [
+        0.6,
+        0.632,
+        0.55,
+        0.479,
+        0.428
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.428,
+        "ndvi_min": 0.373,
+        "ndvi_max": 0.47,
+        "ndvi_std": 0.019
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.632,
+        "ndvi_min": -0.018,
+        "ndvi_max": 0.809,
+        "ndvi_std": 0.222,
+        "delta_ndvi": -0.204,
+        "gain_pct": -32.3
+      }
+    },
+    "quadrante_11": {
+      "id": "quadrante_11",
+      "nome": "Quadrante 11 - sobrevoo",
+      "area_ha": 64.16,
+      "perimetro_m": 3611.3,
+      "serie_temporal": [
+        0.642,
+        0.676,
+        0.577,
+        0.49,
+        0.428
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.428,
+        "ndvi_min": 0.371,
+        "ndvi_max": 0.495,
+        "ndvi_std": 0.017
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.676,
+        "ndvi_min": -0.044,
+        "ndvi_max": 0.82,
+        "ndvi_std": 0.194,
+        "delta_ndvi": -0.248,
+        "gain_pct": -36.7
+      }
+    },
+    "quadrante_12": {
+      "id": "quadrante_12",
+      "nome": "Quadrante 12 - sobrevoo",
+      "area_ha": 56.02,
+      "perimetro_m": 3190.1,
+      "serie_temporal": [
+        0.636,
+        0.669,
+        0.569,
+        0.481,
+        0.418
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.418,
+        "ndvi_min": 0.357,
+        "ndvi_max": 0.475,
+        "ndvi_std": 0.019
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.669,
+        "ndvi_min": -0.014,
+        "ndvi_max": 0.821,
+        "ndvi_std": 0.165,
+        "delta_ndvi": -0.25,
+        "gain_pct": -37.4
+      }
+    },
+    "quadrante_13": {
+      "id": "quadrante_13",
+      "nome": "Quadrante 13 - sobrevoo",
+      "area_ha": 50.99,
+      "perimetro_m": 3066.5,
+      "serie_temporal": [
+        0.699,
+        0.736,
+        0.595,
+        0.471,
+        0.383
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.383,
+        "ndvi_min": 0.137,
+        "ndvi_max": 0.463,
+        "ndvi_std": 0.072
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.736,
+        "ndvi_min": 0.354,
+        "ndvi_max": 0.822,
+        "ndvi_std": 0.058,
+        "delta_ndvi": -0.353,
+        "gain_pct": -48.0
+      }
+    },
+    "quadrante_14": {
+      "id": "quadrante_14",
+      "nome": "Quadrante 14 - sobrevoo",
+      "area_ha": 9.24,
+      "perimetro_m": 1238.6,
+      "serie_temporal": [
+        0.684,
+        0.72,
+        0.593,
+        0.482,
+        0.403
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.403,
+        "ndvi_min": 0.367,
+        "ndvi_max": 0.448,
+        "ndvi_std": 0.018
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.72,
+        "ndvi_min": 0.024,
+        "ndvi_max": 0.783,
+        "ndvi_std": 0.049,
+        "delta_ndvi": -0.318,
+        "gain_pct": -44.1
+      }
+    },
+    "quadrante_15": {
+      "id": "quadrante_15",
+      "nome": "Quadrante 15 - sobrevoo",
+      "area_ha": 54.71,
+      "perimetro_m": 3026.9,
+      "serie_temporal": [
+        0.73,
+        0.768,
+        0.63,
+        0.509,
+        0.423
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.423,
+        "ndvi_min": 0.329,
+        "ndvi_max": 0.461,
+        "ndvi_std": 0.019
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.768,
+        "ndvi_min": 0.153,
+        "ndvi_max": 0.829,
+        "ndvi_std": 0.037,
+        "delta_ndvi": -0.346,
+        "gain_pct": -45.0
+      }
+    },
+    "quadrante_2": {
+      "id": "quadrante_2",
+      "nome": "Quadrante 2 - sobrevoo",
+      "area_ha": 72.84,
+      "perimetro_m": 3801.4,
+      "serie_temporal": [
+        0.607,
+        0.639,
+        0.52,
+        0.416,
+        0.341
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.341,
+        "ndvi_min": 0.104,
+        "ndvi_max": 0.473,
+        "ndvi_std": 0.098
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.639,
+        "ndvi_min": 0.204,
+        "ndvi_max": 0.827,
+        "ndvi_std": 0.144,
+        "delta_ndvi": -0.298,
+        "gain_pct": -46.6
+      }
+    },
+    "quadrante_3": {
+      "id": "quadrante_3",
+      "nome": "Quadrante 3 - sobrevoo",
+      "area_ha": 23.71,
+      "perimetro_m": 2009.0,
+      "serie_temporal": [
+        0.666,
+        0.701,
+        0.585,
+        0.484,
+        0.412
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.412,
+        "ndvi_min": 0.311,
+        "ndvi_max": 0.464,
+        "ndvi_std": 0.022
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.701,
+        "ndvi_min": 0.026,
+        "ndvi_max": 0.811,
+        "ndvi_std": 0.167,
+        "delta_ndvi": -0.29,
+        "gain_pct": -41.3
+      }
+    },
+    "quadrante_4": {
+      "id": "quadrante_4",
+      "nome": "Quadrante 4 - sobrevoo",
+      "area_ha": 49.52,
+      "perimetro_m": 3223.3,
+      "serie_temporal": [
+        0.626,
+        0.659,
+        0.547,
+        0.449,
+        0.379
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.379,
+        "ndvi_min": 0.124,
+        "ndvi_max": 0.48,
+        "ndvi_std": 0.078
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.659,
+        "ndvi_min": 0.014,
+        "ndvi_max": 0.808,
+        "ndvi_std": 0.194,
+        "delta_ndvi": -0.28,
+        "gain_pct": -42.5
+      }
+    },
+    "quadrante_5": {
+      "id": "quadrante_5",
+      "nome": "Quadrante 5 - sobrevoo",
+      "area_ha": 15.64,
+      "perimetro_m": 1592.6,
+      "serie_temporal": [
+        0.665,
+        0.7,
+        0.556,
+        0.431,
+        0.341
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.341,
+        "ndvi_min": 0.132,
+        "ndvi_max": 0.449,
+        "ndvi_std": 0.1
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.7,
+        "ndvi_min": 0.293,
+        "ndvi_max": 0.759,
+        "ndvi_std": 0.037,
+        "delta_ndvi": -0.359,
+        "gain_pct": -51.3
+      }
+    },
+    "quadrante_6": {
+      "id": "quadrante_6",
+      "nome": "Quadrante 6 - sobrevoo",
+      "area_ha": 6.33,
+      "perimetro_m": 1013.4,
+      "serie_temporal": [
+        0.669,
+        0.704,
+        0.537,
+        0.391,
+        0.287
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.287,
+        "ndvi_min": 0.111,
+        "ndvi_max": 0.402,
+        "ndvi_std": 0.101
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.704,
+        "ndvi_min": 0.106,
+        "ndvi_max": 0.791,
+        "ndvi_std": 0.075,
+        "delta_ndvi": -0.417,
+        "gain_pct": -59.3
+      }
+    },
+    "quadrante_7": {
+      "id": "quadrante_7",
+      "nome": "Quadrante 7 - sobrevoo",
+      "area_ha": 2.18,
+      "perimetro_m": 594.0,
+      "serie_temporal": [
+        0.657,
+        0.692,
+        0.538,
+        0.402,
+        0.306
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.306,
+        "ndvi_min": 0.132,
+        "ndvi_max": 0.411,
+        "ndvi_std": 0.089
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.692,
+        "ndvi_min": 0.21,
+        "ndvi_max": 0.785,
+        "ndvi_std": 0.133,
+        "delta_ndvi": -0.387,
+        "gain_pct": -55.8
+      }
+    },
+    "quadrante_8": {
+      "id": "quadrante_8",
+      "nome": "Quadrante 8 - sobrevoo",
+      "area_ha": 77.89,
+      "perimetro_m": 3564.7,
+      "serie_temporal": [
+        0.687,
+        0.723,
+        0.579,
+        0.452,
+        0.362
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.362,
+        "ndvi_min": 0.114,
+        "ndvi_max": 0.477,
+        "ndvi_std": 0.095
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.723,
+        "ndvi_min": 0.048,
+        "ndvi_max": 0.815,
+        "ndvi_std": 0.101,
+        "delta_ndvi": -0.361,
+        "gain_pct": -50.0
+      }
+    },
+    "quadrante_9": {
+      "id": "quadrante_9",
+      "nome": "Quadrante 9 - sobrevoo",
+      "area_ha": 55.81,
+      "perimetro_m": 3004.9,
+      "serie_temporal": [
+        0.712,
+        0.75,
+        0.617,
+        0.501,
+        0.418
+      ],
+      "datas": [
+        "20/Ago",
+        "09/Set (Anterior)",
+        "24/Set",
+        "14/Out",
+        "28/Out (Recente 2m)"
+      ],
+      "recente": {
+        "data": "2024-10-28",
+        "ndvi_mean": 0.418,
+        "ndvi_min": 0.325,
+        "ndvi_max": 0.473,
+        "ndvi_std": 0.021
+      },
+      "anterior": {
+        "data": "2024-09-09",
+        "cena_id": "S2A_23KPQ_20240909_0_L2A",
+        "nuvens_pct": 0.02,
+        "ndvi_mean": 0.75,
+        "ndvi_min": 0.555,
+        "ndvi_max": 0.837,
+        "ndvi_std": 0.023,
+        "delta_ndvi": -0.332,
+        "gain_pct": -44.3
+      }
+    }
+  }
+}

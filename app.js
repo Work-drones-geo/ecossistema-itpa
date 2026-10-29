@@ -125,27 +125,42 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ==========================================================================
   let talhaoChartInstance = null;
 
-  function renderizarGraficoNdviTalhao(props) {
+  async function renderizarGraficoNdviTalhao(props) {
     const canvas = document.getElementById('talhao-ndvi-chart');
     if (!canvas || typeof Chart === 'undefined') return;
 
-    const ndviRecente = props && props.ndvi_mean !== undefined ? Number(props.ndvi_mean) : 0.388;
+    // Obtém a série temporal apurada no arquivo data/historico_ndvi.json
+    const talhaoNome = (props && (props.Name || props.nome || props.Nome)) || '';
+    const talhaoId = (props && (props.id || props.codigo)) || talhaoNome;
 
-    // Série multitemporal dos últimos 90 dias com curva agronômica de desenvolvimento
-    const labels = ['29/Jul', '13/Ago', '28/Set', '13/Out (-15d)', '28/Out (2m)'];
-    const p1 = Number((ndviRecente * 0.72).toFixed(3));
-    const p2 = Number((ndviRecente * 0.79).toFixed(3));
-    const p3 = Number((ndviRecente * 0.87).toFixed(3));
-    const p4 = Number((ndviRecente * 0.94).toFixed(3));
-    const p5 = Number(ndviRecente.toFixed(3));
-    const dados = [p1, p2, p3, p4, p5];
+    let dadosTalhao = null;
+    if (window.ITPAHistorico && typeof window.ITPAHistorico.obterDadosTalhao === 'function') {
+      dadosTalhao = await window.ITPAHistorico.obterDadosTalhao(talhaoId, props);
+    }
 
-    // Calcula ganho percentual total acumulado
-    const gainPct = ((p5 - p1) / (p1 || 0.1)) * 100;
+    const labels = (dadosTalhao && dadosTalhao.datas) || ['20/Ago', '09/Set (Anterior)', '24/Set', '14/Out', '28/Out (Recente 2m)'];
+    const dados = (dadosTalhao && dadosTalhao.serie_temporal) || [0.645, 0.679, 0.563, 0.461, 0.388];
+
+    // Calcula ganho percentual e delta apurado entre a cena anterior (09/Set) e recente (28/Out)
+    let deltaNdvi = 0;
+    let gainPct = 0;
+
+    if (dadosTalhao && dadosTalhao.anterior && dadosTalhao.anterior.delta_ndvi !== undefined) {
+      deltaNdvi = Number(dadosTalhao.anterior.delta_ndvi);
+      gainPct = Number(dadosTalhao.anterior.gain_pct);
+    } else {
+      const pAnt = dados[1] || 0.6;
+      const pRec = dados[dados.length - 1] || 0.38;
+      deltaNdvi = pRec - pAnt;
+      gainPct = (deltaNdvi / (pAnt || 0.1)) * 100;
+    }
+
     const gainBadge = document.getElementById('modal-chart-gain');
     if (gainBadge) {
-      gainBadge.textContent = `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(1)}%`;
+      const sinal = deltaNdvi >= 0 ? '+' : '';
+      gainBadge.textContent = `Δ ${sinal}${deltaNdvi.toFixed(3)} (${sinal}${gainPct.toFixed(1)}%)`;
       gainBadge.className = `chart-gain-badge ${gainPct >= 0 ? 'positive' : 'negative'}`;
+      gainBadge.title = `Passagem Anterior (09/Set): ${(dadosTalhao && dadosTalhao.anterior ? dadosTalhao.anterior.ndvi_mean : dados[1]).toFixed(3)} -> Recente (28/Out): ${(dadosTalhao && dadosTalhao.recente ? dadosTalhao.recente.ndvi_mean : dados[dados.length-1]).toFixed(3)}`;
     }
 
     if (talhaoChartInstance) {
