@@ -152,7 +152,7 @@ const ITPAMap = (function () {
       '🌱 Talhões - NDVI (Recente 2m)': layerGroupNdviRecente,
       '🛰️ Talhões - RGB (Recente 2m)': layerGroupRgbRecente,
       '🌱 Talhões - NDVI (Anterior 09/Set - 2m)': layerGroupNdviAnterior,
-      '🛰️ Talhões - RGB (Anterior 09/Set - 2m)': layerGroupRgbAnterior
+      '🛰️ Talhões RGB - Passagem Anterior (2m)': layerGroupRgbAnterior
     };
 
     layerControl = L.control.layers(baseLayers, overlays, { position: 'topright' }).addTo(map);
@@ -782,6 +782,7 @@ const ITPAMap = (function () {
     const toggleNdvi = document.getElementById('sheet-toggle-ndvi');
     const toggleRgb = document.getElementById('sheet-toggle-rgb');
     const toggleNdviAnt = document.getElementById('sheet-toggle-ndvi-ant');
+    const toggleRgbAnt = document.getElementById('sheet-toggle-rgb-ant');
     const toggleTalhoes = document.getElementById('sheet-toggle-talhoes');
 
     // Sincroniza o estado das pílulas e interruptores com o mapa Leaflet
@@ -803,9 +804,13 @@ const ITPAMap = (function () {
       if (pillRgb) pillRgb.classList.toggle('active', !!rgbAtivo);
       if (toggleRgb) toggleRgb.checked = !!rgbAtivo;
 
-      // 4. Passagem Anterior (-15d)
+      // 4. Passagem Anterior NDVI (09/Set - 2m)
       const ndviAntAtivo = layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior);
       if (toggleNdviAnt) toggleNdviAnt.checked = !!ndviAntAtivo;
+
+      // 4b. Passagem Anterior RGB (09/Set - 2m)
+      const rgbAntAtivo = layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior);
+      if (toggleRgbAnt) toggleRgbAnt.checked = !!rgbAntAtivo;
 
       // 5. Limites dos Talhões
       const talhoesAtivo = talhoesLayer && map.hasLayer(talhoesLayer);
@@ -979,6 +984,17 @@ const ITPAMap = (function () {
       };
     }
 
+    if (toggleRgbAnt) {
+      toggleRgbAnt.onchange = () => {
+        if (toggleRgbAnt.checked) {
+          if (layerGroupRgbAnterior && !map.hasLayer(layerGroupRgbAnterior)) map.addLayer(layerGroupRgbAnterior);
+        } else {
+          if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
+        }
+        sincronizarEstadosUI();
+      };
+    }
+
     if (toggleTalhoes) {
       toggleTalhoes.onchange = () => {
         if (toggleTalhoes.checked) {
@@ -1006,6 +1022,7 @@ const ITPAMap = (function () {
   // ==========================================================================
   let swipeAtivo = false;
   let swipePctAtual = 50;
+  let swipeCamadasPrevias = null;
 
   function atualizarPosicaoSwipe(pct) {
     if (!map || !swipeAtivo) return;
@@ -1056,33 +1073,72 @@ const ITPAMap = (function () {
     const pillSwipe = document.getElementById('pill-quick-swipe');
     if (pillSwipe) pillSwipe.classList.add('active');
 
-    // Identifica se o usuário está visualizando RGB ou NDVI
-    const rgbAtivo = layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente);
+    // 1. Salva o estado exato das camadas antes de entrar no modo swipe
+    swipeCamadasPrevias = {
+      ndviRecente: !!(layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)),
+      ndviAnterior: !!(layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)),
+      rgbRecente: !!(layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)),
+      rgbAnterior: !!(layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior))
+    };
 
-    if (rgbAtivo) {
-      // Comparação RGB: Recente (leftPane) vs Anterior (rightPane)
+    // 2. Determina o modo ativo: prioriza RGB se qualquer uma das camadas RGB estiver ligada
+    const isModoRgb = swipeCamadasPrevias.rgbRecente || swipeCamadasPrevias.rgbAnterior;
+
+    const titleLeft = document.querySelector('.swipe-tag.left .swipe-title');
+    const titleRight = document.querySelector('.swipe-tag.right .swipe-title');
+    const subLeft = document.querySelector('.swipe-tag.left .swipe-sub');
+    const subRight = document.querySelector('.swipe-tag.right .swipe-sub');
+
+    if (isModoRgb) {
+      // Isola modo RGB: desativa temporariamente NDVI para evitar sobreposição/mistura
+      if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) {
+        map.removeLayer(layerGroupNdviRecente);
+      }
+      if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) {
+        map.removeLayer(layerGroupNdviAnterior);
+      }
+
+      // Garante RGB Recente (leftPane) e RGB Anterior (rightPane) ativos no mapa
       if (layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) {
         map.addLayer(layerGroupRgbRecente);
       }
       if (layerGroupRgbAnterior && !map.hasLayer(layerGroupRgbAnterior)) {
         map.addLayer(layerGroupRgbAnterior);
       }
-      const titleLeft = document.querySelector('.swipe-tag.left .swipe-title');
-      const titleRight = document.querySelector('.swipe-tag.right .swipe-title');
+
       if (titleLeft) titleLeft.textContent = '🛰️ RGB Recente (2m)';
+      if (subLeft) subLeft.textContent = '28/Out';
       if (titleRight) titleRight.textContent = '⏪ RGB Anterior (2m)';
+      if (subRight) subRight.textContent = '09/Set';
+
+      // Esconde legenda de NDVI no modo RGB
+      const ndviLegendEl = document.getElementById('ndvi-legend');
+      if (ndviLegendEl) ndviLegendEl.style.display = 'none';
     } else {
-      // Padrão NDVI: Recente (leftPane) vs Anterior (rightPane)
+      // Padrão NDVI: isola modo NDVI, desativando RGB
+      if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) {
+        map.removeLayer(layerGroupRgbRecente);
+      }
+      if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) {
+        map.removeLayer(layerGroupRgbAnterior);
+      }
+
+      // Garante NDVI Recente (leftPane) e NDVI Anterior (rightPane) ativos no mapa
       if (layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) {
         map.addLayer(layerGroupNdviRecente);
       }
       if (layerGroupNdviAnterior && !map.hasLayer(layerGroupNdviAnterior)) {
         map.addLayer(layerGroupNdviAnterior);
       }
-      const titleLeft = document.querySelector('.swipe-tag.left .swipe-title');
-      const titleRight = document.querySelector('.swipe-tag.right .swipe-title');
+
       if (titleLeft) titleLeft.textContent = '🌱 NDVI Recente (2m)';
+      if (subLeft) subLeft.textContent = '28/Out';
       if (titleRight) titleRight.textContent = '⏪ NDVI Anterior (2m)';
+      if (subRight) subRight.textContent = '09/Set';
+
+      // Exibe legenda de NDVI no modo NDVI
+      const ndviLegendEl = document.getElementById('ndvi-legend');
+      if (ndviLegendEl) ndviLegendEl.style.display = 'block';
     }
 
     if (swipeContainer) {
@@ -1138,17 +1194,39 @@ const ITPAMap = (function () {
       satAntPane.style.webkitClipPath = '';
     }
 
-    // Desliga as camadas anteriores após o swipe para manter o mapa limpo
-    if (layerGroupNdviAnterior && map && map.hasLayer(layerGroupNdviAnterior)) {
-      map.removeLayer(layerGroupNdviAnterior);
-    }
-    if (layerGroupRgbAnterior && map && map.hasLayer(layerGroupRgbAnterior)) {
-      map.removeLayer(layerGroupRgbAnterior);
+    // Restaura fielmente o estado prévio das camadas
+    if (swipeCamadasPrevias && map) {
+      const restaurarCamada = (camada, estavaAtiva) => {
+        if (!camada) return;
+        const estaAtiva = map.hasLayer(camada);
+        if (estavaAtiva && !estaAtiva) {
+          map.addLayer(camada);
+        } else if (!estavaAtiva && estaAtiva) {
+          map.removeLayer(camada);
+        }
+      };
+
+      restaurarCamada(layerGroupNdviRecente, swipeCamadasPrevias.ndviRecente);
+      restaurarCamada(layerGroupNdviAnterior, swipeCamadasPrevias.ndviAnterior);
+      restaurarCamada(layerGroupRgbRecente, swipeCamadasPrevias.rgbRecente);
+      restaurarCamada(layerGroupRgbAnterior, swipeCamadasPrevias.rgbAnterior);
+
+      swipeCamadasPrevias = null;
+    } else if (map) {
+      // Fallback seguro de limpeza
+      if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) {
+        map.removeLayer(layerGroupNdviAnterior);
+      }
+      if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) {
+        map.removeLayer(layerGroupRgbAnterior);
+      }
     }
 
     if (map && map.dragging) {
       map.dragging.enable();
     }
+
+    sincronizarEstadosUI();
   }
 
   function setupSwipeInteractions() {
