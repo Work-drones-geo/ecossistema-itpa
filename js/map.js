@@ -77,9 +77,24 @@ const ITPAMap = (function () {
     // Reposiciona o controle de zoom no topo esquerdo para liberar a lateral direita aos atalhos rápidos
     L.control.zoom({ position: 'topleft' }).addTo(map);
 
-    // 3. Panes dedicados para sobreposição de imagens de satélite recortadas dos talhões
-    // satelitePane (Recente 2m - zIndex 355) e sateliteAnteriorPane (Anterior -15d - zIndex 345)
+    // 3. Panes dedicados para sobreposição e controle de swipe (Recente = leftPane, Anterior = rightPane)
     // Ficam entre os tiles base (200) e os vetores de contorno (overlayPane: 400)
+    if (!map.getPane('leftPane')) {
+      map.createPane('leftPane');
+      map.getPane('leftPane').style.zIndex = 355;
+      map.getPane('leftPane').style.pointerEvents = 'none';
+      map.getPane('leftPane').style.width = '100%';
+      map.getPane('leftPane').style.height = '100%';
+    }
+    if (!map.getPane('rightPane')) {
+      map.createPane('rightPane');
+      map.getPane('rightPane').style.zIndex = 345;
+      map.getPane('rightPane').style.pointerEvents = 'none';
+      map.getPane('rightPane').style.width = '100%';
+      map.getPane('rightPane').style.height = '100%';
+    }
+
+    // Aliases para compatibilidade com chamadas legado
     if (!map.getPane('satelitePane')) {
       map.createPane('satelitePane');
       map.getPane('satelitePane').style.zIndex = 355;
@@ -296,7 +311,7 @@ const ITPAMap = (function () {
               const talhaoId = extrairTalhaoId(feature, nomeTalhao);
 
               // Helper para criar ImageOverlay georreferenciado com opacidade e pane dedicado
-              const criarSateliteOverlay = (caminhoRelativo, paneName = 'satelitePane') => {
+              const criarSateliteOverlay = (caminhoRelativo, paneName = 'leftPane') => {
                 const overlay = L.imageOverlay(caminhoRelativo, exactBounds, {
                   opacity: 0.92,
                   interactive: false,
@@ -310,31 +325,31 @@ const ITPAMap = (function () {
                 return overlay;
               };
 
-              // a) 🌱 Talhões - NDVI (Recente 2m)
+              // a) 🌱 Talhões - NDVI (Recente 2m) -> leftPane
               if (layerGroupNdviRecente) {
                 layerGroupNdviRecente.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_recente.png`, 'satelitePane')
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_recente.png`, 'leftPane')
                 );
               }
 
-              // b) 🛰️ Talhões - RGB (Recente 2m)
+              // b) 🛰️ Talhões - RGB (Recente 2m) -> leftPane
               if (layerGroupRgbRecente) {
                 layerGroupRgbRecente.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_recente.png`, 'satelitePane')
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_recente.png`, 'leftPane')
                 );
               }
 
-              // c) 🌱 Talhões - NDVI (Passagem Anterior -15d)
+              // c) 🌱 Talhões - NDVI (Anterior 09/Set - 2m) -> rightPane
               if (layerGroupNdviAnterior) {
                 layerGroupNdviAnterior.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_anterior.png`, 'sateliteAnteriorPane')
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_anterior.png`, 'rightPane')
                 );
               }
 
-              // d) 🛰️ Talhões - RGB (Passagem Anterior -15d)
+              // d) 🛰️ Talhões - RGB (Anterior 09/Set - 2m) -> rightPane
               if (layerGroupRgbAnterior) {
                 layerGroupRgbAnterior.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_anterior.png`, 'sateliteAnteriorPane')
+                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_anterior.png`, 'rightPane')
                 );
               }
             }
@@ -970,6 +985,42 @@ const ITPAMap = (function () {
   // 9. Ferramenta de Comparação "Antes e Depois" (Swipe / Cortina Deslizante)
   // ==========================================================================
   let swipeAtivo = false;
+  let swipePctAtual = 50;
+
+  function atualizarPosicaoSwipe(pct) {
+    if (!map || !swipeAtivo) return;
+
+    // Garante valor numérico seguro entre 0% e 100%
+    const clampedPct = Math.max(0, Math.min(100, Number(pct)));
+    swipePctAtual = clampedPct;
+
+    // Atualiza a posição da linha divisória
+    const divider = document.getElementById('swipe-divider-line');
+    if (divider) {
+      divider.style.left = `${clampedPct}%`;
+    }
+
+    // Aplica o corte diretamente nos contentores dos painéis (com suporte WebKit/Safari)
+    const leftPane = map.getPane('leftPane');
+    const rightPane = map.getPane('rightPane');
+
+    if (leftPane) {
+      leftPane.style.clipPath = `polygon(0 0, ${clampedPct}% 0, ${clampedPct}% 100%, 0 100%)`;
+      leftPane.style.webkitClipPath = `polygon(0 0, ${clampedPct}% 0, ${clampedPct}% 100%, 0 100%)`;
+    }
+
+    if (rightPane) {
+      rightPane.style.clipPath = `polygon(${clampedPct}% 0, 100% 0, 100% 100%, ${clampedPct}% 100%)`;
+      rightPane.style.webkitClipPath = `polygon(${clampedPct}% 0, 100% 0, 100% 100%, ${clampedPct}% 100%)`;
+    }
+
+    // Compatibilidade com pane satelitePane legado
+    const satPane = map.getPane('satelitePane');
+    if (satPane && satPane !== leftPane) {
+      satPane.style.clipPath = `polygon(0 0, ${clampedPct}% 0, ${clampedPct}% 100%, 0 100%)`;
+      satPane.style.webkitClipPath = `polygon(0 0, ${clampedPct}% 0, ${clampedPct}% 100%, 0 100%)`;
+    }
+  }
 
   function ativarModoSwipe(talhaoFoco = null, bounds = null) {
     if (!map) return;
@@ -979,7 +1030,7 @@ const ITPAMap = (function () {
     const pillSwipe = document.getElementById('pill-quick-swipe');
     if (pillSwipe) pillSwipe.classList.add('active');
 
-    // Liga ambas as camadas para a comparação: Recente (superior) vs Anterior (inferior)
+    // Liga ambas as camadas para a comparação: Recente (leftPane) vs Anterior (rightPane)
     if (layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) {
       map.addLayer(layerGroupNdviRecente);
     }
@@ -999,7 +1050,7 @@ const ITPAMap = (function () {
 
     // Posiciona o divisor inicialmente a 50%
     setTimeout(() => {
-      atualizarPosicaoSwipe(map.getSize().x * 0.5);
+      atualizarPosicaoSwipe(50);
     }, 50);
   }
 
@@ -1013,31 +1064,27 @@ const ITPAMap = (function () {
       swipeContainer.style.display = 'none';
     }
 
-    // Restaura o clipPath
-    const pane = map ? map.getPane('satelitePane') : null;
-    if (pane) {
-      pane.style.clipPath = '';
+    // Restaura o clipPath em todos os painéis
+    const leftPane = map ? map.getPane('leftPane') : null;
+    const rightPane = map ? map.getPane('rightPane') : null;
+    const satPane = map ? map.getPane('satelitePane') : null;
+
+    if (leftPane) {
+      leftPane.style.clipPath = '';
+      leftPane.style.webkitClipPath = '';
+    }
+    if (rightPane) {
+      rightPane.style.clipPath = '';
+      rightPane.style.webkitClipPath = '';
+    }
+    if (satPane) {
+      satPane.style.clipPath = '';
+      satPane.style.webkitClipPath = '';
     }
 
     // Desliga a camada anterior após o swipe para manter o mapa limpo
     if (layerGroupNdviAnterior && map && map.hasLayer(layerGroupNdviAnterior)) {
       map.removeLayer(layerGroupNdviAnterior);
-    }
-  }
-
-  function atualizarPosicaoSwipe(xPx) {
-    if (!map || !swipeAtivo) return;
-    const mapWidth = map.getSize().x;
-    const clampedX = Math.max(10, Math.min(mapWidth - 10, xPx));
-
-    const divider = document.getElementById('swipe-divider-line');
-    if (divider) {
-      divider.style.left = `${clampedX}px`;
-    }
-
-    const pane = map.getPane('satelitePane');
-    if (pane) {
-      pane.style.clipPath = `polygon(0 0, ${clampedX}px 0, ${clampedX}px 100%, 0 100%)`;
     }
   }
 
@@ -1067,22 +1114,44 @@ const ITPAMap = (function () {
 
     let isDragging = false;
 
+    function calcularPctDeEvento(e) {
+      const mapEl = document.getElementById('map');
+      if (!mapEl) return 50;
+      const rect = mapEl.getBoundingClientRect();
+
+      let clientX = e.clientX;
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+      } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+      }
+
+      if (clientX === undefined) return swipePctAtual;
+
+      const xRel = clientX - rect.left;
+      const pctRaw = (xRel / rect.width) * 100;
+      return Math.max(0, Math.min(100, pctRaw));
+    }
+
     const startDrag = (e) => {
+      // Impede o scroll e gestos padrão do navegador no mobile
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+
       isDragging = true;
       if (map && map.dragging) map.dragging.disable();
+
+      const pct = calcularPctDeEvento(e);
+      atualizarPosicaoSwipe(pct);
     };
 
     const doDrag = (e) => {
       if (!isDragging) return;
-      let clientX = e.clientX;
-      if (e.touches && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-      }
-      const mapEl = document.getElementById('map');
-      if (mapEl) {
-        const rect = mapEl.getBoundingClientRect();
-        atualizarPosicaoSwipe(clientX - rect.left);
-      }
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+
+      const pct = calcularPctDeEvento(e);
+      atualizarPosicaoSwipe(pct);
     };
 
     const stopDrag = () => {
@@ -1092,24 +1161,27 @@ const ITPAMap = (function () {
       }
     };
 
+    // Eventos táteis com { passive: false } obrigatório para mobile Safari/Chrome
     if (handle) {
+      handle.addEventListener('touchstart', startDrag, { passive: false });
       handle.addEventListener('mousedown', startDrag);
-      handle.addEventListener('touchstart', startDrag, { passive: true });
     }
     if (divider) {
+      divider.addEventListener('touchstart', startDrag, { passive: false });
       divider.addEventListener('mousedown', startDrag);
-      divider.addEventListener('touchstart', startDrag, { passive: true });
     }
 
+    window.addEventListener('touchmove', doDrag, { passive: false });
+    window.addEventListener('touchend', stopDrag, { passive: false });
+    window.addEventListener('touchcancel', stopDrag, { passive: false });
+
     window.addEventListener('mousemove', doDrag);
-    window.addEventListener('touchmove', doDrag, { passive: true });
     window.addEventListener('mouseup', stopDrag);
-    window.addEventListener('touchend', stopDrag);
 
     if (map) {
       map.on('resize', () => {
         if (swipeAtivo) {
-          atualizarPosicaoSwipe(map.getSize().x * 0.5);
+          atualizarPosicaoSwipe(swipePctAtual);
         }
       });
     }

@@ -2635,3 +2635,18 @@ iframe[title*="Netlify"] {
     gap: 6px;
   }
 }
+
+/* ==========================================================================
+   4. Panes Dedicados Leaflet para Comparador Swipe (Recorte Mobile e Desktop)
+   ========================================================================== */
+.leaflet-pane.leaflet-leftPane-pane,
+.leaflet-pane.leaflet-rightPane-pane,
+.leaflet-pane.leaflet-satelitePane-pane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none;
+  will-change: clip-path;
+}
