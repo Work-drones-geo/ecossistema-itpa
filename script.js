@@ -47,6 +47,50 @@ const ITPA_DADOS_PROJETOS = {
   }
 };
 
+// Metadados oficiais das camadas raster (RGB 10m e NDVI 2m) e bounds.json por propriedade
+const ITPA_PROJETOS_RASTERS = {
+  nelito: {
+    chave: "nelito",
+    nome: "Fazenda Nelito",
+    boundsJson: "./DATA/nelito_bounds.json",
+    boundsFallback: [
+      [-22.55606067128168, -43.55337196761436],
+      [-22.53283148841984, -43.53953093530578]
+    ],
+    rgb10m: "./DATA/nelito_rgb_10m.png",
+    ndvi2m: "./DATA/nelito_ndvi_2m.png",
+    rgbAnterior: "./DATA/nelito_rgb_anterior.png",
+    ndviAnterior: "./DATA/nelito_ndvi_anterior.png"
+  },
+  guanai: {
+    chave: "guanai",
+    nome: "Fazenda Guanaí",
+    boundsJson: "./DATA/guanai_bounds.json",
+    boundsFallback: [
+      [-22.56118214040626, -43.55855722892613],
+      [-22.5415121478366, -43.54421380740492]
+    ],
+    rgb10m: "./DATA/guanai_rgb_10m.png",
+    ndvi2m: "./DATA/guanai_ndvi_2m.png",
+    rgbAnterior: "./DATA/guanai_rgb_anterior.png",
+    ndviAnterior: "./DATA/guanai_ndvi_anterior.png"
+  },
+  esec: {
+    chave: "esec",
+    nome: "ESEC Guanabara",
+    boundsJson: "./assets/satelite/bounds_expandido.json",
+    boundsFallback: [
+      [-22.737766, -43.022287],
+      [-22.691124, -42.949613]
+    ],
+    rgb10m: "./assets/satelite/aoi_rgb_recente_2m.png",
+    ndvi2m: "./assets/satelite/aoi_ndvi_recente_2m.png",
+    rgbAnterior: "./assets/satelite/aoi_rgb_anterior_2m.png",
+    ndviAnterior: "./assets/satelite/aoi_ndvi_anterior_2m.png"
+  }
+};
+window.ITPA_PROJETOS_RASTERS = ITPA_PROJETOS_RASTERS;
+
 /**
  * Abre e atualiza o painel de Auditoria de Crédito para o projeto especificado
  * @param {string} projetoKey - 'nelito', 'guanai' ou 'esec'
@@ -148,6 +192,11 @@ window.abrirAuditoriaDoProjeto = function(projetoKey) {
     navMapBtn.click();
   }
 
+  // Sincroniza a troca de projeto e os overlays de satélite/NDVI no Leaflet
+  if (window.ITPAMap && typeof window.ITPAMap.selecionarProjeto === 'function') {
+    window.ITPAMap.selecionarProjeto(key);
+  }
+
   // 5. Atualiza o estado da auditoria em js/auditoria.js se disponível
   if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
     try {
@@ -221,11 +270,31 @@ document.addEventListener('click', function(e) {
   }
 }, true); // useCapture = true para interceptar antes de qualquer biblioteca de mapa
 
-// Inicialização automática do projeto selecionado
+// Instanciação e ligação explícita das camadas raster no Leaflet via bounds.json
+window.instanciarRastersLeaflet = async function(projetoKey, mapInstance) {
+  const map = mapInstance || (window.ITPAMap && window.ITPAMap.getMapInstance ? window.ITPAMap.getMapInstance() : null);
+  if (!map) return;
+  if (window.ITPAMap && typeof window.ITPAMap.carregarRastersDoProjeto === 'function') {
+    return await window.ITPAMap.carregarRastersDoProjeto(projetoKey);
+  }
+};
+
+// Inicialização automática do projeto selecionado e ouvinte de troca
 function initProjetoPadrao() {
   const select = document.getElementById('select-projeto');
   const keyInicial = select ? select.value : 'nelito';
   window.abrirAuditoriaDoProjeto(keyInicial);
+
+  if (select && !select._hasRastersListener) {
+    select._hasRastersListener = true;
+    select.addEventListener('change', function() {
+      const val = this.value;
+      window.abrirAuditoriaDoProjeto(val);
+      if (window.ITPAMap && typeof window.ITPAMap.selecionarProjeto === 'function') {
+        window.ITPAMap.selecionarProjeto(val);
+      }
+    });
+  }
 }
 
 if (document.readyState === 'loading') {

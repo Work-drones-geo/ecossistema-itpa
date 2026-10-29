@@ -736,6 +736,163 @@ const ITPAMap = (function () {
     }
   }
 
+  // =========================================================================
+  // Configuração e Carregamento Dinâmico de Rasters (PNG / bounds.json) por Projeto
+  // Permite que 'Satélite RGB', 'NDVI 2m' e 'Comparar' funcionem para Nelito, Guanaí e ESEC
+  // =========================================================================
+  const CONFIG_RASTERS_PROJETOS = {
+    nelito: {
+      nome: 'Fazenda Nelito',
+      boundsJson: ['./DATA/nelito_bounds.json', 'DATA/nelito_bounds.json'],
+      fallbackBounds: [
+        [-22.55606067128168, -43.55337196761436],
+        [-22.53283148841984, -43.53953093530578]
+      ],
+      rgbRecente: './DATA/nelito_rgb_10m.png',
+      ndviRecente: './DATA/nelito_ndvi_2m.png',
+      rgbAnterior: './DATA/nelito_rgb_anterior.png',
+      ndviAnterior: './DATA/nelito_ndvi_anterior.png',
+      labelRecente: '28/Out (10m)',
+      labelAnterior: '09/Set (10m)'
+    },
+    guanai: {
+      nome: 'Fazenda Guanaí',
+      boundsJson: ['./DATA/guanai_bounds.json', 'DATA/guanai_bounds.json'],
+      fallbackBounds: [
+        [-22.56118214040626, -43.55855722892613],
+        [-22.5415121478366, -43.54421380740492]
+      ],
+      rgbRecente: './DATA/guanai_rgb_10m.png',
+      ndviRecente: './DATA/guanai_ndvi_2m.png',
+      rgbAnterior: './DATA/guanai_rgb_anterior.png',
+      ndviAnterior: './DATA/guanai_ndvi_anterior.png',
+      labelRecente: '28/Out (10m)',
+      labelAnterior: '09/Set (10m)'
+    },
+    esec: {
+      nome: 'ESEC Guanabara',
+      boundsJson: ['./assets/satelite/bounds_expandido.json', 'assets/satelite/bounds_expandido.json'],
+      fallbackBounds: [
+        [-22.737766, -43.022287],
+        [-22.691124, -42.949613]
+      ],
+      rgbRecente: './assets/satelite/aoi_rgb_recente_2m.png',
+      ndviRecente: './assets/satelite/aoi_ndvi_recente_2m.png',
+      rgbAnterior: './assets/satelite/aoi_rgb_anterior_2m.png',
+      ndviAnterior: './assets/satelite/aoi_ndvi_anterior_2m.png',
+      labelRecente: '28/Out (2m)',
+      labelAnterior: '09/Set (2m)'
+    }
+  };
+
+  /**
+   * Instancia dinamicamente no Leaflet (via L.imageOverlay) os rasters em PNG de
+   * Satélite RGB (10m/2m) e NDVI (2m) da fazenda ativa, usando os limites reais de bounds.json.
+   * Garante que os botões 'Satélite RGB', 'NDVI 2m' e 'Comparar' funcionem para cada propriedade.
+   * @param {string} projetoKey Chave da fazenda/projeto ('nelito', 'guanai', 'esec')
+   */
+  async function carregarRastersDoProjeto(projetoKey) {
+    if (!map) return null;
+    const key = (projetoKey || 'nelito').toLowerCase().trim();
+    const config = CONFIG_RASTERS_PROJETOS[key] || CONFIG_RASTERS_PROJETOS.nelito;
+
+    console.log(`[ITPAMap] Carregando rasters e limites para: ${config.nome} (${key})`);
+
+    // 1. Memoriza se as camadas estavam ligadas para manter sua visibilidade
+    const manterNdvi = layerGroupNdviRecente ? map.hasLayer(layerGroupNdviRecente) : false;
+    const manterRgb = layerGroupRgbRecente ? map.hasLayer(layerGroupRgbRecente) : false;
+    const manterNdviAnt = layerGroupNdviAnterior ? map.hasLayer(layerGroupNdviAnterior) : false;
+    const manterRgbAnt = layerGroupRgbAnterior ? map.hasLayer(layerGroupRgbAnterior) : false;
+
+    // 2. Limpa os overlays anteriores para evitar sobreposição de áreas geográficas distintas
+    if (layerGroupNdviRecente) layerGroupNdviRecente.clearLayers();
+    if (layerGroupRgbRecente) layerGroupRgbRecente.clearLayers();
+    if (layerGroupNdviAnterior) layerGroupNdviAnterior.clearLayers();
+    if (layerGroupRgbAnterior) layerGroupRgbAnterior.clearLayers();
+
+    // 3. Lê assincronamente os limites do bounds.json correspondente
+    let boundsOverlay = L.latLngBounds(config.fallbackBounds[0], config.fallbackBounds[1]);
+
+    for (const urlBounds of config.boundsJson) {
+      try {
+        const resp = await fetch(urlBounds);
+        if (resp.ok) {
+          const bData = await resp.json();
+          if (bData && bData.leaflet_bounds && bData.leaflet_bounds.length === 2) {
+            boundsOverlay = L.latLngBounds(bData.leaflet_bounds[0], bData.leaflet_bounds[1]);
+            break;
+          } else if (bData && bData.bounds && bData.bounds.length === 2) {
+            boundsOverlay = L.latLngBounds(bData.bounds[0], bData.bounds[1]);
+            break;
+          }
+        }
+      } catch (e) {
+        // Fallback já garantido
+      }
+    }
+
+    // 4. Helper seguro para criar ImageOverlay georreferenciado
+    const criarOverlay = (caminhoImg, paneName = 'leftPane', opacity = 0.95) => {
+      const overlay = L.imageOverlay(caminhoImg, boundsOverlay, {
+        opacity: opacity,
+        interactive: false,
+        pane: paneName,
+        minZoom: 9,
+        maxZoom: 22
+      });
+      overlay.on('error', () => {
+        if (overlay.getElement()) {
+          overlay.getElement().style.display = 'none';
+        }
+      });
+      return overlay;
+    };
+
+    // 5. Instanciação das novas camadas PNG via L.imageOverlay
+    // a) 🌱 NDVI Recente (2m) -> leftPane
+    if (layerGroupNdviRecente && config.ndviRecente) {
+      layerGroupNdviRecente.addLayer(criarOverlay(config.ndviRecente, 'leftPane'));
+    }
+
+    // b) 🛰️ Satélite RGB Recente (10m / 2m) -> leftPane
+    if (layerGroupRgbRecente && config.rgbRecente) {
+      layerGroupRgbRecente.addLayer(criarOverlay(config.rgbRecente, 'leftPane'));
+    }
+
+    // c) 🌱 NDVI Anterior -> rightPane (utilizado pelo Swipe)
+    if (layerGroupNdviAnterior && config.ndviAnterior) {
+      layerGroupNdviAnterior.addLayer(criarOverlay(config.ndviAnterior, 'rightPane'));
+    }
+
+    // d) 🛰️ Satélite RGB Anterior -> rightPane (utilizado pelo Swipe)
+    if (layerGroupRgbAnterior && config.rgbAnterior) {
+      layerGroupRgbAnterior.addLayer(criarOverlay(config.rgbAnterior, 'rightPane'));
+    }
+
+    // 6. Restaura as camadas no mapa se estavam ligadas pelo usuário
+    if (manterNdvi && layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) {
+      map.addLayer(layerGroupNdviRecente);
+    }
+    if (manterRgb && layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) {
+      map.addLayer(layerGroupRgbRecente);
+    }
+    if (manterNdviAnt && layerGroupNdviAnterior && !map.hasLayer(layerGroupNdviAnterior)) {
+      map.addLayer(layerGroupNdviAnterior);
+    }
+    if (manterRgbAnt && layerGroupRgbAnterior && !map.hasLayer(layerGroupRgbAnterior)) {
+      map.addLayer(layerGroupRgbAnterior);
+    }
+
+    // 7. Atualiza os rótulos de data e resolução do comparador (Swipe)
+    const subLeft = document.querySelector('.swipe-tag.left .swipe-sub');
+    const subRight = document.querySelector('.swipe-tag.right .swipe-sub');
+    if (subLeft) subLeft.textContent = config.labelRecente;
+    if (subRight) subRight.textContent = config.labelAnterior;
+
+    sincronizarEstadosUI();
+    return boundsOverlay;
+  }
+
   /**
    * Alterna dinamicamente o projeto ativo no WebGIS (Arquitetura Multi-Projetos).
    * Executa map.flyTo / map.fitBounds, remove o vetor anterior e renderiza o novo GeoJSON da pasta DATA/.
@@ -782,6 +939,7 @@ const ITPAMap = (function () {
     // 2. Se for a ESEC Guanabara (Guapimirim / APA)
     if (projetoKey === 'esec') {
       await carregarTalhoesGeoJSON(projeto.arquivo_geojson || projeto.geojson || './DATA/esec_poligono.geojson');
+      await carregarRastersDoProjeto('esec');
       if (map) {
         if (talhoesLayer && talhoesLayer.getBounds && talhoesLayer.getBounds().isValid()) {
           map.fitBounds(talhoesLayer.getBounds().pad(0.15), { padding: [30, 30], maxZoom: 15 });
@@ -791,13 +949,12 @@ const ITPAMap = (function () {
       }
     } else {
       // 3. Fazenda Nelito ou Fazenda Guanaí (Miguel Pereira - RJ)
-      // Oculta camadas de satélite específicas da ESEC Guanabara que pertencem a outra região geográfica
-      if (map) {
-        if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
-        if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
-        if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
-        if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
-        if (ortofotoLayer && map.hasLayer(ortofotoLayer)) map.removeLayer(ortofotoLayer);
+      // Instancia os novos overlays PNG (RGB 10m e NDVI 2m) correspondentes usando os limites de bounds.json
+      await carregarRastersDoProjeto(projetoKey);
+
+      // Oculta a ortofoto do drone (específica do voo na ESEC Guanabara)
+      if (map && ortofotoLayer && map.hasLayer(ortofotoLayer)) {
+        map.removeLayer(ortofotoLayer);
       }
 
       // Caminhos candidatos para o GeoJSON oficial do projeto
@@ -1761,6 +1918,8 @@ const ITPAMap = (function () {
     init,
     carregarTalhoesGeoJSON,
     selecionarProjeto,
+    carregarRastersDoProjeto,
+    CONFIG_RASTERS_PROJETOS,
     setupTouchLayerControls,
     ativarModoSwipe,
     desativarModoSwipe,
