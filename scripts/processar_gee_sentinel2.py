@@ -10,18 +10,45 @@ Processamento automatizado de imagens Sentinel-2 para Fazenda Nelito e Fazenda G
 """
 
 import os
+import sys
 import json
+import urllib.request
 import ee
-import geemap
+
+try:
+    import geemap
+except ImportError:
+    geemap = None
 
 # 1. Inicialização do Google Earth Engine
-# Dica: Em versões recentes da API, forneça o ID do projeto GCP: ee.Initialize(project='seu-projeto-gcp')
+# Caso tenha um projeto no Google Cloud (ex: ee-workdrones), defina aqui ou via variável de ambiente:
+GEE_PROJECT = os.getenv("EE_PROJECT", None)
+
 try:
-    ee.Initialize()
+    if GEE_PROJECT:
+        ee.Initialize(project=GEE_PROJECT)
+    else:
+        ee.Initialize()
+    print("[GEE] Inicialização bem-sucedida do Google Earth Engine.")
 except Exception as e:
-    print(f"[GEE] Inicialização padrão falhou ({e}), tentando autenticação...")
-    ee.Authenticate()
-    ee.Initialize()
+    print(f"\n[GEE AVISO] Falha na inicialização direta do Earth Engine: {e}")
+    print("[GEE INSTRUÇÃO] Para autorizar o acesso ao Earth Engine pela primeira vez:")
+    print("  1. Abra um terminal e execute: earthengine authenticate")
+    print("  OU execute no Python: ee.Authenticate()")
+    print("  2. Em seguida, selecione o projeto do Google Cloud.")
+    print("-" * 60)
+    try:
+        print("[GEE] Tentando autenticação interativa ee.Authenticate()...")
+        ee.Authenticate()
+        if GEE_PROJECT:
+            ee.Initialize(project=GEE_PROJECT)
+        else:
+            ee.Initialize()
+        print("[GEE] Autenticado e inicializado com sucesso!")
+    except Exception as auth_err:
+        print(f"\n[ERRO CRÍTICO] Não foi possível autenticar o Earth Engine neste ambiente: {auth_err}")
+        print("Por favor, execute 'earthengine authenticate' no seu terminal interativo.")
+        sys.exit(1)
 
 # 2. Configurações e Caminhos
 BASE_DIR = "DATA"
@@ -52,6 +79,41 @@ def mascarar_nuvens_scl(image):
     scaled = image.select(['B2', 'B3', 'B4', 'B8']).divide(10000)
     return scaled.updateMask(mascara_valida).copyProperties(image, ['system:time_start'])
 
+def converter_geojson_para_roi(geo_data):
+    """Converte GeoJSON para geometria EE (com geemap ou nativo)."""
+    if geemap and hasattr(geemap, 'geojson_to_ee'):
+        return geemap.geojson_to_ee(geo_data).geometry()
+    
+    if "features" in geo_data and len(geo_data["features"]) > 0:
+        geoms = [f["geometry"] for f in geo_data["features"]]
+        if len(geoms) == 1:
+            return ee.Geometry(geoms[0])
+        return ee.FeatureCollection(geo_data).geometry()
+    elif "geometry" in geo_data:
+        return ee.Geometry(geo_data["geometry"])
+    return ee.Geometry(geo_data)
+
+def exportar_geotiff(imagem, caminho_saida, escala, roi):
+    """Exporta imagem do GEE como GeoTIFF local (com geemap ou download direto via API)."""
+    if geemap and hasattr(geemap, 'ee_export_image'):
+        geemap.ee_export_image(
+            imagem,
+            filename=caminho_saida,
+            scale=escala,
+            region=roi,
+            file_per_band=False
+        )
+    else:
+        print(f"-> Gerando URL de download direto do GEE (escala: {escala}m)...")
+        url = imagem.getDownloadURL({
+            'scale': escala,
+            'region': roi,
+            'format': 'GEO_TIFF'
+        })
+        print(f"-> Baixando arquivo GeoTIFF para: {caminho_saida}...")
+        urllib.request.urlretrieve(url, caminho_saida)
+        print(f"-> Concluído: {caminho_saida} ({os.path.getsize(caminho_saida) / (1024*1024):.2f} MB)")
+
 def processar_propriedade(chave, config):
     print(f"\n==========================================")
     print(f"Processando: {config['nome']} ({chave})")
@@ -66,8 +128,7 @@ def processar_propriedade(chave, config):
         geo_data = json.load(f)
     
     # Converte feição para geometria EE
-    ee_feature = geemap.geojson_to_ee(geo_data)
-    roi = ee_feature.geometry()
+    roi = converter_geojson_para_roi(geo_data)
     
     # Busca a imagem mais recente com baixa nebulosidade nos últimos 60 dias
     colecao = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
@@ -89,13 +150,7 @@ def processar_propriedade(chave, config):
     
     rgb_output = os.path.join(BASE_DIR, f"{chave}_rgb_10m.tif")
     print(f"-> Exportando RGB 10m (resolução nativa) para: {rgb_output}")
-    geemap.ee_export_image(
-        rgb_visual,
-        filename=rgb_output,
-        scale=10,
-        region=roi,
-        file_per_band=False
-    )
+    exportar_geotiff(rgb_visual, rgb_output, 10, roi)
     
     # ----------------------------------------------------
     # B. NDVI REAMOSTRADO (2 METROS) COM RAMPA DE CORES
@@ -126,13 +181,7 @@ def processar_propriedade(chave, config):
     
     ndvi_output = os.path.join(BASE_DIR, f"{chave}_ndvi_2m.tif")
     print(f"-> Exportando NDVI 2m (colorizado suave) para: {ndvi_output}")
-    geemap.ee_export_image(
-        ndvi_colorizado,
-        filename=ndvi_output,
-        scale=2,
-        region=roi,
-        file_per_band=False
-    )
+    exportar_geotiff(ndvi_colorizado, ndvi_output, 2, roi)
 
 if __name__ == "__main__":
     for chave, config in PROJETOS.items():
