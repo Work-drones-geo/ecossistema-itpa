@@ -180,11 +180,21 @@ class ITPASuperResolutionPipeline:
                 ten_bands_image = np.stack([red, green, blue, nir, re1, re2, re3, b8a, swir1, swir2], axis=0)
                 out_image = ten_bands_image
 
+            # Normaliza para float32 [0, 1] exigido pela arquitetura do Synapse-SR
+            if out_image.dtype == np.uint8:
+                out_image = out_image.astype(np.float32) / 255.0
+            elif np.issubdtype(out_image.dtype, np.integer) and out_image.max() > 255:
+                out_image = np.clip(out_image.astype(np.float32) / 10000.0, 0.0, 1.0)
+            else:
+                out_image = out_image.astype(np.float32)
+
             out_meta.update({
                 "driver": "GTiff",
                 "height": out_image.shape[1],
                 "width": out_image.shape[2],
                 "count": out_image.shape[0],
+                "dtype": "float32",
+                "nodata": None,
                 "transform": out_transform,
                 "crs": raster_crs
             })
