@@ -480,23 +480,20 @@
         <!-- Painel 2: Seção de Documentos Técnicos & Google Drive (Centralizado) -->
         <div class="talhao-tab-content" id="tab-talhao-docs">
           <div class="secao-documentos">
-            <!-- Banner de Conexão Automática com a Pasta do Google Drive -->
-            <div class="drive-folder-banner">
-              <div class="drive-folder-header">
-                <span class="drive-folder-icon">☁️</span>
-                <div class="drive-folder-info">
-                  <span class="drive-folder-title">Pasta do Google Drive ITPA</span>
-                  <span class="drive-folder-desc">Repositório oficial de laudos, ARTs e fichas</span>
-                </div>
-              </div>
-              <button type="button" class="btn-drive-action" id="btn-abrir-pasta-drive" title="Abrir pasta compartilhada do Google Drive em nova aba">
-                <span>Abrir Pasta no Drive</span>
-                <span class="drive-arrow">↗</span>
-              </button>
+            <!-- Botão em Destaque no Topo: Abrir Pasta Oficial do Google Drive -->
+            <div class="drive-folder-highlight-card">
+              <a href="https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN" target="_blank" rel="noopener noreferrer" class="btn-itpa-drive-master" id="btn-abrir-pasta-drive" title="Abrir pasta oficial do Google Drive em nova aba">
+                <span class="drive-btn-icon">📁</span>
+                <span class="drive-btn-text">Abrir Pasta no Google Drive</span>
+                <span class="drive-btn-arrow">↗</span>
+              </a>
+              <span class="drive-btn-caption">Repositório Oficial em Nuvem • Documentos, Laudos e Fichas Técnicas</span>
             </div>
 
+            <!-- Histórico de Documentos do Talhão -->
             <div class="docs-section-heading">
-              <h4 style="margin: 0; font-size: 14px;">Documentos Vinculados</h4>
+              <h4 style="margin: 0; font-size: 14px;">Histórico de Documentos</h4>
+              <span class="docs-count-badge" id="docs-count-badge">0</span>
             </div>
 
             <ul id="listaDocumentos">
@@ -505,12 +502,15 @@
 
             <hr class="doc-divider">
 
+            <!-- Formulário: Solicita apenas Nome/Descrição -->
             <div class="novo-doc-box">
-              <h5 style="margin: 0 0 6px 0; font-size: 13px; color: var(--itpa-text-dark);">Registrar Novo Documento</h5>
-              <p style="font-size: 11.5px; color: var(--itpa-text-muted); margin: 0 0 10px 0;">O documento é associado automaticamente à pasta do Google Drive sem necessidade de digitar links.</p>
-              <input type="text" id="docDescricao" placeholder="Ex: Laudo Técnico de Vistoria, ART, Vôo Drone" class="form-input" style="margin-bottom: 8px;">
+              <h5 style="margin: 0 0 6px 0; font-size: 13px; color: var(--itpa-text-dark);">Registar Novo Documento</h5>
+              <p style="font-size: 11.5px; color: var(--itpa-text-muted); margin: 0 0 10px 0;">O registo fica associado a este talhão e direcionado para a pasta oficial do Google Drive.</p>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <input type="text" id="docDescricao" placeholder="Ex.: Laudo de Plantio - Outubro" class="form-input" style="width: 100%;">
+              </div>
               <button id="btnEnviarDoc" type="button" class="btn-itpa-pill" style="width: 100%; justify-content: center; gap: 8px;">
-                📁 Vincular à Nuvem do Projeto
+                💾 Guardar Registo do Documento
               </button>
               <div id="statusUpload" style="display:none; font-size: 12px; margin-top: 8px; font-weight: 600;"></div>
             </div>

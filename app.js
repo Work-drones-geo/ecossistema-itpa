@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Função para consultar e renderizar documentos do talhão ativo
   async function carregarListaDocumentosTalhao(talhaoId) {
     const listaUl = document.getElementById('listaDocumentos');
+    const countBadge = document.getElementById('docs-count-badge');
     if (!listaUl) return;
 
     listaUl.innerHTML = '<li class="doc-carregando" style="font-style: italic; color: var(--itpa-text-muted);">Consultando documentos anexados...</li>';
@@ -84,28 +85,38 @@ document.addEventListener('DOMContentLoaded', async () => {
       const docs = await window.ITPASync.listarDocumentosTalhao(talhaoId);
       listaUl.innerHTML = '';
 
+      if (countBadge) {
+        countBadge.textContent = (docs && docs.length) ? docs.length : 0;
+      }
+
       if (!docs || docs.length === 0) {
-        listaUl.innerHTML = '<li class="doc-vazio">Nenhum documento anexado ainda.</li>';
+        listaUl.innerHTML = '<li class="doc-vazio">Nenhum documento anexado ainda para este talhão.</li>';
         return;
       }
 
+      const driveMasterUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
+
       docs.forEach((doc) => {
         const li = document.createElement('li');
-        const urlFinal = doc.url_documento || doc.url_storage || '#';
+        const urlFinal = (doc.url_documento && doc.url_documento.startsWith('http')) ? doc.url_documento : driveMasterUrl;
         li.innerHTML = `
-          <a href="${urlFinal}" target="_blank" rel="noopener noreferrer" class="doc-link" title="Toque para abrir documento em nova aba">
+          <div class="doc-item-container">
             <div class="doc-corpo">
               <span class="doc-titulo">📄 <span>${doc.nome_documento}</span></span>
-              ${doc.data_registo ? `<span class="doc-data">${doc.data_registo}</span>` : ''}
+              ${doc.data_registo ? `<span class="doc-data">📅 ${doc.data_registo}</span>` : ''}
             </div>
-            <span class="doc-seta" aria-hidden="true">↗</span>
-          </a>
+            <a href="${urlFinal}" target="_blank" rel="noopener noreferrer" class="doc-btn-acesso" title="Abrir pasta no Google Drive">
+              <span>Abrir no Drive</span>
+              <span class="doc-seta" aria-hidden="true">↗</span>
+            </a>
+          </div>
         `;
         listaUl.appendChild(li);
       });
     } catch (err) {
       console.warn('[Talhões] Erro ao carregar documentos do talhão:', err);
       listaUl.innerHTML = '<li class="doc-vazio">Nenhum documento anexado ainda.</li>';
+      if (countBadge) countBadge.textContent = 0;
     }
   }
 
@@ -285,8 +296,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnDrive) {
       btnDrive.onclick = (e) => {
         e.preventDefault();
-        const driveUrl = window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com';
-        showToast('☁️ Abrindo pasta oficial do Google Drive ITPA...', 'info');
+        const driveUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
+        showToast('📁 Abrindo pasta oficial do Google Drive ITPA...', 'info');
         window.open(driveUrl, '_blank', 'noopener,noreferrer');
       };
     }
@@ -847,14 +858,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const titulo = docDescricao ? docDescricao.value.trim() : '';
       // Utiliza automaticamente a URL oficial da Pasta Mestre do Google Drive
-      const link = window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com';
+      const link = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
 
       if (!talhaoId) {
         alert('Identificador do talhão não encontrado. Selecione o talhão novamente no mapa.');
         return;
       }
       if (!titulo) {
-        alert('Por favor, informe a descrição ou título do documento.');
+        alert('Por favor, informe a descrição ou título do documento (ex.: Laudo de Plantio - Outubro).');
         if (docDescricao) docDescricao.focus();
         return;
       }
@@ -863,7 +874,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (statusUpload) {
           statusUpload.style.display = 'block';
           statusUpload.style.color = '#007700';
-          statusUpload.textContent = 'Vinculando documento ao Google Drive...';
+          statusUpload.textContent = 'Guardando registo do documento associado ao talhão...';
         }
         btnEnviarDoc.disabled = true;
 
@@ -871,7 +882,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await window.ITPASync.registrarDocumentoTalhao(talhaoId, titulo, link);
 
         if (statusUpload) {
-          statusUpload.textContent = '✓ Documento vinculado ao Google Drive com sucesso!';
+          statusUpload.textContent = '✓ Documento registado com sucesso!';
         }
 
         // Limpa o campo de título
@@ -879,7 +890,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Recarrega lista imediatamente para exibir o novo documento
         await carregarListaDocumentosTalhao(talhaoId);
-        showToast('✅ Documento vinculado à pasta do Google Drive!', 'success');
+        showToast('✅ Documento guardado e associado à pasta do Google Drive!', 'success');
 
         setTimeout(() => {
           if (statusUpload && statusUpload.textContent.includes('sucesso')) {
@@ -906,8 +917,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnAbrirPastaDrive) {
     btnAbrirPastaDrive.onclick = (e) => {
       e.preventDefault();
-      const driveUrl = window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com';
-      showToast('☁️ Abrindo pasta oficial do Google Drive ITPA...', 'info');
+      const driveUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
+      showToast('📁 Abrindo pasta oficial do Google Drive ITPA...', 'info');
       window.open(driveUrl, '_blank', 'noopener,noreferrer');
     };
   }
@@ -916,8 +927,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnSettingsOpenDrive) {
     btnSettingsOpenDrive.onclick = (e) => {
       e.preventDefault();
-      const driveUrl = window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com';
-      showToast('☁️ Abrindo pasta oficial do Google Drive ITPA...', 'info');
+      const driveUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
+      showToast('📁 Abrindo pasta oficial do Google Drive ITPA...', 'info');
       window.open(driveUrl, '_blank', 'noopener,noreferrer');
     };
   }

@@ -9,17 +9,19 @@
   'use strict';
 
   // URL e ID oficial da Pasta Mestre do Google Drive compartilhada para o projeto ITPA
-  const GOOGLE_DRIVE_FOLDER_ID = '1ITPA-Drones-Geo-Restaura-Florestal';
-  const GOOGLE_DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1ITPA-Drones-Geo-Restaura-Florestal?usp=sharing';
+  const ITPA_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN";
+  const ITPA_DRIVE_FOLDER_ID = "1O9EOZV9XnoNxbeauldItmaolwYu1ndQN";
 
   const ITPA_CONFIG = {
     // Identificação do Sistema
     NOME_SISTEMA: 'Ecossistema ITPA - Monitoramento & Restauração Florestal',
-    VERSAO: '2.4.0',
+    VERSAO: '2.5.0',
 
     // Google Drive Oficial
-    GOOGLE_DRIVE_FOLDER_ID: GOOGLE_DRIVE_FOLDER_ID,
-    GOOGLE_DRIVE_FOLDER_URL: GOOGLE_DRIVE_FOLDER_URL,
+    ITPA_DRIVE_FOLDER_ID: ITPA_DRIVE_FOLDER_ID,
+    ITPA_DRIVE_FOLDER_URL: ITPA_DRIVE_FOLDER_URL,
+    GOOGLE_DRIVE_FOLDER_ID: ITPA_DRIVE_FOLDER_ID,
+    GOOGLE_DRIVE_FOLDER_URL: ITPA_DRIVE_FOLDER_URL,
 
     /**
      * Retorna o link direto da pasta do Google Drive.
@@ -27,7 +29,7 @@
      * @returns {string} URL da pasta compartilhada
      */
     obterUrlDrive: function (talhaoId) {
-      return this.GOOGLE_DRIVE_FOLDER_URL;
+      return this.ITPA_DRIVE_FOLDER_URL;
     },
 
     /**
@@ -41,8 +43,10 @@
   };
 
   // Exportação em escopo global para acesso universal
-  window.GOOGLE_DRIVE_FOLDER_ID = GOOGLE_DRIVE_FOLDER_ID;
-  window.GOOGLE_DRIVE_FOLDER_URL = GOOGLE_DRIVE_FOLDER_URL;
+  window.ITPA_DRIVE_FOLDER_URL = ITPA_DRIVE_FOLDER_URL;
+  window.ITPA_DRIVE_FOLDER_ID = ITPA_DRIVE_FOLDER_ID;
+  window.GOOGLE_DRIVE_FOLDER_URL = ITPA_DRIVE_FOLDER_URL;
+  window.GOOGLE_DRIVE_FOLDER_ID = ITPA_DRIVE_FOLDER_ID;
   window.ITPA_CONFIG = ITPA_CONFIG;
 
 })(window);
