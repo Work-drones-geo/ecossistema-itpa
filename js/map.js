@@ -735,6 +735,11 @@ const ITPAMap = (function () {
       selectEl.value = projetoKey;
     }
 
+    // 0. Injeção dinâmica imediata e síncrona nos campos do painel de auditoria territorial (.card-auditoria / #painel-auditoria)
+    if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
+      window.ITPAAuditoria.definirProjetoAtivo(projetoKey);
+    }
+
     console.log(`[ITPAMap] Alternando para o projeto ativo: ${projeto.nome} (${projetoKey})`);
 
     // 1. Remove vetor anterior do projeto se existir

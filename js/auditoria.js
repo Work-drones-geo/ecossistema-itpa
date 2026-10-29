@@ -101,15 +101,21 @@ const ITPAAuditoria = (function () {
   }
 
   /**
-   * Atualiza os elementos da interface do Widget de Diagnóstico Territorial
+   * Atualiza os elementos da interface do Widget de Diagnóstico Territorial (.card-auditoria / #painel-auditoria)
    */
   function atualizarUI() {
-    const elBadge = document.getElementById('audit-status-badge');
-    const elCode = document.getElementById('audit-car-code');
-    const elMunicipio = document.getElementById('audit-municipio');
-    const elArea = document.getElementById('audit-total-area');
-    const elProdes = document.getElementById('audit-prodes-overlap');
-    const elStatus = document.getElementById('audit-eligibility-status');
+    const elCard = document.getElementById('painel-auditoria') ||
+                   document.getElementById('card-auditoria-cmn') ||
+                   document.querySelector('.card-auditoria') ||
+                   document.querySelector('.map-audit-card');
+
+    const elBadge = document.getElementById('audit-status-badge') || (elCard && elCard.querySelector('#audit-status-badge, .audit-status-badge'));
+    const elCode = document.getElementById('audit-car-code') || (elCard && elCard.querySelector('#audit-car-code, .audit-car-code, [data-field="car"]'));
+    const elTipo = document.getElementById('audit-property-type') || document.getElementById('audit-tipo-imovel') || (elCard && elCard.querySelector('#audit-property-type, #audit-tipo-imovel, .audit-tipo-imovel, [data-field="tipo"]'));
+    const elMunicipio = document.getElementById('audit-municipio') || (elCard && elCard.querySelector('#audit-municipio, .audit-municipio, [data-field="municipio"]'));
+    const elArea = document.getElementById('audit-total-area') || document.getElementById('audit-area-total') || (elCard && elCard.querySelector('#audit-total-area, #audit-area-total, .audit-total-area, [data-field="area"]'));
+    const elProdes = document.getElementById('audit-prodes-overlap') || (elCard && elCard.querySelector('#audit-prodes-overlap, .audit-prodes-overlap, [data-field="prodes"]'));
+    const elStatus = document.getElementById('audit-eligibility-status') || (elCard && elCard.querySelector('#audit-eligibility-status, .audit-eligibility-status, [data-field="status"]'));
 
     if (!estadoAuditoria.carregado) {
       if (elBadge) {
@@ -120,6 +126,7 @@ const ITPAAuditoria = (function () {
         elCode.textContent = '[Aguardando arquivo]';
         elCode.classList.add('placeholder');
       }
+      if (elTipo) elTipo.textContent = '--';
       if (elMunicipio) elMunicipio.textContent = '--';
       if (elArea) elArea.textContent = '-- ha';
       if (elProdes) elProdes.textContent = '-- ha (0.00%)';
@@ -137,23 +144,33 @@ const ITPAAuditoria = (function () {
       elBadge.className = 'audit-status-badge ' + (isConforme ? 'success' : 'warning');
     }
 
+    // 1. Código do CAR
     if (elCode) {
       elCode.textContent = estadoAuditoria.codigoCar;
       elCode.classList.remove('placeholder');
     }
 
+    // 2. Tipo de Imóvel: "Imóvel Rural Privado" para Nelito e Guanaí
+    if (elTipo) {
+      elTipo.textContent = estadoAuditoria.tipoImovel || (estadoAuditoria.projetoKey === 'esec' ? 'Unidade de Conservação Federal' : 'Imóvel Rural Privado');
+    }
+
+    // 3. Município / UF
     if (elMunicipio) {
       elMunicipio.textContent = estadoAuditoria.municipio || '--';
     }
 
+    // 4. Área Total Auditada: projeto.area_registrada
     if (elArea) {
       elArea.textContent = estadoAuditoria.areaTextoOficial || `${estadoAuditoria.areaTotalHa.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ha`;
     }
 
+    // 5. Sobreposição PRODES pós-2019
     if (elProdes) {
       elProdes.textContent = `${estadoAuditoria.sobreposicaoProdesHa.toFixed(2)} ha (${estadoAuditoria.percentualProdes.toFixed(2)}%)`;
     }
 
+    // 6. Status de Elegibilidade
     if (elStatus) {
       elStatus.textContent = estadoAuditoria.statusElegibilidade || 'ELEGÍVEL (Resolução CMN nº 5.303/2026)';
       const isConforme = (estadoAuditoria.statusElegibilidade || '').includes('ELEGÍVEL') || estadoAuditoria.statusElegibilidade === 'Conforme';
@@ -320,8 +337,17 @@ const ITPAAuditoria = (function () {
       });
     }
 
-    // Inicializa com o projeto ativo selecionado
+    // Ouvinte imediato e direto no #select-projeto para reatividade instantânea no DOM
     const selectProj = document.getElementById('select-projeto');
+    if (selectProj) {
+      selectProj.addEventListener('change', function () {
+        definirProjetoAtivo(this.value);
+      });
+      selectProj.addEventListener('input', function () {
+        definirProjetoAtivo(this.value);
+      });
+    }
+
     const projInicial = selectProj ? selectProj.value : (window.PROJETO_ATIVO_ID || 'esec');
     definirProjetoAtivo(projInicial);
   }
@@ -345,13 +371,18 @@ const ITPAAuditoria = (function () {
       areaNum = areaStr;
     }
 
+    // Regra explícita: "Imóvel Rural Privado" para Nelito e Guanaí
+    const tipoImovel = (projetoKey === 'esec')
+      ? (projeto.tipo || 'Unidade de Conservação Federal')
+      : 'Imóvel Rural Privado';
+
     estadoAuditoria = {
       carregado: true,
       projetoKey: projetoKey,
       codigoCar: projeto.car,
       nomeImovel: projeto.nome,
-      tipoImovel: projeto.tipo || 'Imóvel Rural Privado',
-      municipio: projeto.municipio || 'Miguel Pereira - RJ',
+      tipoImovel: tipoImovel,
+      municipio: projeto.municipio || (projetoKey === 'esec' ? 'Guapimirim / APA - RJ' : 'Miguel Pereira - RJ'),
       areaTotalHa: areaNum,
       areaTextoOficial: projeto.area_registrada || projeto.area,
       statusCar: projeto.status_car || 'Ativo',
@@ -366,7 +397,25 @@ const ITPAAuditoria = (function () {
       geojsonCar: null
     };
 
+    // Atualiza imediatamente os campos do painel (.card-auditoria / #painel-auditoria)
     atualizarUI();
+
+    // Expande o painel lateral para visibilidade imediata dos dados do imóvel ativo
+    const cardAudit = document.getElementById('painel-auditoria') ||
+                      document.getElementById('card-auditoria-cmn') ||
+                      document.querySelector('.card-auditoria') ||
+                      document.querySelector('.map-audit-card');
+    if (cardAudit) {
+      const outerCard = cardAudit.closest('.map-audit-card') || cardAudit;
+      outerCard.classList.remove('collapsed');
+      const pill = document.getElementById('pill-quick-auditoria');
+      if (pill) pill.classList.add('active');
+      const btnToggle = document.getElementById('btn-toggle-audit-card');
+      if (btnToggle) {
+        const icon = btnToggle.querySelector('.toggle-icon');
+        if (icon) icon.textContent = '−';
+      }
+    }
   }
 
   return {

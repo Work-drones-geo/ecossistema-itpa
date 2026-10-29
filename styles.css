@@ -2809,7 +2809,8 @@ iframe[title*="Netlify"] {
 /* ==========================================================================
    5. Widget de Diagnóstico Territorial: Auditoria de Crédito Rural (CMN nº 5.303/2026)
    ========================================================================== */
-.map-audit-card {
+.map-audit-card,
+.card-auditoria {
   position: absolute;
   top: 80px;
   left: 14px;
@@ -2825,13 +2826,17 @@ iframe[title*="Netlify"] {
   font-family: inherit;
 }
 
-.map-audit-card.collapsed {
+.map-audit-card.collapsed,
+.card-auditoria.collapsed {
   width: auto;
   max-width: 220px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.map-audit-card.collapsed .audit-card-body {
+.map-audit-card.collapsed .audit-card-body,
+.card-auditoria.collapsed .audit-card-body,
+.map-audit-card.collapsed #painel-auditoria,
+.card-auditoria.collapsed #painel-auditoria {
   display: none;
 }
 
@@ -3020,14 +3025,16 @@ iframe[title*="Netlify"] {
 }
 
 @media (max-width: 600px) {
-  .map-audit-card {
+  .map-audit-card,
+  .card-auditoria {
     top: 68px;
     left: 10px;
     right: 10px;
     width: auto;
     max-width: none;
   }
-  .map-audit-card.collapsed {
+  .map-audit-card.collapsed,
+  .card-auditoria.collapsed {
     max-width: 200px;
   }
   .audit-card-title {

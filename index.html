@@ -155,7 +155,7 @@
         </div>
 
         <!-- Widget de Diagnóstico Territorial: Auditoria de Crédito Rural (CMN nº 5.303/2026) -->
-        <div class="map-audit-card collapsed" id="card-auditoria-cmn">
+        <div class="map-audit-card collapsed card-auditoria" id="card-auditoria-cmn">
           <div class="audit-card-header">
             <div class="audit-header-title-wrap">
               <span class="audit-header-icon">⚖️</span>
@@ -169,7 +169,7 @@
             </button>
           </div>
 
-          <div class="audit-card-body" id="audit-card-body">
+          <div class="audit-card-body card-auditoria" id="painel-auditoria">
             <!-- Status Inicial Padrão (Sem dados fictícios) -->
             <div class="audit-status-badge-box">
               <span class="audit-status-label">Status da Análise:</span>
@@ -180,23 +180,27 @@
             <div class="audit-fields-grid">
               <div class="audit-field-item">
                 <span class="audit-field-name">Código do CAR</span>
-                <span class="audit-field-value placeholder" id="audit-car-code">[Aguardando arquivo]</span>
+                <span class="audit-field-value placeholder" id="audit-car-code" data-field="car">[Aguardando arquivo]</span>
+              </div>
+              <div class="audit-field-item">
+                <span class="audit-field-name">Tipo de Imóvel</span>
+                <span class="audit-field-value" id="audit-property-type" data-field="tipo">Unidade de Conservação Federal</span>
               </div>
               <div class="audit-field-item">
                 <span class="audit-field-name">Município / UF</span>
-                <span class="audit-field-value" id="audit-municipio">--</span>
+                <span class="audit-field-value" id="audit-municipio" data-field="municipio">--</span>
               </div>
               <div class="audit-field-item">
-                <span class="audit-field-name">Área em Hectares</span>
-                <span class="audit-field-value" id="audit-total-area">-- ha</span>
+                <span class="audit-field-name">Área Total Auditada</span>
+                <span class="audit-field-value" id="audit-total-area" data-field="area">-- ha</span>
               </div>
               <div class="audit-field-item">
                 <span class="audit-field-name">Sobreposição PRODES pós-2019</span>
-                <span class="audit-field-value" id="audit-prodes-overlap">-- ha (0.00%)</span>
+                <span class="audit-field-value" id="audit-prodes-overlap" data-field="prodes">-- ha (0.00%)</span>
               </div>
               <div class="audit-field-item">
                 <span class="audit-field-name">Status de Elegibilidade</span>
-                <span class="audit-field-value status-pendente" id="audit-eligibility-status">Pendente</span>
+                <span class="audit-field-value status-pendente" id="audit-eligibility-status" data-field="status">Pendente</span>
               </div>
             </div>
 
