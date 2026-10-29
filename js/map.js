@@ -80,30 +80,39 @@ const ITPAMap = (function () {
     // 3. Panes dedicados para sobreposição e controle de swipe (Recente = leftPane, Anterior = rightPane)
     // Ficam entre os tiles base (200) e os vetores de contorno (overlayPane: 400)
     if (!map.getPane('leftPane')) {
-      map.createPane('leftPane');
-      map.getPane('leftPane').style.zIndex = 355;
-      map.getPane('leftPane').style.pointerEvents = 'none';
-      map.getPane('leftPane').style.width = '100%';
-      map.getPane('leftPane').style.height = '100%';
+      const lp = map.createPane('leftPane');
+      lp.style.zIndex = 355;
+      lp.style.pointerEvents = 'none';
+      lp.style.width = '100%';
+      lp.style.height = '100%';
     }
     if (!map.getPane('rightPane')) {
-      map.createPane('rightPane');
-      map.getPane('rightPane').style.zIndex = 345;
-      map.getPane('rightPane').style.pointerEvents = 'none';
-      map.getPane('rightPane').style.width = '100%';
-      map.getPane('rightPane').style.height = '100%';
+      const rp = map.createPane('rightPane');
+      rp.style.zIndex = 345;
+      rp.style.pointerEvents = 'none';
+      rp.style.width = '100%';
+      rp.style.height = '100%';
+    }
+
+    if (map._mapPane) {
+      map._mapPane.style.width = '100%';
+      map._mapPane.style.height = '100%';
     }
 
     // Aliases para compatibilidade com chamadas legado
     if (!map.getPane('satelitePane')) {
-      map.createPane('satelitePane');
-      map.getPane('satelitePane').style.zIndex = 355;
-      map.getPane('satelitePane').style.pointerEvents = 'none';
+      const sp = map.createPane('satelitePane');
+      sp.style.zIndex = 355;
+      sp.style.pointerEvents = 'none';
+      sp.style.width = '100%';
+      sp.style.height = '100%';
     }
     if (!map.getPane('sateliteAnteriorPane')) {
-      map.createPane('sateliteAnteriorPane');
-      map.getPane('sateliteAnteriorPane').style.zIndex = 345;
-      map.getPane('sateliteAnteriorPane').style.pointerEvents = 'none';
+      const sap = map.createPane('sateliteAnteriorPane');
+      sap.style.zIndex = 345;
+      sap.style.pointerEvents = 'none';
+      sap.style.width = '100%';
+      sap.style.height = '100%';
     }
 
     // 4. Instanciação dos LayerGroups para NDVI e RGB dos talhões
@@ -1014,11 +1023,17 @@ const ITPAMap = (function () {
       rightPane.style.webkitClipPath = `polygon(${clampedPct}% 0, 100% 0, 100% 100%, ${clampedPct}% 100%)`;
     }
 
-    // Compatibilidade com pane satelitePane legado
+    // Compatibilidade com panes legado
     const satPane = map.getPane('satelitePane');
     if (satPane && satPane !== leftPane) {
       satPane.style.clipPath = `polygon(0 0, ${clampedPct}% 0, ${clampedPct}% 100%, 0 100%)`;
       satPane.style.webkitClipPath = `polygon(0 0, ${clampedPct}% 0, ${clampedPct}% 100%, 0 100%)`;
+    }
+
+    const satAntPane = map.getPane('sateliteAnteriorPane');
+    if (satAntPane && satAntPane !== rightPane) {
+      satAntPane.style.clipPath = `polygon(${clampedPct}% 0, 100% 0, 100% 100%, ${clampedPct}% 100%)`;
+      satAntPane.style.webkitClipPath = `polygon(${clampedPct}% 0, 100% 0, 100% 100%, ${clampedPct}% 100%)`;
     }
   }
 
@@ -1030,12 +1045,33 @@ const ITPAMap = (function () {
     const pillSwipe = document.getElementById('pill-quick-swipe');
     if (pillSwipe) pillSwipe.classList.add('active');
 
-    // Liga ambas as camadas para a comparação: Recente (leftPane) vs Anterior (rightPane)
-    if (layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) {
-      map.addLayer(layerGroupNdviRecente);
-    }
-    if (layerGroupNdviAnterior && !map.hasLayer(layerGroupNdviAnterior)) {
-      map.addLayer(layerGroupNdviAnterior);
+    // Identifica se o usuário está visualizando RGB ou NDVI
+    const rgbAtivo = layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente);
+
+    if (rgbAtivo) {
+      // Comparação RGB: Recente (leftPane) vs Anterior (rightPane)
+      if (layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) {
+        map.addLayer(layerGroupRgbRecente);
+      }
+      if (layerGroupRgbAnterior && !map.hasLayer(layerGroupRgbAnterior)) {
+        map.addLayer(layerGroupRgbAnterior);
+      }
+      const titleLeft = document.querySelector('.swipe-tag.left .swipe-title');
+      const titleRight = document.querySelector('.swipe-tag.right .swipe-title');
+      if (titleLeft) titleLeft.textContent = '🛰️ RGB Recente (2m)';
+      if (titleRight) titleRight.textContent = '⏪ RGB Anterior (2m)';
+    } else {
+      // Padrão NDVI: Recente (leftPane) vs Anterior (rightPane)
+      if (layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) {
+        map.addLayer(layerGroupNdviRecente);
+      }
+      if (layerGroupNdviAnterior && !map.hasLayer(layerGroupNdviAnterior)) {
+        map.addLayer(layerGroupNdviAnterior);
+      }
+      const titleLeft = document.querySelector('.swipe-tag.left .swipe-title');
+      const titleRight = document.querySelector('.swipe-tag.right .swipe-title');
+      if (titleLeft) titleLeft.textContent = '🌱 NDVI Recente (2m)';
+      if (titleRight) titleRight.textContent = '⏪ NDVI Anterior (2m)';
     }
 
     if (swipeContainer) {
@@ -1049,9 +1085,13 @@ const ITPAMap = (function () {
     }
 
     // Posiciona o divisor inicialmente a 50%
+    atualizarPosicaoSwipe(50);
     setTimeout(() => {
       atualizarPosicaoSwipe(50);
-    }, 50);
+    }, 80);
+    setTimeout(() => {
+      atualizarPosicaoSwipe(50);
+    }, 300);
   }
 
   function desativarModoSwipe() {
@@ -1068,6 +1108,7 @@ const ITPAMap = (function () {
     const leftPane = map ? map.getPane('leftPane') : null;
     const rightPane = map ? map.getPane('rightPane') : null;
     const satPane = map ? map.getPane('satelitePane') : null;
+    const satAntPane = map ? map.getPane('sateliteAnteriorPane') : null;
 
     if (leftPane) {
       leftPane.style.clipPath = '';
@@ -1081,10 +1122,21 @@ const ITPAMap = (function () {
       satPane.style.clipPath = '';
       satPane.style.webkitClipPath = '';
     }
+    if (satAntPane) {
+      satAntPane.style.clipPath = '';
+      satAntPane.style.webkitClipPath = '';
+    }
 
-    // Desliga a camada anterior após o swipe para manter o mapa limpo
+    // Desliga as camadas anteriores após o swipe para manter o mapa limpo
     if (layerGroupNdviAnterior && map && map.hasLayer(layerGroupNdviAnterior)) {
       map.removeLayer(layerGroupNdviAnterior);
+    }
+    if (layerGroupRgbAnterior && map && map.hasLayer(layerGroupRgbAnterior)) {
+      map.removeLayer(layerGroupRgbAnterior);
+    }
+
+    if (map && map.dragging) {
+      map.dragging.enable();
     }
   }
 
@@ -1093,6 +1145,7 @@ const ITPAMap = (function () {
     const handle = document.getElementById('swipe-handle');
     const btnClose = document.getElementById('btn-close-swipe');
     const pillSwipe = document.getElementById('pill-quick-swipe');
+    const swipeContainer = document.getElementById('map-swipe-container');
 
     if (pillSwipe) {
       pillSwipe.addEventListener('click', (e) => {
@@ -1126,7 +1179,7 @@ const ITPAMap = (function () {
         clientX = e.changedTouches[0].clientX;
       }
 
-      if (clientX === undefined) return swipePctAtual;
+      if (clientX === undefined || isNaN(clientX)) return swipePctAtual;
 
       const xRel = clientX - rect.left;
       const pctRaw = (xRel / rect.width) * 100;
@@ -1164,11 +1217,23 @@ const ITPAMap = (function () {
     // Eventos táteis com { passive: false } obrigatório para mobile Safari/Chrome
     if (handle) {
       handle.addEventListener('touchstart', startDrag, { passive: false });
+      handle.addEventListener('touchmove', doDrag, { passive: false });
+      handle.addEventListener('touchend', stopDrag, { passive: false });
+      handle.addEventListener('touchcancel', stopDrag, { passive: false });
       handle.addEventListener('mousedown', startDrag);
     }
     if (divider) {
       divider.addEventListener('touchstart', startDrag, { passive: false });
+      divider.addEventListener('touchmove', doDrag, { passive: false });
+      divider.addEventListener('touchend', stopDrag, { passive: false });
+      divider.addEventListener('touchcancel', stopDrag, { passive: false });
       divider.addEventListener('mousedown', startDrag);
+    }
+
+    if (swipeContainer) {
+      swipeContainer.addEventListener('touchmove', doDrag, { passive: false });
+      swipeContainer.addEventListener('touchend', stopDrag, { passive: false });
+      swipeContainer.addEventListener('touchcancel', stopDrag, { passive: false });
     }
 
     window.addEventListener('touchmove', doDrag, { passive: false });
@@ -1179,7 +1244,7 @@ const ITPAMap = (function () {
     window.addEventListener('mouseup', stopDrag);
 
     if (map) {
-      map.on('resize', () => {
+      map.on('resize move moveend zoomend viewreset', () => {
         if (swipeAtivo) {
           atualizarPosicaoSwipe(swipePctAtual);
         }

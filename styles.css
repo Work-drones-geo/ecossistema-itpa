@@ -2567,9 +2567,9 @@ iframe[title*="Netlify"] {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 3px;
+  width: 4px;
   background-color: #ffffff;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
   z-index: 865;
   pointer-events: auto;
   cursor: ew-resize;
@@ -2578,13 +2578,26 @@ iframe[title*="Netlify"] {
   transform: translateX(-50%);
 }
 
+/* Área de toque expandida para facilitar o arraste no mobile/touch */
+.swipe-divider-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -20px;
+  right: -20px;
+  background: transparent;
+  touch-action: none;
+  cursor: ew-resize;
+}
+
 .swipe-handle-circle {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   background-color: #ffffff;
   color: #0f172a;
@@ -2593,12 +2606,15 @@ iframe[title*="Netlify"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 800;
   cursor: ew-resize;
+  touch-action: none;
   user-select: none;
+  -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  z-index: 866;
 }
 
 .swipe-handle-circle:hover {
@@ -2639,14 +2655,24 @@ iframe[title*="Netlify"] {
 /* ==========================================================================
    4. Panes Dedicados Leaflet para Comparador Swipe (Recorte Mobile e Desktop)
    ========================================================================== */
+.leaflet-container .leaflet-map-pane {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.leaflet-pane.leaflet-left-pane,
+.leaflet-pane.leaflet-right-pane,
 .leaflet-pane.leaflet-leftPane-pane,
 .leaflet-pane.leaflet-rightPane-pane,
-.leaflet-pane.leaflet-satelitePane-pane {
+.leaflet-pane.leaflet-satelitePane-pane,
+.leaflet-pane.leaflet-sateliteAnteriorPane-pane {
   position: absolute;
   top: 0;
   left: 0;
   width: 100% !important;
   height: 100% !important;
   pointer-events: none;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   will-change: clip-path;
 }
