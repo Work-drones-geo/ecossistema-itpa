@@ -296,6 +296,59 @@ const ITPAMap = (function () {
       if (layerGroupNdviAnterior) layerGroupNdviAnterior.clearLayers();
       if (layerGroupRgbAnterior) layerGroupRgbAnterior.clearLayers();
 
+      // Coordenadas exatas do bbox_expandido (buffer geográfico de 18% para cobrir todo o Norte sem cortes)
+      // bbox expandido: minX=-43.023964, minY=-22.742655, maxX=-42.947936, maxY=-22.688045
+      const boundsSateliteExpandido = L.latLngBounds(
+        [-22.742655, -43.023964], // [lat_min_expandida, lng_min_expandida]
+        [-22.688045, -42.947936]  // [lat_max_expandida, lng_max_expandida]
+      );
+
+      // Helper para criar ImageOverlay georreferenciado da AOI completa com limites de zoom (10 a 22)
+      const criarAoiOverlay = (caminhoRelativo, paneName = 'leftPane') => {
+        const overlay = L.imageOverlay(caminhoRelativo, boundsSateliteExpandido, {
+          opacity: 0.95,
+          interactive: false,
+          pane: paneName,
+          minZoom: 10,
+          maxZoom: 22
+        });
+        overlay.on('error', () => {
+          if (overlay.getElement()) {
+            overlay.getElement().style.display = 'none';
+          }
+        });
+        return overlay;
+      };
+
+      // 1. Sobreposição de Imagens de Satélite e NDVI da AOI consolidada com folga expandida
+      // a) 🌱 Talhões - NDVI (Recente 2m) -> leftPane
+      if (layerGroupNdviRecente) {
+        layerGroupNdviRecente.addLayer(
+          criarAoiOverlay('./assets/satelite/aoi_ndvi_recente_2m.png', 'leftPane')
+        );
+      }
+
+      // b) 🛰️ Talhões - RGB (Recente 2m) -> leftPane
+      if (layerGroupRgbRecente) {
+        layerGroupRgbRecente.addLayer(
+          criarAoiOverlay('./assets/satelite/aoi_rgb_recente_2m.png', 'leftPane')
+        );
+      }
+
+      // c) 🌱 Talhões - NDVI (Anterior 09/Set - 2m) -> rightPane
+      if (layerGroupNdviAnterior) {
+        layerGroupNdviAnterior.addLayer(
+          criarAoiOverlay('./assets/satelite/aoi_ndvi_anterior_2m.png', 'rightPane')
+        );
+      }
+
+      // d) 🛰️ Talhões - RGB (Anterior 09/Set - 2m) -> rightPane
+      if (layerGroupRgbAnterior) {
+        layerGroupRgbAnterior.addLayer(
+          criarAoiOverlay('./assets/satelite/aoi_rgb_anterior_2m.png', 'rightPane')
+        );
+      }
+
       // Estilo oficial da identidade do ITPA:
       // Contorno verde vibrante destacado (#82C325, 2.5px) e preenchimento quase transparente para permitir visualização de satélite/NDVI
       talhoesLayer = L.geoJSON(geojsonData, {
@@ -314,65 +367,6 @@ const ITPAMap = (function () {
           const layerOrigem = props.layer || '';
           const descricao = props.description || '';
           const codigo = props.id || props.codigo || '';
-
-          // 1. Sobreposição de Imagens de Satélite (L.imageOverlay) recortadas no bounding box exato
-          if (layer.getBounds && typeof layer.getBounds === 'function') {
-            const b = layer.getBounds();
-            if (b && b.isValid()) {
-              const south = b.getSouth();
-              const west = b.getWest();
-              const north = b.getNorth();
-              const east = b.getEast();
-              const exactBounds = [[south, west], [north, east]];
-
-              const talhaoId = extrairTalhaoId(feature, nomeTalhao);
-
-              // Helper para criar ImageOverlay georreferenciado com limites de zoom (10 a 22)
-              const criarSateliteOverlay = (caminhoRelativo, paneName = 'leftPane') => {
-                const overlay = L.imageOverlay(caminhoRelativo, exactBounds, {
-                  opacity: 0.95,
-                  interactive: false,
-                  pane: paneName,
-                  minZoom: 10,
-                  maxZoom: 22
-                });
-                overlay.on('error', () => {
-                  if (overlay.getElement()) {
-                    overlay.getElement().style.display = 'none';
-                  }
-                });
-                return overlay;
-              };
-
-              // a) 🌱 Talhões - NDVI (Recente 2m) -> leftPane
-              if (layerGroupNdviRecente) {
-                layerGroupNdviRecente.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_recente.png`, 'leftPane')
-                );
-              }
-
-              // b) 🛰️ Talhões - RGB (Recente 2m) -> leftPane
-              if (layerGroupRgbRecente) {
-                layerGroupRgbRecente.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_recente.png`, 'leftPane')
-                );
-              }
-
-              // c) 🌱 Talhões - NDVI (Anterior 09/Set - 2m) -> rightPane
-              if (layerGroupNdviAnterior) {
-                layerGroupNdviAnterior.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_ndvi_anterior.png`, 'rightPane')
-                );
-              }
-
-              // d) 🛰️ Talhões - RGB (Anterior 09/Set - 2m) -> rightPane
-              if (layerGroupRgbAnterior) {
-                layerGroupRgbAnterior.addLayer(
-                  criarSateliteOverlay(`./assets/satelite/${talhaoId}_rgb_anterior.png`, 'rightPane')
-                );
-              }
-            }
-          }
 
           // Efeito hover interativo nos polígonos
           layer.on({
