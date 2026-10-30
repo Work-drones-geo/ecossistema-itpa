@@ -840,8 +840,7 @@ const ITPAMap = (function () {
     const droneAtivo = ortofotoLayer && map.hasLayer(ortofotoLayer);
     if (pillDrone) {
       pillDrone.classList.toggle('active', !!droneAtivo);
-      // Nas fazendas Nelito e Guanaí a cobertura é satelital (RGB 10m / NDVI 2m), oculta o botão Drone para evitar confusão
-      pillDrone.style.display = keyAtiva === 'esec' ? 'inline-flex' : 'none';
+      pillDrone.style.display = 'flex';
     }
     if (toggleDrone) toggleDrone.checked = !!droneAtivo;
 
@@ -1636,6 +1635,12 @@ const ITPAMap = (function () {
     if (pillDrone) {
       pillDrone.onclick = (e) => {
         e.preventDefault();
+        const keyAtiva = (window.PROJETO_ATIVO_ID || 'esec').toLowerCase().trim();
+        if (keyAtiva !== 'esec' && (!ortofotoLayer || !map.hasLayer(ortofotoLayer))) {
+          if (window.showToast) {
+            window.showToast('Ortofoto de drone cadastrada na ESEC Guanabara. Em Nelito e Guanaí utilize as coberturas RGB e NDVI.', 'info');
+          }
+        }
         alternarCamada(ortofotoLayer);
       };
     }

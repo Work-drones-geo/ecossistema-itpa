@@ -166,40 +166,43 @@ html, body {
 }
 
 .btn-project-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  color: #94a3b8;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  padding: 6px 12px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 12px;
+  background-color: #ffffff;
+  color: #24292f;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
   font-family: var(--font-body);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  transition: all 0.15s ease;
   user-select: none;
 }
 
 .btn-project-tab:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f1f5f9;
-  border-color: rgba(255, 255, 255, 0.15);
+  background-color: #f6f8fa;
+  border-color: #afb8c1;
+  color: #0f172a;
 }
 
 .btn-project-tab.active {
-  background: #82C325;
-  color: #0f172a;
-  border-color: #82C325;
-  font-weight: 800;
-  box-shadow: 0 2px 8px rgba(130, 195, 37, 0.35);
-  transform: translateY(-0.5px);
+  background-color: #2E7D32 !important;
+  color: #ffffff !important;
+  border-color: #2E7D32 !important;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(46, 125, 50, 0.25);
+  transform: none;
 }
 
 .btn-project-tab:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
 
 .custom-select {
@@ -1788,10 +1791,11 @@ iframe[title*="Netlify"] {
   .btn-project-tab {
     flex: 1;
     justify-content: center;
-    padding: 8px 6px;
-    font-size: 0.72rem;
-    min-height: 40px;
-    border-radius: 8px;
+    padding: 0 6px;
+    font-size: 0.74rem;
+    height: 36px;
+    min-height: 36px;
+    border-radius: 4px;
   }
 
   .project-selector-wrapper .status-badge {
@@ -1834,69 +1838,126 @@ iframe[title*="Netlify"] {
   display: none !important;
 }
 
-/* 2. Barra Flutuante de Atalhos Rápidos na Lateral Direita */
-.map-quick-layer-bar {
+/* ==========================================================================
+   Controles Rápidos de Camada (Coluna Vertical Técnica - Canto Superior Direito)
+   ========================================================================== */
+.map-quick-tech-column {
   position: absolute;
   top: 14px;
   right: 14px;
   z-index: 850;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
+  gap: 6px;
+  width: 82px;
   pointer-events: auto;
 }
 
-.map-quick-pill {
-  min-height: 40px;
-  padding: 8px 14px;
-  border-radius: 999px;
+.btn-tech-control {
+  width: 100%;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 4px;
+  background-color: #ffffff;
+  color: #24292f;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
   font-family: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.btn-tech-control:hover {
+  background-color: #f6f8fa;
+  border-color: #afb8c1;
+  color: #0f172a;
+}
+
+.btn-tech-control.active {
+  background-color: #2E7D32 !important;
+  border-color: #2E7D32 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(46, 125, 50, 0.35);
+}
+
+.btn-tech-gps {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 50%;
+  border: 1px solid #d0d7de;
+  background-color: #ffffff;
+  color: #2E7D32;
+  font-size: 1.35rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px auto 0 auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.btn-tech-gps:hover {
+  background-color: #f6f8fa;
+  border-color: #2E7D32;
+  color: #1b5e20;
+}
+
+.btn-tech-gps:active {
+  transform: scale(0.94);
+  background-color: #e8f5e9;
+}
+
+/* Tag Técnica Agritech para o Bottom Sheet de Camadas */
+.sheet-tech-tag {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  cursor: pointer;
-  background-color: #ffffff;
+  justify-content: center;
+  min-width: 44px;
+  height: 22px;
+  padding: 0 6px;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
   color: #334155;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  backdrop-filter: blur(8px);
+  text-transform: uppercase;
 }
 
-.map-quick-pill .pill-dot {
-  width: 8px;
-  height: 8px;
+/* Indicador Verde Ativo do Cabeçalho */
+.status-dot-active {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background-color: #94a3b8;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  background-color: #2E7D32;
+  margin-right: 4px;
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
 }
 
-.map-quick-pill:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  border-color: #cbd5e1;
+/* Fallbacks de retrocompatibilidade para classes antigas */
+.map-quick-layer-bar {
+  display: none;
 }
-
-.map-quick-pill:active {
-  transform: scale(0.96);
-}
-
-/* Estado Ativo: Fundo verde vibrante #16a34a e texto branco */
-.map-quick-pill.active {
-  background-color: #16a34a !important;
-  color: #ffffff !important;
-  border-color: #15803d !important;
-  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.38) !important;
-}
-
-.map-quick-pill.active .pill-dot {
-  background-color: #ffffff;
-  transform: scale(1.15);
+.map-quick-pill {
+  display: none;
 }
 
 /* Botão Flutuante 'Camadas' (Touch target mínimo de 48x48px) */
@@ -2876,78 +2937,128 @@ iframe[title*="Netlify"] {
 /* ==========================================================================
    5. Widget de Diagnóstico Territorial: Auditoria de Crédito Rural (CMN nº 5.303/2026)
    ========================================================================== */
-.map-audit-card,
-.card-auditoria {
+/* ==========================================================================
+   Painel de Auditoria e Emissão do Laudo (Bottom Sheet Minimalista Acima do Rodapé)
+   ========================================================================== */
+.audit-bottom-strip,
+#card-auditoria.audit-bottom-strip {
   position: absolute;
-  top: 80px;
-  left: 14px;
-  width: 330px;
-  max-width: calc(100vw - 28px);
+  bottom: calc(var(--bottom-bar-height) + 10px);
+  left: 12px;
+  right: 12px;
+  top: auto !important;
+  width: auto !important;
+  max-width: none !important;
+  z-index: 850;
   background-color: #ffffff;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
-  z-index: 860;
-  overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  padding: 8px 12px;
+  box-sizing: border-box;
+  pointer-events: auto;
+  transition: all 0.2s ease;
   font-family: inherit;
+  display: block !important;
 }
 
-.map-audit-card.collapsed,
-.card-auditoria.collapsed {
-  width: auto;
-  max-width: 220px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+@media (min-width: 768px) {
+  .audit-bottom-strip,
+  #card-auditoria.audit-bottom-strip {
+    left: 16px;
+    right: auto;
+    width: 440px !important;
+  }
 }
 
-.map-audit-card.collapsed .audit-card-body,
-.card-auditoria.collapsed .audit-card-body,
-.map-audit-card.collapsed #painel-auditoria,
-.card-auditoria.collapsed #painel-auditoria {
-  display: none;
-}
-
-.audit-card-header {
+.audit-strip-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
-  background-color: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
+  gap: 12px;
 }
 
-.map-audit-card.collapsed .audit-card-header {
-  border-bottom: none;
-}
-
-.audit-header-title-wrap {
+.audit-strip-info {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.audit-strip-header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.audit-header-icon {
-  font-size: 1.15rem;
-  line-height: 1;
-}
-
-.audit-card-title {
-  margin: 0;
-  font-size: 0.82rem;
+.audit-prop-name {
+  font-size: 0.88rem;
   font-weight: 700;
   color: #0f172a;
+}
+
+.audit-prop-divider {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.audit-prop-area {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #2E7D32;
+}
+
+.audit-strip-badge-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.audit-status-badge-cmn {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #1b5e20;
+  background-color: #e8f5e9;
+  border: 1px solid #c8e6c9;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.btn-tech-pdf {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 14px;
+  background-color: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  color: #24292f;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  transition: all 0.15s ease;
   white-space: nowrap;
 }
 
-.audit-card-subtitle {
-  display: block;
-  font-size: 0.68rem;
-  color: #64748b;
-  white-space: nowrap;
+.btn-tech-pdf:hover {
+  background-color: #2E7D32;
+  border-color: #2E7D32;
+  color: #ffffff;
+}
+
+.btn-tech-pdf:active {
+  transform: translateY(1px);
 }
 
 .btn-toggle-audit-card {
@@ -3091,95 +3202,7 @@ iframe[title*="Netlify"] {
   white-space: nowrap;
 }
 
-@media (max-width: 600px) {
-  .map-audit-card,
-  .card-auditoria {
-    top: 68px;
-    left: 10px;
-    right: 10px;
-    width: auto;
-    max-width: none;
-  }
-  .map-audit-card.collapsed,
-  .card-auditoria.collapsed {
-    max-width: 200px;
-  }
-  .audit-card-title {
-    font-size: 0.78rem;
-  }
-  .audit-card-subtitle {
-    font-size: 0.65rem;
-  }
-}
-
-/* Card de Auditoria de Crédito */
-.card-auditoria {
-  position: absolute;
-  top: 80px;
-  left: 14px;
-  width: 330px;
-  max-width: calc(100vw - 28px);
-  background-color: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #cbd5e1;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
-  z-index: 860;
-  overflow: hidden;
-  font-family: inherit;
-}
-
-.card-auditoria .card-header {
-  padding: 10px 14px;
-  background-color: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #0f172a;
-}
-
-.card-auditoria .card-body {
-  padding: 12px 14px;
-  background-color: #ffffff;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: #334155;
-}
-
-.card-auditoria .card-body p {
-  margin: 6px 0;
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  border-bottom: 1px dashed #f1f5f9;
-  padding-bottom: 4px;
-}
-
-.card-auditoria:not(.collapsed) .card-body,
-.card-auditoria:not(.collapsed) .audit-card-body,
-.card-auditoria:not(.collapsed) #auditoria-body,
-.map-audit-card:not(.collapsed) .card-body,
-.map-audit-card:not(.collapsed) .audit-card-body,
-.map-audit-card:not(.collapsed) #auditoria-body {
-  display: block !important;
-}
-
-.map-audit-card.collapsed,
-.card-auditoria.collapsed {
-  width: auto;
-  max-width: 240px;
-}
-
-.map-audit-card.collapsed .audit-card-body,
-.card-auditoria.collapsed .audit-card-body,
-.map-audit-card.collapsed .card-body,
-.card-auditoria.collapsed .card-body,
-.map-audit-card.collapsed #painel-auditoria,
-.card-auditoria.collapsed #painel-auditoria,
-.map-audit-card.collapsed #auditoria-body,
-.card-auditoria.collapsed #auditoria-body {
-  display: none !important;
-}
-
+/* A barra de auditoria agora está consolidada em .audit-bottom-strip no rodapé */
 .leaflet-control-layers { display: none !important; }
 
 /* Animação pulsante de destaque ao ativar a Auditoria Territorial */

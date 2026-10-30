@@ -135,7 +135,8 @@ window.atualizarDadosAuditoria = function(projetoKey) {
   setTexto(['#audit-municipio', '.audit-municipio', '[data-field="municipio"]'], p.municipio);
   setTexto(['#audit-area', '#audit-total-area', '#audit-area-total', '[data-field="area"]'], p.area);
   setTexto(['#audit-prodes', '#audit-prodes-overlap', '[data-field="prodes"]'], p.prodes || '0,00 ha (0.0%)');
-  setTexto(['#audit-status', '#audit-status-badge', '.audit-status-badge', '[data-field="status-texto"]'], p.status || 'CONFORME');
+  const statusFormatado = key === 'esec' ? 'CONFORME CNUC/ICMBio' : 'CONFORME CMN nº 5.303/2026';
+  setTexto(['#audit-status', '#audit-status-badge', '.audit-status-badge', '[data-field="status-texto"]'], statusFormatado);
   setTexto(['#audit-elegibilidade', '#audit-eligibility-status', '[data-field="status"]'], p.elegibilidade || 'ELEGÍVEL');
 
   // Atualiza subtítulo do cabeçalho do card
@@ -213,7 +214,7 @@ window.trocarProjeto = function(projetoKey) {
 
   // 8. Toast discreto confirmando a fazenda ativa
   if (typeof window.showToast === 'function') {
-    window.showToast(`📍 Propriedade Ativa: ${p.nome}`, 'info');
+    window.showToast(`Propriedade Ativa: ${p.nome}`, 'info');
   }
 };
 
@@ -261,7 +262,7 @@ window.abrirAuditoriaDoProjeto = function(projetoKey) {
   }
 
   if (typeof window.showToast === 'function') {
-    window.showToast(`⚖️ Auditoria: ${p.nome} • CONFORME CMN nº 5.303/2026`, 'success');
+    window.showToast(`Auditoria: ${p.nome} • CONFORME CMN nº 5.303/2026`, 'success');
   }
 };
 

@@ -74,13 +74,13 @@
         <!-- Botões de Acesso Rápido por Imóvel / Propriedade Rural -->
         <div class="project-buttons-group" id="project-buttons-group" role="tablist" aria-label="Seletor de Propriedade Ativa">
           <button type="button" class="btn-project-tab active" data-projeto="esec" onclick="window.trocarProjeto('esec')" title="Visualizar ESEC Guanabara">
-            🏛️ <span class="tab-label">ESEC Guanabara</span>
+            <span class="tab-label">ESEC Guanabara</span>
           </button>
           <button type="button" class="btn-project-tab" data-projeto="nelito" onclick="window.trocarProjeto('nelito')" title="Visualizar Fazenda Nelito">
-            🏡 <span class="tab-label">Fazenda Nelito</span>
+            <span class="tab-label">Fazenda Nelito</span>
           </button>
           <button type="button" class="btn-project-tab" data-projeto="guanai" onclick="window.trocarProjeto('guanai')" title="Visualizar Fazenda Guanaí">
-            🏡 <span class="tab-label">Fazenda Guanaí</span>
+            <span class="tab-label">Fazenda Guanaí</span>
           </button>
         </div>
 
@@ -91,7 +91,7 @@
           <option value="guanai">Fazenda Guanaí (Miguel Pereira - RJ)</option>
         </select>
 
-        <span class="status-badge">🟢 MONITORAMENTO ATIVO</span>
+        <span class="status-badge"><span class="status-dot-active"></span> MONITORAMENTO ATIVO</span>
       </div>
 
       <div class="header-actions">
@@ -103,7 +103,7 @@
         </div>
 
         <button class="btn-itpa-pill secondary" id="header-sync-btn" title="Sincronizar dados pendentes">
-          🔄 <span class="hide-mobile">Sincronizar</span>
+          <span class="hide-mobile">Sincronizar</span>
         </button>
       </div>
     </header>
@@ -115,39 +115,25 @@
       <section id="map-view">
         <div id="map"></div>
 
-        <!-- Barra de Acesso Rápido de Camadas (Estilo 'Dados Fazenda' Touch-Friendly) -->
-        <div class="map-quick-layer-bar" id="map-quick-layer-bar">
-          <button type="button" class="map-quick-pill" id="pill-quick-ndvi" title="Alternar NDVI 2m">
-            <span class="pill-dot"></span>
-            <span>🌱 NDVI 2m</span>
+        <!-- Controles de Camada Rápidos (Coluna Vertical Técnica - Canto Superior Direito) -->
+        <div class="map-quick-tech-column" id="map-quick-tech-column">
+          <button type="button" class="btn-tech-control active" id="pill-quick-drone" title="Alternar Ortofoto Drone">DRONE</button>
+          <button type="button" class="btn-tech-control" id="pill-quick-rgb" title="Alternar Satélite RGB">RGB</button>
+          <button type="button" class="btn-tech-control" id="pill-quick-ndvi" title="Alternar Índice de Vegetação NDVI">NDVI</button>
+          <button type="button" class="btn-tech-control" id="btn-open-layers-sheet" title="Abrir Gerenciador de Camadas">CAMADAS</button>
+          
+          <!-- Botão Circular de GPS logo abaixo da coluna técnica -->
+          <button type="button" class="btn-tech-gps" id="btn-gps-locate" title="Minha Localização GPS" aria-label="Localização GPS">
+            <span class="gps-crosshair-icon">⌖</span>
           </button>
-          <button type="button" class="map-quick-pill active" id="pill-quick-drone" title="Alternar Ortofoto Drone">
-            <span class="pill-dot"></span>
-            <span>📸 Drone</span>
-          </button>
-          <button type="button" class="map-quick-pill" id="pill-quick-rgb" title="Alternar Satélite RGB 2m">
-            <span class="pill-dot"></span>
-            <span>🛰️ Satélite RGB</span>
-          </button>
-          <button type="button" class="map-quick-pill active" id="pill-quick-limites" title="Alternar Limites Territoriais Oficiais" onclick="if(window.ITPAMap && window.ITPAMap.alternarLimitesTerritoriais) window.ITPAMap.alternarLimitesTerritoriais()">
-            <span class="pill-dot"></span>
-            <span>📐 Limites</span>
-          </button>
-          <button type="button" class="map-quick-pill swipe-pill" id="pill-quick-swipe" title="Comparador Antes e Depois (Swipe)">
-            <span class="pill-dot"></span>
-            <span>↔️ Comparar</span>
-          </button>
-          <button type="button" class="map-quick-pill" id="pill-quick-auditoria" title="Auditoria de Crédito (CMN 5.303/2026)" onclick="window.toggleAuditoria()">
-            <span class="pill-dot"></span>
-            <span>⚖️ Auditoria</span>
-          </button>
-          <button type="button" class="btn-quick-layers" id="btn-open-layers-sheet" title="Abrir Menu Completo de Camadas" aria-label="Camadas">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-              <polyline points="2 17 12 22 22 17"></polyline>
-              <polyline points="2 12 12 17 22 12"></polyline>
-            </svg>
-          </button>
+        </div>
+
+        <!-- Elementos de suporte mantidos ocultos para retrocompatibilidade -->
+        <div style="display: none;" aria-hidden="true">
+          <button type="button" id="pill-quick-limites" onclick="if(window.ITPAMap && window.ITPAMap.alternarLimitesTerritoriais) window.ITPAMap.alternarLimitesTerritoriais()">Limites</button>
+          <button type="button" id="pill-quick-swipe">Comparar</button>
+          <button type="button" id="pill-quick-auditoria" onclick="window.toggleAuditoria()">Auditoria</button>
+          <button type="button" id="btn-pick-point">Marcar Ponto</button>
         </div>
 
         <!-- Ferramenta de Comparação 'Antes e Depois' (Swipe / Cortina Deslizante) -->
@@ -155,7 +141,7 @@
           <div class="swipe-top-bar">
             <div class="swipe-tag left">
               <span class="swipe-indicator green"></span>
-              <span class="swipe-title">🌱 Recente (2m)</span>
+              <span class="swipe-title">Recente (2m)</span>
               <span class="swipe-sub">28/Out</span>
             </div>
             <button type="button" class="btn-close-swipe" id="btn-close-swipe" title="Sair da Comparação">
@@ -163,7 +149,7 @@
             </button>
             <div class="swipe-tag right">
               <span class="swipe-indicator amber"></span>
-              <span class="swipe-title">⏪ Anterior (2m)</span>
+              <span class="swipe-title">Anterior (2m)</span>
               <span class="swipe-sub">09/Set</span>
             </div>
           </div>
@@ -174,70 +160,44 @@
           </div>
         </div>
 
-        <!-- Widget de Diagnóstico Territorial: Auditoria de Crédito Rural (CMN nº 5.303/2026) -->
-        <div id="card-auditoria" class="map-audit-card card-auditoria collapsed">
-          <div class="card-header audit-card-header" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="window.toggleAuditoria()">
-            <div class="audit-header-title-wrap" style="display:flex; align-items:center; gap:8px;">
-              <span class="audit-header-icon" style="font-size:1.15rem;">⚖️</span>
-              <div>
-                <h4 class="audit-card-title" id="audit-card-header-title" style="margin:0; font-size:0.85rem; font-weight:700; color:#0f172a;">Auditoria de Crédito</h4>
-                <span class="audit-card-subtitle" id="audit-card-header-sub" style="font-size:0.68rem; color:#64748b;">ESEC Guanabara • CNUC/ICMBio</span>
+        <!-- Painel de Auditoria e Emissão do Laudo (Bottom Sheet Minimalista Acima do Rodapé) -->
+        <div id="card-auditoria" class="audit-bottom-strip">
+          <div class="audit-strip-content">
+            <div class="audit-strip-info">
+              <div class="audit-strip-header">
+                <span class="audit-prop-name" id="audit-nome-propriedade">ESEC Guanabara</span>
+                <span class="audit-prop-divider">•</span>
+                <span class="audit-prop-area" id="audit-area">3.200,00 ha</span>
+              </div>
+              <div class="audit-strip-badge-wrap">
+                <span class="audit-status-badge-cmn" id="audit-status">CONFORME CMN nº 5.303/2026</span>
               </div>
             </div>
-            <button type="button" id="btn-toggle-audit" class="btn-toggle-audit-card" onclick="event.stopPropagation(); window.toggleAuditoria();" style="background:none;border:none;font-size:18px;font-weight:bold;cursor:pointer;padding:4px 8px;color:#475569;">+</button>
-          </div>
-          <div id="auditoria-body" class="card-body audit-card-body" style="display: none; padding: 12px 14px;">
-            <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Imóvel:</strong> <span id="audit-nome-propriedade" style="font-weight: 700; color:#0f172a;">ESEC Guanabara</span>
-            </p>
-            <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Status:</strong> <span id="audit-status" style="color:#16a34a; font-weight:700; background:#dcfce7; padding:1px 8px; border-radius:999px;">CONFORME</span>
-            </p>
-            <p style="margin: 6px 0; font-size: 0.82rem; display: flex; flex-direction: column; gap: 2px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Código do CAR:</strong>
-              <span id="audit-car" style="font-family: monospace; font-size: 0.72rem; word-break: break-all; color:#334155; background:#f1f5f9; padding: 3px 6px; border-radius: 4px;">Regime Público (CNUC / ICMBio)</span>
-            </p>
-            <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Tipo:</strong> <span id="audit-tipo">Unidade de Conservação Federal</span>
-            </p>
-            <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Município / UF:</strong> <span id="audit-municipio">Guapimirim / APA - RJ</span>
-            </p>
-            <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Área Auditada:</strong> <span id="audit-area" style="font-weight: 700; color: #047857;">3.200,00 ha</span>
-            </p>
-            <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>PRODES pós-2008:</strong> <span id="audit-prodes">0,00 ha (0.0%)</span>
-            </p>
-            <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Elegibilidade:</strong> <span id="audit-elegibilidade" style="color:#15803d; font-weight:700;">ELEGÍVEL (Regime Público ICMBio)</span>
-            </p>
-            <div class="audit-card-actions" style="margin-top: 10px; display: flex; gap: 8px;">
-              <label class="btn-itpa-pill secondary btn-audit-action" for="input-car-upload" style="cursor: pointer; font-size: 0.75rem; padding: 6px 10px; flex: 1; text-align: center;">
-                📥 Importar CAR
-              </label>
-              <input type="file" id="input-car-upload" accept=".geojson,.kml,.json" style="display: none;">
-              <button type="button" class="btn-itpa-pill outline btn-audit-action" id="btn-gerar-laudo-cmn" title="Exportar Laudo Pericial em PDF" style="cursor: pointer; font-size: 0.75rem; padding: 6px 10px; flex: 1;">
-                📄 Laudo PDF
+            <div class="audit-strip-actions">
+              <button type="button" class="btn-tech-pdf" id="btn-gerar-laudo-cmn" title="Exportar Laudo Pericial em PDF">
+                Laudo PDF
               </button>
             </div>
           </div>
-        </div>
 
-        <!-- Controles Flutuantes do Mapa -->
-        <div class="map-floating-controls">
-          <button class="btn-fab-round" id="btn-gps-locate" title="Minha Localização GPS">
-            📍
-          </button>
-          <button class="btn-fab-round" id="btn-pick-point" title="Marcar ponto no mapa">
-            🎯
-          </button>
+          <!-- Campos auxiliares ocultos para retrocompatibilidade com scripts legados -->
+          <div id="auditoria-body" style="display: none;" aria-hidden="true">
+            <span id="audit-car">Regime Público (CNUC / ICMBio)</span>
+            <span id="audit-tipo">Unidade de Conservação Federal</span>
+            <span id="audit-municipio">Guapimirim / APA - RJ</span>
+            <span id="audit-prodes">0,00 ha (0.0%)</span>
+            <span id="audit-elegibilidade">ELEGÍVEL</span>
+            <span id="audit-card-header-title">Auditoria de Crédito</span>
+            <span id="audit-card-header-sub">ESEC Guanabara</span>
+            <button type="button" id="btn-toggle-audit">+</button>
+            <input type="file" id="input-car-upload" accept=".geojson,.kml,.json">
+          </div>
         </div>
 
         <!-- Legenda Flutuante de NDVI (RdYlGn) -->
         <div class="itpa-ndvi-legend" id="ndvi-legend" style="display: none;">
           <div class="ndvi-legend-header">
-            <span class="ndvi-legend-title">🌱 Escala NDVI (Vigor)</span>
+            <span class="ndvi-legend-title">Escala NDVI (Vigor)</span>
             <button class="btn-close-ndvi-legend" id="btn-close-ndvi-legend" title="Fechar Legenda">&times;</button>
           </div>
           <div class="ndvi-legend-bar"></div>
@@ -258,10 +218,10 @@
           </div>
           <div class="records-actions-bar" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
             <button class="btn-itpa-pill" id="btn-export-pdf" title="Exportar Relatório Técnico Completo com Fotos em PDF" style="padding: 7px 14px; font-size: 0.8rem;">
-              📄 Exportar Relatório PDF
+              Exportar Relatório PDF
             </button>
             <button class="btn-itpa-pill secondary" id="btn-export-geojson-list" title="Exportar ocorrências em GeoJSON para o QGIS" style="padding: 7px 12px; font-size: 0.8rem;">
-              📥 GeoJSON
+              GeoJSON
             </button>
             <select id="filter-status-select" class="form-select" style="width: auto; padding: 6px 10px; font-size: 0.8rem;">
               <option value="all">Todas</option>
@@ -286,17 +246,17 @@
           <!-- Card de Status do Banco Local -->
           <div class="ocorrencia-card" style="flex-direction: column;">
             <h3 style="font-family: var(--font-heading); color: var(--itpa-green-dark); margin-bottom: 8px;">
-              💾 Armazenamento Offline-First (IndexedDB)
+              Armazenamento Offline-First (IndexedDB)
             </h3>
             <p style="font-size: 0.88rem; color: var(--itpa-text-muted); margin-bottom: 12px;">
               Todos os registros, medições de campo e fotos compactadas são gravados localmente no seu dispositivo e continuam acessíveis mesmo sem sinal de celular.
             </p>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <button class="btn-itpa-pill secondary" id="btn-export-geojson">
-                📥 Exportar GeoJSON
+                Exportar GeoJSON
               </button>
               <button class="btn-itpa-pill outline" id="btn-clean-synced">
-                🧹 Limpar Sincronizados
+                Limpar Sincronizados
               </button>
             </div>
           </div>
@@ -304,20 +264,20 @@
           <!-- Card de Integração Google Drive -->
           <div class="ocorrencia-card" style="flex-direction: column;">
             <h3 style="font-family: var(--font-heading); color: var(--itpa-green-dark); margin-bottom: 8px;">
-              ☁️ Repositório Google Drive (Nuvem Oficial)
+              Repositório Google Drive (Nuvem Oficial)
             </h3>
             <p style="font-size: 0.85rem; color: var(--itpa-text-muted); margin-bottom: 14px;">
               Pasta mestre compartilhada para armazenamento de relatórios, Fichas Técnicas, ortofotos e laudos do ITPA.
             </p>
             <button type="button" class="btn-itpa-pill" id="btn-settings-open-drive" style="align-self: flex-start;">
-              ☁️ Abrir Pasta no Google Drive ↗
+              Abrir Pasta no Google Drive ↗
             </button>
           </div>
 
           <!-- Card de Integração Firebase -->
           <div class="ocorrencia-card" style="flex-direction: column;">
             <h3 style="font-family: var(--font-heading); color: var(--itpa-green-dark); margin-bottom: 8px;">
-              🔥 Integração Firebase Firestore & Storage
+              Integração Firebase Firestore & Storage
             </h3>
             <p style="font-size: 0.85rem; color: var(--itpa-text-muted); margin-bottom: 14px;">
               Configure as chaves do projeto Firebase da Work Drones / ITPA para habilitar sincronização automática em nuvem.
@@ -349,23 +309,35 @@
     <!-- Barra Inferior de Navegação -->
     <nav class="itpa-bottom-bar">
       <button class="nav-tab-item active" data-tab="map-view">
-        <span class="nav-icon">🗺️</span>
+        <svg class="nav-tech-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+          <line x1="8" y1="2" x2="8" y2="18"></line>
+          <line x1="16" y1="6" x2="16" y2="22"></line>
+        </svg>
         <span>Mapa</span>
       </button>
 
       <button class="nav-tab-cta" id="btn-open-form-modal">
-        <span>➕</span>
+        <span class="nav-plus-icon">+</span>
         <span>Nova Ocorrência</span>
       </button>
 
       <button class="nav-tab-item" data-tab="list-view">
-        <span class="nav-icon">📋</span>
+        <svg class="nav-tech-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
         <span>Registros</span>
         <span class="badge-count" id="tab-pending-badge" style="display: none;">0</span>
       </button>
 
       <button class="nav-tab-item" data-tab="settings-view">
-        <span class="nav-icon">⚙️</span>
+        <svg class="nav-tech-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
         <span>Ajustes</span>
       </button>
     </nav>
@@ -387,13 +359,13 @@
         <div class="form-group">
           <label class="form-label">Tipo de Ocorrência</label>
           <div class="category-chips-grid" id="category-selector">
-            <div class="chip-option selected" data-value="muda_danificada">🌱 Muda Danificada</div>
-            <div class="chip-option" data-value="fogo">🔥 Foco de Incêndio</div>
-            <div class="chip-option" data-value="erosao">⚠️ Processo Erosivo</div>
-            <div class="chip-option" data-value="plantio">🌿 Plantio Realizado</div>
-            <div class="chip-option" data-value="regeneracao">🍃 Regeneração</div>
-            <div class="chip-option" data-value="fauna">🐾 Fauna</div>
-            <div class="chip-option" data-value="outro">📍 Outro</div>
+            <div class="chip-option selected" data-value="muda_danificada">Muda Danificada</div>
+            <div class="chip-option" data-value="fogo">Foco de Incêndio</div>
+            <div class="chip-option" data-value="erosao">Processo Erosivo</div>
+            <div class="chip-option" data-value="plantio">Plantio Realizado</div>
+            <div class="chip-option" data-value="regeneracao">Regeneração</div>
+            <div class="chip-option" data-value="fauna">Fauna</div>
+            <div class="chip-option" data-value="outro">Outro</div>
           </div>
           <input type="hidden" id="ocorrencia-tipo" value="muda_danificada" required>
         </div>
@@ -443,10 +415,10 @@
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px;">
             <button type="button" class="btn-itpa-pill secondary" id="btn-trigger-camera" style="justify-content: center; padding: 12px 14px; font-size: 0.85rem;">
-              📸 Tirar Foto
+              Tirar Foto
             </button>
             <button type="button" class="btn-itpa-pill outline" id="btn-trigger-gallery" style="justify-content: center; padding: 12px 14px; font-size: 0.85rem;">
-              📁 Escolher Arquivo
+              Escolher Arquivo
             </button>
           </div>
 
@@ -466,7 +438,7 @@
               <div class="gps-accuracy-tag" id="display-accuracy">Precisão: --</div>
             </div>
             <button type="button" class="btn-itpa-pill secondary" id="btn-refresh-gps" style="padding: 6px 14px; font-size: 0.75rem;">
-              📡 Atualizar
+              Atualizar
             </button>
           </div>
           <input type="hidden" id="ocorrencia-lat" required>
@@ -481,7 +453,7 @@
             Cancelar
           </button>
           <button type="submit" class="btn-itpa-pill" id="btn-submit-ocorrencia">
-            💾 Gravar Ocorrência
+            Gravar Ocorrência
           </button>
         </div>
       </form>
@@ -510,10 +482,10 @@
       <!-- Abas de Navegação do Imóvel -->
       <div class="talhao-sheet-tabs">
         <button type="button" class="talhao-tab-btn active" data-tab-pane="tab-talhao-grafico">
-          📈 Evolução NDVI
+          Evolução NDVI
         </button>
         <button type="button" class="talhao-tab-btn" data-tab-pane="tab-talhao-docs">
-          📂 Documentos
+          Documentos
         </button>
       </div>
 
@@ -553,15 +525,15 @@
           <!-- Ações Rápidas: Swipe, Exportar Ficha Técnica PDF e Google Drive -->
           <div class="talhao-modal-actions-grid" style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <button type="button" class="btn-itpa-pill" id="btn-swipe-deste-talhao" style="justify-content: center; gap: 6px; font-size: 13px;">
-              ↔️ Comparar (Swipe)
+              Comparar (Swipe)
             </button>
             <button type="button" class="btn-itpa-pill btn-itpa-pdf-action" id="btn-pdf-deste-talhao" style="justify-content: center; gap: 6px; font-size: 13px;">
-              📄 Ficha Técnica (PDF)
+              Ficha Técnica (PDF)
             </button>
           </div>
           <div style="margin-top: 8px;">
             <button type="button" class="btn-itpa-pill btn-itpa-drive-action" id="btn-drive-deste-talhao" style="width: 100%; justify-content: center; gap: 8px; font-size: 13px;">
-              ☁️ Salvar no Drive / Acessar Nuvem
+              Salvar no Drive / Acessar Nuvem
             </button>
           </div>
         </div>
@@ -572,7 +544,6 @@
             <!-- Botão em Destaque no Topo: Abrir Pasta Oficial do Google Drive -->
             <div class="drive-folder-highlight-card">
               <a href="https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN" target="_blank" rel="noopener noreferrer" class="btn-itpa-drive-master" id="btn-abrir-pasta-drive" title="Abrir pasta oficial do Google Drive em nova aba">
-                <span class="drive-btn-icon">📁</span>
                 <span class="drive-btn-text">Abrir Pasta no Google Drive</span>
                 <span class="drive-btn-arrow">↗</span>
               </a>
@@ -599,7 +570,7 @@
                 <input type="text" id="docDescricao" placeholder="Ex.: Laudo de Plantio - Outubro" class="form-input" style="width: 100%;">
               </div>
               <button id="btnEnviarDoc" type="button" class="btn-itpa-pill" style="width: 100%; justify-content: center; gap: 8px;">
-                💾 Guardar Registo do Documento
+                Guardar Registo do Documento
               </button>
               <div id="statusUpload" style="display:none; font-size: 12px; margin-top: 8px; font-weight: 600;"></div>
             </div>
@@ -644,7 +615,7 @@
           <div class="sheet-radio-list">
             <label class="sheet-choice-item" for="base-opt-satelite">
               <div class="sheet-choice-left">
-                <span class="sheet-choice-emoji">🛰️</span>
+                <span class="sheet-tech-tag">RGB</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">Satélite de Alta Resolução</span>
                   <span class="sheet-choice-sub">Esri World Imagery / Maxar</span>
@@ -656,7 +627,7 @@
 
             <label class="sheet-choice-item" for="base-opt-osm">
               <div class="sheet-choice-left">
-                <span class="sheet-choice-emoji">🗺️</span>
+                <span class="sheet-tech-tag">OSM</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">Mapa Topográfico / Ruas</span>
                   <span class="sheet-choice-sub">OpenStreetMap Padrão</span>
@@ -668,7 +639,7 @@
 
             <label class="sheet-choice-item" for="base-opt-voyager">
               <div class="sheet-choice-left">
-                <span class="sheet-choice-emoji">🎨</span>
+                <span class="sheet-tech-tag">CARTO</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">Carto Voyager</span>
                   <span class="sheet-choice-sub">Visual cartográfico claro e suave</span>
@@ -690,7 +661,7 @@
             <!-- Ortofoto Drone -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
-                <span class="sheet-choice-emoji">📸</span>
+                <span class="sheet-tech-tag">DRONE</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">Ortofoto Drone (Alta Resolução)</span>
                   <span class="sheet-choice-sub">Voo aerofotogramétrico georreferenciado</span>
@@ -705,7 +676,7 @@
             <!-- NDVI Satélite 2m -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
-                <span class="sheet-choice-emoji">🌱</span>
+                <span class="sheet-tech-tag">NDVI</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">NDVI Satélite 2m</span>
                   <span class="sheet-choice-sub">Vigor vegetativo super-resolvido (Recente)</span>
@@ -720,7 +691,7 @@
             <!-- Satélite RGB 2m -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
-                <span class="sheet-choice-emoji">🛰️</span>
+                <span class="sheet-tech-tag">RGB</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">Satélite RGB 2m</span>
                   <span class="sheet-choice-sub">Cor verdadeira super-resolvida (Recente)</span>
@@ -735,7 +706,7 @@
             <!-- Passagem Anterior -15d (NDVI) -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
-                <span class="sheet-choice-emoji">⏪</span>
+                <span class="sheet-tech-tag">T0-NDVI</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">NDVI - Passagem Anterior (2m)</span>
                   <span class="sheet-choice-sub">Comparativo temporal de vigor (09/Set)</span>
@@ -750,7 +721,7 @@
             <!-- Satélite RGB - Passagem Anterior (2m) -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
-                <span class="sheet-choice-emoji">🛰️</span>
+                <span class="sheet-tech-tag">T0-RGB</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">Satélite RGB - Passagem Anterior (2m)</span>
                   <span class="sheet-choice-sub">Cor verdadeira super-resolvida (09/Set)</span>
@@ -775,7 +746,7 @@
             <!-- Limites Territoriais Oficiais / Perímetro Imóvel vs CAR -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
-                <span class="sheet-choice-emoji">🟩</span>
+                <span class="sheet-tech-tag">LIMITES</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">Limites Territoriais Oficiais</span>
                   <span class="sheet-choice-sub">Perímetro Imóvel vs CAR</span>
@@ -790,7 +761,7 @@
             <!-- Base CAR (Polígono Oficial) -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
-                <span class="sheet-choice-emoji">📑</span>
+                <span class="sheet-tech-tag">CAR</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">Base CAR (Polígono Oficial)</span>
                   <span class="sheet-choice-sub">Imóvel rural cadastrado (SICAR)</span>
@@ -805,7 +776,7 @@
             <!-- Alertas PRODES (> 31/07/2019) -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
-                <span class="sheet-choice-emoji">🚨</span>
+                <span class="sheet-tech-tag">PRODES</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">Alertas PRODES (&gt; 31/07/2019)</span>
                   <span class="sheet-choice-sub">Desmatamento pós-marco temporal CMN</span>
@@ -820,7 +791,7 @@
             <!-- Embargos Ambientais (IBAMA) -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
-                <span class="sheet-choice-emoji">🛑</span>
+                <span class="sheet-tech-tag">IBAMA</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">Embargos Ambientais (IBAMA)</span>
                   <span class="sheet-choice-sub">Áreas embargadas pelo órgão federal</span>
