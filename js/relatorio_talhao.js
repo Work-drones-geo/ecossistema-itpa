@@ -759,61 +759,35 @@
       const contentWidth = pageWidth - marginLeft - marginRight; // 182 mm
 
       // =========================================================================
-      // 1. CABEÇALHO CONJUNTO (ITPA + WORK DRONES GEO)
+      // 1. CABEÇALHO INSTITUCIONAL OFICIAL (WORK DRONES GEO)
       // =========================================================================
-      const topY = 6;
-      const logoSize = 18;
+      const topY = 5;
+      const logoSize = 20;
 
-      // Logo ITPA (Esquerda)
-      if (logoItpa) {
-        try {
-          doc.addImage(logoItpa, 'JPEG', marginLeft, topY, logoSize, logoSize);
-        } catch (e) {
-          console.warn('[PDF] Falha ao renderizar logo ITPA:', e);
-        }
-      }
-
-      // Textos ITPA (Esquerda)
-      const xItpaText = logoItpa ? (marginLeft + logoSize + 3) : marginLeft;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.0);
-      doc.setTextColor(15, 23, 42); // #0F172A
-      doc.text('INSTITUTO TERRA DE PRESERVACAO AMBIENTAL', xItpaText, topY + 5.0);
-      doc.setFontSize(7.2);
-      doc.setTextColor(3, 105, 161); // #0369A1
-      doc.text('ITPA - CONSERVACAO & RESTAURACAO FLORESTAL', xItpaText, topY + 9.5);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.6);
-      doc.setTextColor(71, 85, 105); // #475569
-      doc.text('CNPJ: 03.181.728/0001-99 | itpa.org.br', xItpaText, topY + 13.8);
-      doc.text('Corredor Ecologico da Mata Atlantica', xItpaText, topY + 17.5);
-
-      // Logo Work Drones Geo (Direita)
-      const xWdLogo = pageWidth - marginRight - logoSize;
+      // Logo Oficial Work Drones Geo (Esquerda)
       if (logoWorkDrones) {
         try {
-          doc.addImage(logoWorkDrones, 'JPEG', xWdLogo, topY, logoSize, logoSize);
+          doc.addImage(logoWorkDrones, 'JPEG', marginLeft, topY, logoSize, logoSize);
         } catch (e) {
           console.warn('[PDF] Falha ao renderizar logo Work Drones:', e);
         }
       }
 
-      // Textos Work Drones Geo (Direita, alinhados à direita)
-      const xWdText = logoWorkDrones ? (xWdLogo - 3) : (pageWidth - marginRight);
+      // Textos Corporativos Work Drones Geo
+      const xWdText = logoWorkDrones ? (marginLeft + logoSize + 4) : marginLeft;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.0);
-      doc.setTextColor(15, 23, 42);
-      doc.text('WORK DRONES GEO', xWdText, topY + 5.0, { align: 'right' });
-      doc.setFontSize(7.2);
-      doc.setTextColor(14, 165, 233); // #0EA5E9
-      doc.text('GEOPROCESSAMENTO E FOTOGRAMETRIA AEREA', xWdText, topY + 9.5, { align: 'right' });
+      doc.setFontSize(9.8);
+      doc.setTextColor(15, 23, 42); // #0F172A
+      doc.text('WORK DRONES GEO — GEOPROCESSAMENTO E FOTOGRAMETRIA AEREA', xWdText, topY + 5.5);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.6);
+      doc.setFontSize(7.5);
+      doc.setTextColor(71, 85, 105); // #475569
+      doc.text('Inteligencia Geografica, Sensoriamento Remoto & Auditoria Territorial', xWdText, topY + 10.2);
+
+      doc.setFontSize(7.0);
       doc.setTextColor(71, 85, 105);
-      doc.text('CNPJ: 35.410.458/0001-01 | Volta Redonda - RJ', xWdText, topY + 13.8, { align: 'right' });
-      doc.text('Tel: (24) 99929-3101 | workdrones.contato@gmail.com', xWdText, topY + 17.5, { align: 'right' });
+      doc.text('CNPJ: 35.410.458/0001-01 | Volta Redonda - RJ | Tel: (24) 99929-3101 | workdrones.contato@gmail.com', xWdText, topY + 14.8);
 
       // Linha divisória horizontal sutil
       doc.setDrawColor(203, 213, 225); // #CBD5E1
@@ -1172,7 +1146,7 @@
       doc.line(colItpaX, cursorY + 44.5, colItpaX + 74, cursorY + 44.5);
 
       // =========================================================================
-      // 7. RODAPÉ INSTITUCIONAL CONJUNTO
+      // 7. RODAPÉ INSTITUCIONAL OFICIAL (WORK DRONES GEO)
       // =========================================================================
       const footerY = pageHeight - 11;
       doc.setDrawColor(226, 232, 240);
@@ -1183,7 +1157,7 @@
       doc.setFontSize(6.5);
       doc.setTextColor(148, 163, 184); // #94A3B8
       doc.text(
-        'Instituto Terra de Preservacao Ambiental (ITPA) & Work Drones Geo | Resolucao CMN no 5.303/2026 (Manual de Credito Rural - MCR)',
+        'Work Drones Geo — Inteligencia Geografica & Fotogrametria Aerea | Resolucao CMN no 5.303/2026 (Manual de Credito Rural - MCR)',
         marginLeft,
         footerY + 4.8
       );
