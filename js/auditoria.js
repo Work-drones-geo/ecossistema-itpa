@@ -423,31 +423,13 @@ const ITPAAuditoria = (function () {
       geojsonCar: null
     };
 
-    // Atualiza imediatamente os campos do painel (.card-auditoria / #painel-auditoria)
-    if (typeof window.atualizarAuditoria === 'function') {
+    // Atualiza imediatamente os campos do painel (.card-auditoria / #painel-auditoria) sem forçar abertura
+    if (typeof window.atualizarDadosAuditoria === 'function') {
+      window.atualizarDadosAuditoria(projetoKey);
+    } else if (typeof window.atualizarAuditoria === 'function') {
       window.atualizarAuditoria(projetoKey, false);
     }
     atualizarUI();
-
-    // Expande o painel lateral para visibilidade imediata dos dados do imóvel ativo
-    const cardAudit = document.getElementById('card-auditoria') ||
-                      document.getElementById('painel-auditoria') ||
-                      document.getElementById('card-auditoria-cmn') ||
-                      document.querySelector('.card-auditoria') ||
-                      document.querySelector('.map-audit-card');
-    if (cardAudit) {
-      const outerCard = cardAudit.closest('.map-audit-card') || cardAudit;
-      outerCard.classList.remove('collapsed');
-      outerCard.style.display = 'block';
-      const pill = document.getElementById('pill-quick-auditoria');
-      if (pill) pill.classList.add('active');
-      const btnToggle = document.getElementById('btn-toggle-audit') || document.getElementById('btn-toggle-audit-card');
-      if (btnToggle) {
-        btnToggle.textContent = '−';
-        const icon = btnToggle.querySelector('.toggle-icon');
-        if (icon) icon.textContent = '−';
-      }
-    }
   }
 
   return {

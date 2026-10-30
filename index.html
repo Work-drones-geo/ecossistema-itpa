@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 
   <!-- Estilos Customizados do ITPA -->
-  <link rel="stylesheet" href="styles.css?v=5.2">
+  <link rel="stylesheet" href="styles.css?v=5.3">
 </head>
 <body>
 
@@ -69,12 +69,28 @@
 
       <!-- Seletor Suspenso de Arquitetura Multi-Projetos -->
       <div class="project-selector-wrapper">
-        <label for="select-projeto">PROJETO ATIVO:</label>
-        <select id="select-projeto" class="custom-select" onchange="window.abrirAuditoriaDoProjeto(this.value)">
+        <label for="select-projeto" class="project-selector-label">PROJETO ATIVO:</label>
+        
+        <!-- Botões de Acesso Rápido por Imóvel / Propriedade Rural -->
+        <div class="project-buttons-group" id="project-buttons-group" role="tablist" aria-label="Seletor de Propriedade Ativa">
+          <button type="button" class="btn-project-tab active" data-projeto="esec" onclick="window.trocarProjeto('esec')" title="Visualizar ESEC Guanabara">
+            🏛️ <span class="tab-label">ESEC Guanabara</span>
+          </button>
+          <button type="button" class="btn-project-tab" data-projeto="nelito" onclick="window.trocarProjeto('nelito')" title="Visualizar Fazenda Nelito">
+            🏡 <span class="tab-label">Fazenda Nelito</span>
+          </button>
+          <button type="button" class="btn-project-tab" data-projeto="guanai" onclick="window.trocarProjeto('guanai')" title="Visualizar Fazenda Guanaí">
+            🏡 <span class="tab-label">Fazenda Guanaí</span>
+          </button>
+        </div>
+
+        <!-- Select nativo mantido sincronizado para acessibilidade e retrocompatibilidade -->
+        <select id="select-projeto" class="custom-select visually-hidden-accessible" style="display: none;" onchange="window.trocarProjeto(this.value)">
           <option value="esec" selected>ESEC Guanabara (Guapimirim / APA)</option>
           <option value="nelito">Fazenda Nelito (Miguel Pereira - RJ)</option>
           <option value="guanai">Fazenda Guanaí (Miguel Pereira - RJ)</option>
         </select>
+
         <span class="status-badge">🟢 MONITORAMENTO ATIVO</span>
       </div>
 
@@ -155,42 +171,42 @@
         </div>
 
         <!-- Widget de Diagnóstico Territorial: Auditoria de Crédito Rural (CMN nº 5.303/2026) -->
-        <div id="card-auditoria" class="map-audit-card card-auditoria">
+        <div id="card-auditoria" class="map-audit-card card-auditoria collapsed">
           <div class="card-header audit-card-header" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="window.toggleAuditoria()">
             <div class="audit-header-title-wrap" style="display:flex; align-items:center; gap:8px;">
               <span class="audit-header-icon" style="font-size:1.15rem;">⚖️</span>
               <div>
                 <h4 class="audit-card-title" id="audit-card-header-title" style="margin:0; font-size:0.85rem; font-weight:700; color:#0f172a;">Auditoria de Crédito</h4>
-                <span class="audit-card-subtitle" id="audit-card-header-sub" style="font-size:0.68rem; color:#64748b;">Fazenda Nelito • CMN 5.303/2026</span>
+                <span class="audit-card-subtitle" id="audit-card-header-sub" style="font-size:0.68rem; color:#64748b;">ESEC Guanabara • CNUC/ICMBio</span>
               </div>
             </div>
-            <button type="button" id="btn-toggle-audit" class="btn-toggle-audit-card" onclick="event.stopPropagation(); window.toggleAuditoria();" style="background:none;border:none;font-size:18px;font-weight:bold;cursor:pointer;padding:4px 8px;color:#475569;">−</button>
+            <button type="button" id="btn-toggle-audit" class="btn-toggle-audit-card" onclick="event.stopPropagation(); window.toggleAuditoria();" style="background:none;border:none;font-size:18px;font-weight:bold;cursor:pointer;padding:4px 8px;color:#475569;">+</button>
           </div>
-          <div id="auditoria-body" class="card-body audit-card-body" style="display: block; padding: 12px 14px;">
+          <div id="auditoria-body" class="card-body audit-card-body" style="display: none; padding: 12px 14px;">
             <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Imóvel:</strong> <span id="audit-nome-propriedade" style="font-weight: 700; color:#0f172a;">Fazenda Nelito</span>
+              <strong>Imóvel:</strong> <span id="audit-nome-propriedade" style="font-weight: 700; color:#0f172a;">ESEC Guanabara</span>
             </p>
             <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
               <strong>Status:</strong> <span id="audit-status" style="color:#16a34a; font-weight:700; background:#dcfce7; padding:1px 8px; border-radius:999px;">CONFORME</span>
             </p>
             <p style="margin: 6px 0; font-size: 0.82rem; display: flex; flex-direction: column; gap: 2px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
               <strong>Código do CAR:</strong>
-              <span id="audit-car" style="font-family: monospace; font-size: 0.72rem; word-break: break-all; color:#334155; background:#f1f5f9; padding: 3px 6px; border-radius: 4px;">RJ-3302908-AE983FB03BAE42A9B32833247D8CCD4D</span>
+              <span id="audit-car" style="font-family: monospace; font-size: 0.72rem; word-break: break-all; color:#334155; background:#f1f5f9; padding: 3px 6px; border-radius: 4px;">Regime Público (CNUC / ICMBio)</span>
             </p>
             <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Tipo:</strong> <span id="audit-tipo">Imóvel Rural Privado</span>
+              <strong>Tipo:</strong> <span id="audit-tipo">Unidade de Conservação Federal</span>
             </p>
             <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Município / UF:</strong> <span id="audit-municipio">Miguel Pereira - RJ</span>
+              <strong>Município / UF:</strong> <span id="audit-municipio">Guapimirim / APA - RJ</span>
             </p>
             <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Área Auditada:</strong> <span id="audit-area" style="font-weight: 700; color: #047857;">246,116 ha</span>
+              <strong>Área Auditada:</strong> <span id="audit-area" style="font-weight: 700; color: #047857;">3.200,00 ha</span>
             </p>
             <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
               <strong>PRODES pós-2008:</strong> <span id="audit-prodes">0,00 ha (0.0%)</span>
             </p>
             <p style="margin: 6px 0; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>Elegibilidade:</strong> <span id="audit-elegibilidade" style="color:#15803d; font-weight:700;">ELEGÍVEL (CMN 5.303/2026)</span>
+              <strong>Elegibilidade:</strong> <span id="audit-elegibilidade" style="color:#15803d; font-weight:700;">ELEGÍVEL (Regime Público ICMBio)</span>
             </p>
             <div class="audit-card-actions" style="margin-top: 10px; display: flex; gap: 8px;">
               <label class="btn-itpa-pill secondary btn-audit-action" for="input-car-upload" style="cursor: pointer; font-size: 0.75rem; padding: 6px 10px; flex: 1; text-align: center;">
@@ -838,17 +854,17 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <!-- Módulos da Aplicação Ecossistema ITPA -->
-  <script src="script.js?v=5.2"></script>
-  <script src="js/config.js?v=5.2"></script>
-  <script src="js/db.js?v=5.2"></script>
-  <script src="js/camera.js?v=5.2"></script>
-  <script src="js/map.js?v=5.2"></script>
-  <script src="js/sync.js?v=5.2"></script>
-  <script src="js/report.js?v=5.2"></script>
-  <script src="js/assets_laudo.js?v=5.2"></script>
-  <script src="js/relatorio_talhao.js?v=5.2"></script>
-  <script src="js/auditoria.js?v=5.2"></script>
-  <script src="app.js?v=5.2"></script>
+  <script src="script.js?v=5.3"></script>
+  <script src="js/config.js?v=5.3"></script>
+  <script src="js/db.js?v=5.3"></script>
+  <script src="js/camera.js?v=5.3"></script>
+  <script src="js/map.js?v=5.3"></script>
+  <script src="js/sync.js?v=5.3"></script>
+  <script src="js/report.js?v=5.3"></script>
+  <script src="js/assets_laudo.js?v=5.3"></script>
+  <script src="js/relatorio_talhao.js?v=5.3"></script>
+  <script src="js/auditoria.js?v=5.3"></script>
+  <script src="app.js?v=5.3"></script>
 
 </body>
 </html>

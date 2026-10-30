@@ -313,12 +313,14 @@ const ITPAMap = (function () {
     const projetoInicial = selectProjetoEl ? selectProjetoEl.value : 'esec';
     selecionarProjeto(projetoInicial);
 
-    if (selectProjetoEl) {
+    if (selectProjetoEl && !selectProjetoEl._hasChangeBound) {
+      selectProjetoEl._hasChangeBound = true;
       selectProjetoEl.addEventListener('change', function () {
-        if (typeof window.atualizarAuditoria === 'function') {
-          window.atualizarAuditoria(this.value);
+        if (typeof window.trocarProjeto === 'function') {
+          window.trocarProjeto(this.value);
+        } else {
+          selecionarProjeto(this.value);
         }
-        selecionarProjeto(this.value);
       });
     }
 
@@ -918,31 +920,39 @@ const ITPAMap = (function () {
    * Executa map.flyTo / map.fitBounds, remove o vetor anterior e renderiza o novo GeoJSON da pasta DATA/.
    * @param {string} projetoKey Chave do projeto ('esec', 'nelito', 'guanai')
    */
-  async function selecionarProjeto(projetoKey, syncAudit = true) {
+  async function selecionarProjeto(projetoKey) {
     const projetos = window.PROJETOS || {};
-    const projeto = projetos[projetoKey];
+    const key = (projetoKey || 'esec').toLowerCase().trim();
+    const projeto = projetos[key] || (window.ITPA_DADOS_PROJETOS && window.ITPA_DADOS_PROJETOS[key]);
 
     if (!projeto) {
-      console.warn(`[ITPAMap] Projeto '${projetoKey}' não encontrado no catálogo PROJETOS.`);
+      console.warn(`[ITPAMap] Projeto '${key}' não encontrado no catálogo.`);
       return;
     }
 
-    window.PROJETO_ATIVO_ID = projetoKey;
+    window.PROJETO_ATIVO_ID = key;
+
+    // Sincroniza visualmente os botões do header
+    const projectButtons = document.querySelectorAll('.btn-project-tab');
+    projectButtons.forEach(btn => {
+      const btnKey = (btn.getAttribute('data-projeto') || '').toLowerCase().trim();
+      btn.classList.toggle('active', btnKey === key);
+    });
 
     // Sincroniza o seletor HTML caso a chamada tenha vindo via script
     const selectEl = document.getElementById('select-projeto');
-    if (selectEl && selectEl.value !== projetoKey) {
-      selectEl.value = projetoKey;
+    if (selectEl && selectEl.value !== key) {
+      selectEl.value = key;
     }
 
-    // Atualização infalível da Auditoria de Crédito sem retroalimentar selecionarProjeto
-    if (syncAudit && typeof window.abrirAuditoriaDoProjeto === 'function') {
-      window.abrirAuditoriaDoProjeto(projetoKey, false);
-    } else if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
-      window.ITPAAuditoria.definirProjetoAtivo(projetoKey, false);
+    // Atualização silenciosa dos dados da auditoria (sem abrir o card)
+    if (typeof window.atualizarDadosAuditoria === 'function') {
+      window.atualizarDadosAuditoria(key);
+    } else if (typeof window.atualizarAuditoria === 'function') {
+      window.atualizarAuditoria(key);
     }
 
-    console.log(`[ITPAMap] Alternando para o projeto ativo: ${projeto.nome} (${projetoKey})`);
+    console.log(`[ITPAMap] Alternando para o projeto ativo: ${projeto.nome} (${key})`);
 
     // 1. Remove vetor anterior do projeto se existir
     if (talhoesLayer && map) {
@@ -953,34 +963,57 @@ const ITPAMap = (function () {
       talhoesLayer = null;
     }
 
+    let boundsRaster = null;
+
     // 2. Se for a ESEC Guanabara (Guapimirim / APA)
-    if (projetoKey === 'esec') {
+    if (key === 'esec') {
+      // Para ESEC, ativa a ortofoto do drone e desativa o satélite RGB se estiver ativo para priorizar a ortofoto de 2cm
+      if (map && ortofotoLayer && !map.hasLayer(ortofotoLayer)) {
+        map.addLayer(ortofotoLayer);
+      }
+      if (map && layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) {
+        map.removeLayer(layerGroupRgbRecente);
+      }
+
       await carregarTalhoesGeoJSON(projeto.arquivo_geojson || projeto.geojson || './DATA/esec_poligono.geojson');
-      await carregarRastersDoProjeto('esec');
+      boundsRaster = await carregarRastersDoProjeto('esec');
+
       if (map) {
         if (talhoesLayer && talhoesLayer.getBounds && talhoesLayer.getBounds().isValid()) {
           map.fitBounds(talhoesLayer.getBounds().pad(0.15), { padding: [30, 30], maxZoom: 15 });
+        } else if (boundsRaster && boundsRaster.isValid()) {
+          map.fitBounds(boundsRaster.pad(0.15), { padding: [30, 30], maxZoom: 15 });
         } else {
-          map.flyTo(projeto.coordenadas_centro || projeto.coords, projeto.zoom, { duration: 1.5 });
+          map.flyTo(projeto.coordenadas_centro || projeto.coords || [-22.705, -43.030], projeto.zoom || 14, { duration: 1.5 });
         }
       }
     } else {
       // 3. Fazenda Nelito ou Fazenda Guanaí (Miguel Pereira - RJ)
       // Instancia os novos overlays PNG (RGB 10m e NDVI 2m) correspondentes usando os limites de bounds.json
-      await carregarRastersDoProjeto(projetoKey);
+      boundsRaster = await carregarRastersDoProjeto(key);
 
       // Oculta a ortofoto do drone (específica do voo na ESEC Guanabara)
       if (map && ortofotoLayer && map.hasLayer(ortofotoLayer)) {
         map.removeLayer(ortofotoLayer);
       }
 
+      // Para as fazendas privadas, garante que a imagem de satélite RGB recente apareça imediatamente no mapa
+      // (a menos que o NDVI já esteja ligado pelo usuário)
+      const ndviAtivo = layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente);
+      if (!ndviAtivo) {
+        if (layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) {
+          map.addLayer(layerGroupRgbRecente);
+        }
+      }
+
       // Caminhos candidatos para o GeoJSON oficial do projeto
       const arquivoGeojson = projeto.arquivo_geojson || projeto.geojson;
       const caminhos = [
-        './' + arquivoGeojson,
         arquivoGeojson,
+        './' + arquivoGeojson,
+        'DATA/' + arquivoGeojson.split('/').pop(),
         './DATA/' + arquivoGeojson.split('/').pop(),
-        './data/' + arquivoGeojson.split('/').pop()
+        'data/' + arquivoGeojson.split('/').pop()
       ];
 
       let geojsonData = null;
@@ -998,25 +1031,24 @@ const ITPAMap = (function () {
       }
 
       if (geojsonData) {
-        console.log(`[ITPAMap] Polígono do projeto ${projeto.nome} carregado de: ${urlSucesso}`);
+        console.log(`[ITPAMap] Polígono da ${projeto.nome} carregado com sucesso de: ${urlSucesso}`);
 
         talhoesLayer = L.geoJSON(geojsonData, {
           style: function () {
             return {
-              color: '#27ae60',       // Contorno verde escuro (#27ae60)
+              color: '#16a34a',       // Contorno verde nítido e vibrante
               weight: 3.5,
               opacity: 1.0,
-              fillColor: '#2ecc71',   // Preenchimento verde (#2ecc71) levemente translúcido
-              fillOpacity: 0.20
+              fillColor: '#22c55e',   // Preenchimento verde levemente translúcido
+              fillOpacity: 0.18
             };
           },
           onEachFeature: function (feature, layer) {
             const props = feature.properties || {};
-            const nomeImovel = props.Name || props.nome || projeto.nome;
 
             layer.on({
               mouseover: function (e) {
-                e.target.setStyle({ weight: 4.5, color: '#1e8449', fillOpacity: 0.35 });
+                e.target.setStyle({ weight: 4.5, color: '#15803d', fillOpacity: 0.32 });
                 if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) e.target.bringToFront();
               },
               mouseout: function (e) {
@@ -1028,7 +1060,7 @@ const ITPAMap = (function () {
               <div class="itpa-popup-card imovel-analytic-popup" style="padding: 12px 14px; min-width: 250px; font-family: inherit;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
                   <span style="background: #eef7e6; color: #274D1E; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">🏛️ PROJETO ATIVO</span>
-                  <span style="background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${projetoKey}</span>
+                  <span style="background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${key}</span>
                 </div>
                 
                 <h3 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 800; color: #0f172a; line-height: 1.25;">${projeto.nome}</h3>
@@ -1040,32 +1072,13 @@ const ITPAMap = (function () {
                 </div>
                 
                 <div style="margin-top: 10px;">
-                  <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" data-projeto="${projetoKey}" onclick="window.abrirAuditoriaDoProjeto('${projetoKey}')" style="width: 100%; justify-content: center; font-size: 12px; padding: 8px 12px; cursor: pointer; background: #82C325; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 6px;">
+                  <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" data-projeto="${key}" onclick="window.abrirAuditoriaDoProjeto('${key}')" style="width: 100%; justify-content: center; font-size: 12px; padding: 8px 12px; cursor: pointer; background: #82C325; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 6px;">
                     ⚖️ Ver Auditoria Territorial
                   </button>
                 </div>
               </div>
             `;
             layer.bindPopup(popupHtml, { maxWidth: 320, className: 'itpa-leaflet-popup' });
-
-            layer.on('popupopen', (e) => {
-              const popupEl = e.popup ? e.popup.getElement() : document.querySelector('.itpa-leaflet-popup');
-              if (popupEl) {
-                const btnAudit = popupEl.querySelector('.btn-abrir-auditoria-proj');
-                if (btnAudit) {
-                  L.DomEvent.disableClickPropagation(btnAudit);
-                  L.DomEvent.on(btnAudit, 'click', (ev) => {
-                    L.DomEvent.stopPropagation(ev);
-                    L.DomEvent.preventDefault(ev);
-                    const pKey = btnAudit.getAttribute('data-projeto') || projetoKey;
-                    if (typeof window.abrirAuditoriaDoProjeto === 'function') {
-                      window.abrirAuditoriaDoProjeto(pKey);
-                    }
-                    if (map) map.closePopup();
-                  });
-                }
-              }
-            });
           }
         });
 
@@ -1079,38 +1092,29 @@ const ITPAMap = (function () {
               padding: [30, 30],
               maxZoom: 16
             });
+          } else if (boundsRaster && boundsRaster.isValid()) {
+            map.fitBounds(boundsRaster.pad(0.15), { padding: [30, 30], maxZoom: 16 });
           } else {
-            map.flyTo(projeto.coordenadas_centro || projeto.coords, projeto.zoom, { duration: 1.5 });
+            map.flyTo(projeto.coordenadas_centro || projeto.coords, projeto.zoom || 15, { duration: 1.5 });
           }
         }
       } else {
         if (map) {
-          map.flyTo(projeto.coordenadas_centro || projeto.coords, projeto.zoom, { duration: 1.5 });
+          if (boundsRaster && boundsRaster.isValid()) {
+            map.fitBounds(boundsRaster.pad(0.15), { padding: [30, 30], maxZoom: 16 });
+          } else {
+            map.flyTo(projeto.coordenadas_centro || projeto.coords, projeto.zoom || 15, { duration: 1.5 });
+          }
         }
       }
     }
 
-    // 4. Notifica o módulo de auditoria territorial para atualizar o CAR, município, área e elegibilidade oficiais
-    if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
-      window.ITPAAuditoria.definirProjetoAtivo(projetoKey);
-    }
+    // 4. Sincroniza a barra rápida flutuante (NDVI, RGB, Drone)
+    sincronizarEstadosUI();
 
-    // Expande o card de auditoria na tela para visualização imediata dos dados reais do imóvel selecionado
-    const cardAudit = document.getElementById('card-auditoria') ||
-                      document.getElementById('painel-auditoria') ||
-                      document.getElementById('card-auditoria-cmn') ||
-                      document.querySelector('.card-auditoria');
-    if (cardAudit) {
-      cardAudit.classList.remove('collapsed');
-      cardAudit.style.display = 'block';
-      const pill = document.getElementById('pill-quick-auditoria');
-      if (pill) pill.classList.add('active');
-      const btnToggle = document.getElementById('btn-toggle-audit') || document.getElementById('btn-toggle-audit-card');
-      if (btnToggle) {
-        btnToggle.textContent = '−';
-        const icon = btnToggle.querySelector('.toggle-icon');
-        if (icon) icon.textContent = '−';
-      }
+    // 5. Notifica o módulo de auditoria territorial para atualizar o CAR, município, área e elegibilidade oficiais
+    if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
+      window.ITPAAuditoria.definirProjetoAtivo(key);
     }
   }
 

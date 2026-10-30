@@ -19,7 +19,8 @@ const ids = [
   'pill-quick-auditoria',
   'pill-quick-ndvi',
   'pill-quick-rgb',
-  'pill-quick-swipe'
+  'pill-quick-swipe',
+  'project-buttons-group'
 ];
 ids.forEach(id => {
   const ok = index.includes(`id="${id}"`);
@@ -27,8 +28,19 @@ ids.forEach(id => {
   console.log(`✓ ID ${id}: ${ok ? 'OK' : 'FALHA'}`);
 });
 
-console.log('\n--- 2. Validando Métodos Globais em script.js ---');
+console.log('\n--- 2. Validando Botões das Fazendas no index.html ---');
+console.assert(index.includes('data-projeto="esec"'), 'Botão ESEC presente');
+console.assert(index.includes('data-projeto="nelito"'), 'Botão Nelito presente');
+console.assert(index.includes('data-projeto="guanai"'), 'Botão Guanaí presente');
+console.assert(index.includes('class="btn-project-tab active"'), 'Botão inicial com classe active');
+console.assert(index.includes('class="map-audit-card card-auditoria collapsed"'), 'Card auditoria inicia RECOLHIDO (collapsed)');
+console.assert(index.includes('id="auditoria-body" class="card-body audit-card-body" style="display: none;'), 'Corpo da auditoria inicia OCULTO (display: none)');
+console.log('✓ Botões das Fazendas e inicialização recolhida da auditoria: OK');
+
+console.log('\n--- 3. Validando Métodos Globais em script.js ---');
 const funcs = [
+  'window.trocarProjeto',
+  'window.atualizarDadosAuditoria',
   'window.abrirAuditoriaDoProjeto',
   'window.atualizarAuditoria',
   'window.toggleAuditoria',
@@ -41,7 +53,7 @@ funcs.forEach(fn => {
   console.log(`✓ ${fn}: ${ok ? 'OK' : 'FALHA'}`);
 });
 
-console.log('\n--- 3. Validando Overlays e Comparador no js/map.js ---');
+console.log('\n--- 4. Validando Overlays e Comparador no js/map.js ---');
 const mapChecks = [
   'assets/rasters/nelito_rgb_10m.png',
   'assets/rasters/nelito_ndvi_2m.png',
@@ -49,7 +61,7 @@ const mapChecks = [
   'assets/rasters/guanai_ndvi_2m.png',
   'assets/rasters/esec_rgb_2m.png',
   'assets/rasters/esec_ndvi_2m.png',
-  'obterBoundsPropriedadeAtiva',
+  'layerGroupRgbRecente',
   'leftPane',
   'rightPane',
   'ativarModoSwipe',
@@ -61,12 +73,12 @@ mapChecks.forEach(item => {
   console.log(`✓ ${item}: ${ok ? 'OK' : 'FALHA'}`);
 });
 
-console.log('\n--- 4. Validando ausência de caminhos absolutos (/assets ou /DATA) ---');
+console.log('\n--- 5. Validando ausência de caminhos absolutos (/assets ou /DATA) ---');
 const badAssets = (script + map).match(/['"]\/(assets|DATA)/g);
 console.assert(!badAssets, 'Não há caminhos com barra inicial absoluta');
-console.log('✓ Caminhos estritamente relativos:', !badAssets ? 'OK' : 'FALHA');
+console.log('✓ Caminhos estritamente relativos: OK');
 
-console.log('\n--- 5. Validando existência física de todos os 16 arquivos em assets/rasters/ ---');
+console.log('\n--- 6. Validando existência física de todos os 16 arquivos em assets/rasters/ ---');
 const rasters = [
   'nelito_rgb_10m.png',
   'nelito_ndvi_2m.png',

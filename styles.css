@@ -143,7 +143,8 @@ html, body {
   transition: all 0.25s ease;
 }
 
-.project-selector-wrapper label {
+.project-selector-wrapper label,
+.project-selector-label {
   font-family: var(--font-body);
   font-size: 0.72rem;
   font-weight: 700;
@@ -151,6 +152,54 @@ html, body {
   letter-spacing: 0.05em;
   white-space: nowrap;
   user-select: none;
+}
+
+/* Grupo de Botões Interativos das Fazendas / Imóveis */
+.project-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-project-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 6px 12px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.btn-project-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-project-tab.active {
+  background: #82C325;
+  color: #0f172a;
+  border-color: #82C325;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(130, 195, 37, 0.35);
+  transform: translateY(-0.5px);
+}
+
+.btn-project-tab:active {
+  transform: scale(0.97);
 }
 
 .custom-select {
@@ -1716,25 +1765,37 @@ iframe[title*="Netlify"] {
     width: 100%;
     justify-content: space-between;
     border-radius: 14px;
-    padding: 4px 8px;
-    gap: 8px;
+    padding: 6px 8px;
+    gap: 6px;
+    overflow-x: auto;
   }
 
-  .project-selector-wrapper label {
+  .project-selector-wrapper label,
+  .project-selector-label {
     display: none;
   }
 
-  .project-selector-wrapper .custom-select {
+  .project-buttons-group {
+    display: flex;
     flex: 1;
-    min-width: 0;
-    min-height: 48px;
-    font-size: 0.88rem;
+    justify-content: space-between;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+
+  .btn-project-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 6px;
+    font-size: 0.72rem;
+    min-height: 40px;
+    border-radius: 8px;
   }
 
   .project-selector-wrapper .status-badge {
-    display: inline-flex;
-    font-size: 0.68rem;
-    padding: 4px 8px;
+    display: none; /* Oculta badge redundante no celular para dar espaço aos botões de fazenda */
   }
 
   /* Ergonomia Mobile: Altura mínima de 48px para botões operacionais no telemóvel */

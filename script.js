@@ -1,11 +1,24 @@
 /**
  * ECOSSISTEMA ITPA - Controle Global de Auditoria de Crédito e UI
- * Garante reatividade infalível ao clicar em 'Ver Auditoria Territorial'
- * e ao alternar propriedades rurais (Nelito, Guanaí, ESEC Guanabara).
+ * Garante reatividade infalível ao alternar propriedades rurais (Nelito, Guanaí, ESEC Guanabara)
+ * e mantém o painel de auditoria recolhido (collapsed) por padrão, abrindo somente quando solicitado.
  */
 
 // Dados oficiais exatos de cada imóvel rural / projeto
 const ITPA_DADOS_PROJETOS = {
+  esec: {
+    key: "esec",
+    nome: "ESEC Guanabara",
+    car: "Regime Público (CNUC / ICMBio)",
+    tipo: "Unidade de Conservação Federal",
+    municipio: "Guapimirim / APA - RJ",
+    area: "3.200,00 ha",
+    area_num: 3200.0,
+    prodes: "0,00 ha (0.0%)",
+    status: "CONFORME - Ausência de Sobreposição PRODES/DETER",
+    elegibilidade: "ELEGÍVEL (Regime Público ICMBio)",
+    coords: [-22.685, -43.045]
+  },
   nelito: {
     key: "nelito",
     nome: "Fazenda Nelito",
@@ -31,25 +44,11 @@ const ITPA_DADOS_PROJETOS = {
     status: "CONFORME - Ausência de Sobreposição PRODES/DETER",
     elegibilidade: "ELEGÍVEL (Resolução CMN nº 5.303/2026)",
     coords: [-22.552, -43.558]
-  },
-  esec: {
-    key: "esec",
-    nome: "ESEC Guanabara",
-    car: "Regime Público (CNUC / ICMBio)",
-    tipo: "Unidade de Conservação Federal",
-    municipio: "Guapimirim / APA - RJ",
-    area: "3.200,00 ha",
-    area_num: 3200.0,
-    prodes: "0,00 ha (0.0%)",
-    status: "CONFORME - Ausência de Sobreposição PRODES/DETER",
-    elegibilidade: "ELEGÍVEL (Regime Público ICMBio)",
-    coords: [-22.685, -43.045]
   }
 };
 window.ITPA_DADOS_PROJETOS = ITPA_DADOS_PROJETOS;
 
 // Metadados oficiais das camadas raster (RGB 10m e NDVI 2m) e bounds.json por propriedade
-// Usando estritamente caminhos relativos sem barra inicial absoluta para compatibilidade com GitHub Pages
 const ITPA_PROJETOS_RASTERS = {
   nelito: {
     chave: "nelito",
@@ -105,136 +104,169 @@ window.ITPA_PROJETOS_RASTERS = ITPA_PROJETOS_RASTERS;
 let _isAuditoriaSyncing = false;
 
 /**
- * Abre e atualiza o painel de Auditoria de Crédito para o projeto especificado
- * @param {string} projetoKey - 'nelito', 'guanai' ou 'esec'
- * @param {boolean} syncMap - Se deve propagar a troca para o mapa (evita ciclo de chamadas)
+ * Atualiza silenciosamente os campos de texto da auditoria no DOM (sem abrir o card)
+ * @param {string} projetoKey - 'esec', 'nelito' ou 'guanai'
  */
-window.abrirAuditoriaDoProjeto = function(projetoKey, syncMap = true) {
-  if (_isAuditoriaSyncing) return;
-  _isAuditoriaSyncing = true;
+window.atualizarDadosAuditoria = function(projetoKey) {
+  if (!projetoKey || typeof projetoKey !== 'string') {
+    const sel = document.getElementById('select-projeto');
+    projetoKey = (sel && sel.value) ? sel.value : (window.PROJETO_ATIVO_ID || 'esec');
+  }
 
-  try {
-    // 1. Resolução segura da chave do projeto
-    if (!projetoKey || typeof projetoKey !== 'string') {
-      const sel = document.getElementById('select-projeto');
-      projetoKey = (sel && sel.value) ? sel.value : (window.PROJETO_ATIVO_ID || 'nelito');
-    }
+  const key = projetoKey.toLowerCase().trim();
+  const p = ITPA_DADOS_PROJETOS[key] ||
+            (window.PROJETOS && window.PROJETOS[key]) ||
+            ITPA_DADOS_PROJETOS.esec;
 
-    // Normalização caso venha em maiúsculas
-    const key = projetoKey.toLowerCase().trim();
-    const p = ITPA_DADOS_PROJETOS[key] ||
-              (window.PROJETOS && window.PROJETOS[key]) ||
-              ITPA_DADOS_PROJETOS.nelito;
-
-    console.log('[Auditoria] Abrindo diagnóstico territorial para:', p.nome, `(${key})`);
-
-    // 2. Sincroniza seletor de projeto ativo no topo
-    const selectEl = document.getElementById('select-projeto');
-    if (selectEl && selectEl.value !== key) {
-      selectEl.value = key;
-    }
-    window.PROJETO_ATIVO_ID = key;
-
-    // 3. Atualiza os dados em todos os elementos de texto no DOM (suporte amplo a IDs e classes)
-    const setTexto = (seletorLista, valor) => {
-      seletorLista.forEach(sel => {
-        const elementos = document.querySelectorAll(sel);
-        elementos.forEach(el => {
-          el.innerText = valor;
-          el.classList.remove('placeholder');
-        });
+  // Atualiza os dados em todos os seletores pertinentes no DOM
+  const setTexto = (seletorLista, valor) => {
+    seletorLista.forEach(sel => {
+      const elementos = document.querySelectorAll(sel);
+      elementos.forEach(el => {
+        el.innerText = valor;
+        el.classList.remove('placeholder');
       });
+    });
+  };
+
+  setTexto(['#audit-nome-propriedade', '#audit-property-name', '.audit-property-name'], p.nome);
+  setTexto(['#audit-car', '#audit-car-code', '.audit-car-code', '[data-field="car"]'], p.car);
+  setTexto(['#audit-tipo', '#audit-property-type', '#audit-tipo-imovel', '[data-field="tipo"]'], p.tipo);
+  setTexto(['#audit-municipio', '.audit-municipio', '[data-field="municipio"]'], p.municipio);
+  setTexto(['#audit-area', '#audit-total-area', '#audit-area-total', '[data-field="area"]'], p.area);
+  setTexto(['#audit-prodes', '#audit-prodes-overlap', '[data-field="prodes"]'], p.prodes || '0,00 ha (0.0%)');
+  setTexto(['#audit-status', '#audit-status-badge', '.audit-status-badge', '[data-field="status-texto"]'], p.status || 'CONFORME');
+  setTexto(['#audit-elegibilidade', '#audit-eligibility-status', '[data-field="status"]'], p.elegibilidade || 'ELEGÍVEL');
+
+  // Atualiza subtítulo do cabeçalho do card
+  const headerSub = document.getElementById('audit-card-header-sub') || document.querySelector('.audit-card-subtitle');
+  if (headerSub) {
+    headerSub.innerText = `${p.nome} • ${key === 'esec' ? 'CNUC/ICMBio' : 'CMN 5.303/2026'}`;
+  }
+
+  // Sincroniza o seletor no formulário de novas ocorrências
+  const selOcorrencia = document.getElementById('ocorrencia-talhao');
+  if (selOcorrencia) {
+    const mapaNomes = {
+      esec: 'ESEC Guanabara',
+      nelito: 'Fazenda Nelito',
+      guanai: 'Fazenda Guanaí'
     };
-
-    setTexto(['#audit-nome-propriedade', '#audit-property-name', '.audit-property-name'], p.nome);
-    setTexto(['#audit-car', '#audit-car-code', '.audit-car-code', '[data-field="car"]'], p.car);
-    setTexto(['#audit-tipo', '#audit-property-type', '#audit-tipo-imovel', '[data-field="tipo"]'], p.tipo);
-    setTexto(['#audit-municipio', '.audit-municipio', '[data-field="municipio"]'], p.municipio);
-    setTexto(['#audit-area', '#audit-total-area', '#audit-area-total', '[data-field="area"]'], p.area);
-    setTexto(['#audit-prodes', '#audit-prodes-overlap', '[data-field="prodes"]'], p.prodes || '0,00 ha (0.0%)');
-    setTexto(['#audit-status', '#audit-status-badge', '.audit-status-badge', '[data-field="status-texto"]'], p.status || 'CONFORME');
-    setTexto(['#audit-elegibilidade', '#audit-eligibility-status', '[data-field="status"]'], p.elegibilidade || 'ELEGÍVEL');
-
-    // Atualiza subtítulo do cabeçalho do card
-    const headerSub = document.getElementById('audit-card-header-sub') || document.querySelector('.audit-card-subtitle');
-    if (headerSub) {
-      headerSub.innerText = `${p.nome} • CMN 5.303/2026`;
-    }
-
-    // 4. FORÇA A ABERTURA E VISIBILIDADE DO CARD LATERAL
-    const cards = document.querySelectorAll('#card-auditoria, #card-auditoria-cmn, .card-auditoria, .map-audit-card');
-    cards.forEach(card => {
-      card.classList.remove('collapsed');
-      card.style.display = 'block';
-      card.classList.remove('audit-card-highlight');
-      void card.offsetWidth; // Força reflow para reiniciar animação visual de destaque
-      card.classList.add('audit-card-highlight');
-    });
-
-    const bodies = document.querySelectorAll('#auditoria-body, #painel-auditoria, .card-body, .audit-card-body');
-    bodies.forEach(body => {
-      body.style.display = 'block';
-    });
-
-    const buttons = document.querySelectorAll('#btn-toggle-audit, #btn-toggle-audit-card, .btn-toggle-audit-card');
-    buttons.forEach(btn => {
-      btn.innerText = '−';
-      const icon = btn.querySelector('.toggle-icon');
-      if (icon) icon.innerText = '−';
-    });
-
-    // Sincroniza também o seletor de imóvel no formulário de ocorrências
-    const selOcorrencia = document.getElementById('ocorrencia-talhao');
-    if (selOcorrencia) {
-      const mapaNomes = {
-        nelito: 'Fazenda Nelito',
-        guanai: 'Fazenda Guanaí',
-        esec: 'ESEC Guanabara'
-      };
-      if (mapaNomes[key]) selOcorrencia.value = mapaNomes[key];
-    }
-
-    // Ativa o pill rápido do mapa
-    const pill = document.getElementById('pill-quick-auditoria');
-    if (pill) pill.classList.add('active');
-
-    // Fecha qualquer pop-up no mapa para dar visão desobstruída do painel lateral
-    if (window.ITPAMap && typeof window.ITPAMap.getMapInstance === 'function') {
-      const m = window.ITPAMap.getMapInstance();
-      if (m) m.closePopup();
-    }
-
-    // Se o usuário estiver em outra aba (Registros/Ajustes), retorna à vista do Mapa
-    const navMapBtn = document.querySelector('[data-view="map-view"]');
-    if (navMapBtn && !navMapBtn.classList.contains('active')) {
-      navMapBtn.click();
-    }
-
-    // Sincroniza a troca de projeto e os overlays de satélite/NDVI no Leaflet
-    if (syncMap && window.ITPAMap && typeof window.ITPAMap.selecionarProjeto === 'function') {
-      window.ITPAMap.selecionarProjeto(key, false);
-    }
-
-    // 5. Atualiza o estado da auditoria em js/auditoria.js se disponível
-    if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
-      try {
-        window.ITPAAuditoria.definirProjetoAtivo(key, false);
-      } catch (e) {
-        console.warn('[Auditoria] Falha silenciosa no módulo auditoria:', e);
-      }
-    }
-
-    // 6. Toast informativo
-    if (typeof window.showToast === 'function') {
-      window.showToast(`⚖️ Auditoria: ${p.nome} • CONFORME CMN nº 5.303/2026`, 'success');
-    }
-  } finally {
-    _isAuditoriaSyncing = false;
+    if (mapaNomes[key]) selOcorrencia.value = mapaNomes[key];
   }
 };
 
-// Aliases para retrocompatibilidade
-window.atualizarAuditoria = window.abrirAuditoriaDoProjeto;
+/**
+ * Função mestra para troca de projeto/fazenda ativa disparada pelos botões ou pelo select.
+ * NÃO abre a auditoria territorial automaticamente (mantém o mapa livre e visível).
+ * @param {string} projetoKey - 'esec', 'nelito' ou 'guanai'
+ */
+window.trocarProjeto = function(projetoKey) {
+  if (!projetoKey || typeof projetoKey !== 'string') return;
+  const key = projetoKey.toLowerCase().trim();
+  const p = ITPA_DADOS_PROJETOS[key] || ITPA_DADOS_PROJETOS.esec;
+
+  console.log(`[Ecossistema ITPA] Troca de propriedade selecionada: ${p.nome} (${key})`);
+
+  // 1. Atualiza visualmente o botão/aba ativo no cabeçalho
+  const projectButtons = document.querySelectorAll('.btn-project-tab');
+  projectButtons.forEach(btn => {
+    const btnKey = (btn.getAttribute('data-projeto') || '').toLowerCase().trim();
+    btn.classList.toggle('active', btnKey === key);
+  });
+
+  // 2. Sincroniza o elemento <select>
+  const selectEl = document.getElementById('select-projeto');
+  if (selectEl && selectEl.value !== key) {
+    selectEl.value = key;
+  }
+  window.PROJETO_ATIVO_ID = key;
+
+  // 3. Atualiza os dados de diagnóstico da auditoria sem abrir o card
+  window.atualizarDadosAuditoria(key);
+
+  // 4. Se o usuário estiver em outra aba (Lista de Registros ou Ajustes), retorna para o mapa
+  const mapTabBtn = document.querySelector('[data-tab="map-view"]');
+  if (mapTabBtn && !mapTabBtn.classList.contains('active')) {
+    mapTabBtn.click();
+  }
+
+  // 5. Fecha qualquer pop-up aberto no mapa
+  if (window.ITPAMap && typeof window.ITPAMap.getMapInstance === 'function') {
+    const m = window.ITPAMap.getMapInstance();
+    if (m) m.closePopup();
+  }
+
+  // 6. Transmite a troca para o módulo WebGIS (carrega o polígono oficial e os rasters da fazenda)
+  if (window.ITPAMap && typeof window.ITPAMap.selecionarProjeto === 'function') {
+    window.ITPAMap.selecionarProjeto(key);
+  }
+
+  // 7. Notifica o módulo de auditoria territorial sem forçar abertura
+  if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
+    try {
+      window.ITPAAuditoria.definirProjetoAtivo(key);
+    } catch (e) {
+      console.warn('[Auditoria] Falha silenciosa em definirProjetoAtivo:', e);
+    }
+  }
+
+  // 8. Toast discreto confirmando a fazenda ativa
+  if (typeof window.showToast === 'function') {
+    window.showToast(`📍 Propriedade Ativa: ${p.nome}`, 'info');
+  }
+};
+
+/**
+ * Abre e expande explicitamente o painel de Auditoria de Crédito para o projeto ativo
+ * (Usado quando o usuário clica em 'Ver Auditoria Territorial' no popup do mapa)
+ * @param {string} projetoKey - 'nelito', 'guanai' ou 'esec'
+ */
+window.abrirAuditoriaDoProjeto = function(projetoKey) {
+  const key = (projetoKey || window.PROJETO_ATIVO_ID || 'esec').toLowerCase().trim();
+  const p = ITPA_DADOS_PROJETOS[key] || ITPA_DADOS_PROJETOS.esec;
+
+  // Atualiza os dados de texto do imóvel selecionado
+  window.atualizarDadosAuditoria(key);
+
+  // Expande e destaca o card lateral de auditoria
+  const cards = document.querySelectorAll('#card-auditoria, #card-auditoria-cmn, .card-auditoria, .map-audit-card');
+  cards.forEach(card => {
+    card.classList.remove('collapsed');
+    card.style.display = 'block';
+    card.classList.remove('audit-card-highlight');
+    void card.offsetWidth; // Força reflow para animação visual de pulso
+    card.classList.add('audit-card-highlight');
+  });
+
+  const bodies = document.querySelectorAll('#auditoria-body, #painel-auditoria, .card-body, .audit-card-body');
+  bodies.forEach(body => {
+    body.style.display = 'block';
+  });
+
+  const buttons = document.querySelectorAll('#btn-toggle-audit, #btn-toggle-audit-card, .btn-toggle-audit-card');
+  buttons.forEach(btn => {
+    btn.innerText = '−';
+    const icon = btn.querySelector('.toggle-icon');
+    if (icon) icon.innerText = '−';
+  });
+
+  const pill = document.getElementById('pill-quick-auditoria');
+  if (pill) pill.classList.add('active');
+
+  // Fecha qualquer pop-up no mapa para dar visão desobstruída do painel lateral
+  if (window.ITPAMap && typeof window.ITPAMap.getMapInstance === 'function') {
+    const m = window.ITPAMap.getMapInstance();
+    if (m) m.closePopup();
+  }
+
+  if (typeof window.showToast === 'function') {
+    window.showToast(`⚖️ Auditoria: ${p.nome} • CONFORME CMN nº 5.303/2026`, 'success');
+  }
+};
+
+// Aliases para retrocompatibilidade com scripts legados
+window.atualizarAuditoria = window.atualizarDadosAuditoria;
 
 /**
  * Alterna manualmente a exibição do painel de auditoria (expandir / recolher)
@@ -245,7 +277,6 @@ window.toggleAuditoria = function(forcarEstado) {
   const bodies = document.querySelectorAll('#auditoria-body, #painel-auditoria, .card-body, .audit-card-body');
   const buttons = document.querySelectorAll('#btn-toggle-audit, #btn-toggle-audit-card, .btn-toggle-audit-card');
 
-  // Verifica se está aberto atualmente
   let isCurrentlyOpen = false;
   cards.forEach(c => {
     if (!c.classList.contains('collapsed')) isCurrentlyOpen = true;
@@ -281,24 +312,23 @@ window.toggleAuditoria = function(forcarEstado) {
   }
 };
 
-// Capturador global de cliques (Fase de Captura) para garantir que botões de auditoria nunca sejam bloqueados
+// Capturador global de cliques para o botão de auditoria dentro do popup do mapa
 document.addEventListener('click', function(e) {
   const btn = e.target && e.target.closest ? e.target.closest('.btn-abrir-auditoria-proj') : null;
   if (btn) {
     console.log('[Auditoria] Interceptado clique em .btn-abrir-auditoria-proj via Delegated Event Listener');
     e.preventDefault();
     e.stopPropagation();
-    const projKey = btn.getAttribute('data-projeto') ||
-                    (document.getElementById('select-projeto') ? document.getElementById('select-projeto').value : 'nelito');
+    const projKey = btn.getAttribute('data-projeto') || window.PROJETO_ATIVO_ID || 'esec';
     window.abrirAuditoriaDoProjeto(projKey);
     if (window.ITPAMap && window.ITPAMap.getMapInstance) {
       const m = window.ITPAMap.getMapInstance();
       if (m) m.closePopup();
     }
   }
-}, true); // useCapture = true para interceptar antes de qualquer biblioteca de mapa
+}, true);
 
-// Instanciação e ligação explícita das camadas raster no Leaflet via bounds.json
+// Instanciação explícita das camadas raster no Leaflet via bounds.json
 window.instanciarRastersLeaflet = async function(projetoKey, mapInstance) {
   const map = mapInstance || (window.ITPAMap && window.ITPAMap.getMapInstance ? window.ITPAMap.getMapInstance() : null);
   if (!map) return;
@@ -307,19 +337,23 @@ window.instanciarRastersLeaflet = async function(projetoKey, mapInstance) {
   }
 };
 
-// Inicialização automática do projeto selecionado e ouvinte de troca
+// Inicialização segura do projeto padrão (mantém a auditoria recolhida na carga)
 function initProjetoPadrao() {
   const select = document.getElementById('select-projeto');
-  const keyInicial = select ? select.value : 'nelito';
-  window.abrirAuditoriaDoProjeto(keyInicial, false);
+  const keyInicial = select ? select.value : 'esec';
 
-  if (select && !select._hasRastersListener) {
-    select._hasRastersListener = true;
-    select.addEventListener('change', function() {
-      const val = this.value;
-      window.abrirAuditoriaDoProjeto(val, true);
-    });
-  }
+  // Sincroniza dados textuais sem abrir o card de auditoria
+  window.atualizarDadosAuditoria(keyInicial);
+
+  // Garante que o card de auditoria inicie RECOLHIDO (collapsed)
+  window.toggleAuditoria(false);
+
+  // Sincroniza abas no topo
+  const projectButtons = document.querySelectorAll('.btn-project-tab');
+  projectButtons.forEach(btn => {
+    const btnKey = (btn.getAttribute('data-projeto') || '').toLowerCase().trim();
+    btn.classList.toggle('active', btnKey === keyInicial);
+  });
 }
 
 if (document.readyState === 'loading') {
