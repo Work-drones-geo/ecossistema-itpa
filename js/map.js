@@ -9,6 +9,7 @@ const ITPAMap = (function () {
   let layerControl = null;
   let talhoesLayer = null;
   let ortofotoLayer = null;
+  let projetoPendente = null;
   let userLocationMarker = null;
   let userAccuracyCircle = null;
   let tempPickMarker = null;
@@ -226,8 +227,9 @@ const ITPAMap = (function () {
       '🚫 Embargos Ambientais (IBAMA)': layerGroupIbama
     };
 
-    // Controle nativo de camadas eliminado para evitar ícone quadrado duplicado sobre o NDVI
-    // L.control.layers(baseLayers, overlays);
+    // Controle nativo de camadas integrado ao mapa
+    layerControl = L.control.layers(baseLayers, overlays, { collapsed: true });
+    layerControl.addTo(map);
 
     // 7. Controle Dinâmico da Legenda de NDVI (RdYlGn)
     const ndviLegendEl = document.getElementById('ndvi-legend');
@@ -310,7 +312,8 @@ const ITPAMap = (function () {
 
     // 6. Inicialização do Projeto Ativo no WebGIS (Arquitetura Multi-Projetos)
     const selectProjetoEl = document.getElementById('select-projeto');
-    const projetoInicial = selectProjetoEl ? selectProjetoEl.value : 'esec';
+    const projetoInicial = projetoPendente || (selectProjetoEl ? selectProjetoEl.value : 'esec');
+    projetoPendente = null;
     selecionarProjeto(projetoInicial);
 
     if (selectProjetoEl && !selectProjetoEl._hasChangeBound) {
@@ -818,6 +821,7 @@ const ITPAMap = (function () {
     const pillNdvi = document.getElementById('pill-quick-ndvi');
     const pillDrone = document.getElementById('pill-quick-drone');
     const pillRgb = document.getElementById('pill-quick-rgb');
+    const pillLimites = document.getElementById('pill-quick-limites');
 
     const toggleDrone = document.getElementById('sheet-toggle-drone');
     const toggleNdvi = document.getElementById('sheet-toggle-ndvi');
@@ -830,9 +834,15 @@ const ITPAMap = (function () {
     const toggleIbama = document.getElementById('sheet-toggle-ibama');
     const baseRadios = document.querySelectorAll('input[name="base-map-choice"]');
 
+    const keyAtiva = (window.PROJETO_ATIVO_ID || 'esec').toLowerCase().trim();
+
     // 1. Ortofoto Drone (ESEC Guanabara)
     const droneAtivo = ortofotoLayer && map.hasLayer(ortofotoLayer);
-    if (pillDrone) pillDrone.classList.toggle('active', !!droneAtivo);
+    if (pillDrone) {
+      pillDrone.classList.toggle('active', !!droneAtivo);
+      // Nas fazendas Nelito e Guanaí a cobertura é satelital (RGB 10m / NDVI 2m), oculta o botão Drone para evitar confusão
+      pillDrone.style.display = keyAtiva === 'esec' ? 'inline-flex' : 'none';
+    }
     if (toggleDrone) toggleDrone.checked = !!droneAtivo;
 
     // 2. Talhões NDVI 2m
@@ -855,6 +865,7 @@ const ITPAMap = (function () {
 
     // 5. Limites Territoriais Oficiais / Perímetro Imóvel vs CAR
     const talhoesAtivo = talhoesLayer && map.hasLayer(talhoesLayer);
+    if (pillLimites) pillLimites.classList.toggle('active', !!talhoesAtivo);
     if (toggleTalhoes) toggleTalhoes.checked = !!talhoesAtivo;
 
     // 5b. Conformidade e Auditoria de Crédito (CMN nº 5.303/2026)
@@ -898,17 +909,23 @@ const ITPAMap = (function () {
   const CONFIG_RASTERS_PROJETOS = {
     nelito: {
       nome: 'Fazenda Nelito',
-      boundsJson: ['assets/rasters/nelito_bounds.json', 'DATA/nelito_bounds.json'],
-      fallbackBounds: [
-        [-22.55606067128168, -43.55337196761436],
-        [-22.53283148841984, -43.53953093530578]
+      boundsJson: [
+        'assets/satelite/bounds_expandido.json',
+        'assets/satelite/bounds.json',
+        'assets/rasters/bounds.json',
+        'assets/rasters/nelito_bounds.json',
+        'DATA/nelito_bounds.json'
       ],
-      rgbRecente: 'assets/rasters/nelito_rgb_10m.png',
-      ndviRecente: 'assets/rasters/nelito_ndvi_2m.png',
+      fallbackBounds: [
+        [-22.556060671, -43.553371968],
+        [-22.532831488, -43.539530935]
+      ],
+      rgbRecente: 'assets/satelite/nelito_rgb_10m.png',
+      ndviRecente: 'assets/satelite/nelito_ndvi_2m.png',
+      fallbackRgbRecente: 'assets/rasters/nelito_rgb_10m.png',
+      fallbackNdviRecente: 'assets/rasters/nelito_ndvi_2m.png',
       rgbAnterior: 'assets/rasters/nelito_rgb_anterior.png',
       ndviAnterior: 'assets/rasters/nelito_ndvi_anterior.png',
-      fallbackRgbRecente: 'DATA/nelito_rgb_10m.png',
-      fallbackNdviRecente: 'DATA/nelito_ndvi_2m.png',
       fallbackRgbAnterior: 'DATA/nelito_rgb_anterior.png',
       fallbackNdviAnterior: 'DATA/nelito_ndvi_anterior.png',
       labelRecente: '28/Out (10m)',
@@ -916,17 +933,23 @@ const ITPAMap = (function () {
     },
     guanai: {
       nome: 'Fazenda Guanaí',
-      boundsJson: ['assets/rasters/guanai_bounds.json', 'DATA/guanai_bounds.json'],
-      fallbackBounds: [
-        [-22.56118214040626, -43.55855722892613],
-        [-22.5415121478366, -43.54421380740492]
+      boundsJson: [
+        'assets/satelite/bounds_expandido.json',
+        'assets/satelite/bounds.json',
+        'assets/rasters/bounds.json',
+        'assets/rasters/guanai_bounds.json',
+        'DATA/guanai_bounds.json'
       ],
-      rgbRecente: 'assets/rasters/guanai_rgb_10m.png',
-      ndviRecente: 'assets/rasters/guanai_ndvi_2m.png',
+      fallbackBounds: [
+        [-22.561182140, -43.558557229],
+        [-22.541512148, -43.544213807]
+      ],
+      rgbRecente: 'assets/satelite/guanai_rgb_10m.png',
+      ndviRecente: 'assets/satelite/guanai_ndvi_2m.png',
+      fallbackRgbRecente: 'assets/rasters/guanai_rgb_10m.png',
+      fallbackNdviRecente: 'assets/rasters/guanai_ndvi_2m.png',
       rgbAnterior: 'assets/rasters/guanai_rgb_anterior.png',
       ndviAnterior: 'assets/rasters/guanai_ndvi_anterior.png',
-      fallbackRgbRecente: 'DATA/guanai_rgb_10m.png',
-      fallbackNdviRecente: 'DATA/guanai_ndvi_2m.png',
       fallbackRgbAnterior: 'DATA/guanai_rgb_anterior.png',
       fallbackNdviAnterior: 'DATA/guanai_ndvi_anterior.png',
       labelRecente: '28/Out (10m)',
@@ -934,19 +957,24 @@ const ITPAMap = (function () {
     },
     esec: {
       nome: 'ESEC Guanabara',
-      boundsJson: ['assets/rasters/esec_bounds.json', 'assets/satelite/bounds_expandido.json', 'DATA/esec_bounds.json'],
+      boundsJson: [
+        'assets/satelite/bounds_expandido.json',
+        'assets/satelite/bounds.json',
+        'assets/rasters/esec_bounds.json',
+        'DATA/esec_bounds.json'
+      ],
       fallbackBounds: [
         [-22.737766, -43.022287],
         [-22.691124, -42.949613]
       ],
-      rgbRecente: 'assets/rasters/esec_rgb_2m.png',
-      ndviRecente: 'assets/rasters/esec_ndvi_2m.png',
-      rgbAnterior: 'assets/rasters/esec_rgb_anterior.png',
-      ndviAnterior: 'assets/rasters/esec_ndvi_anterior.png',
-      fallbackRgbRecente: 'assets/satelite/aoi_rgb_recente_2m.png',
-      fallbackNdviRecente: 'assets/satelite/aoi_ndvi_recente_2m.png',
-      fallbackRgbAnterior: 'assets/satelite/aoi_rgb_anterior_2m.png',
-      fallbackNdviAnterior: 'assets/satelite/aoi_ndvi_anterior_2m.png',
+      rgbRecente: 'assets/satelite/aoi_rgb_recente_2m.png',
+      ndviRecente: 'assets/satelite/aoi_ndvi_recente_2m.png',
+      fallbackRgbRecente: 'assets/rasters/esec_rgb_2m.png',
+      fallbackNdviRecente: 'assets/rasters/esec_ndvi_2m.png',
+      rgbAnterior: 'assets/satelite/aoi_rgb_anterior_2m.png',
+      ndviAnterior: 'assets/satelite/aoi_ndvi_anterior_2m.png',
+      fallbackRgbAnterior: 'assets/rasters/esec_rgb_anterior.png',
+      fallbackNdviAnterior: 'assets/rasters/esec_ndvi_anterior.png',
       labelRecente: '28/Out (2m)',
       labelAnterior: '09/Set (2m)'
     }
@@ -985,14 +1013,17 @@ const ITPAMap = (function () {
         const resp = await fetch(urlBounds);
         if (resp.ok) {
           const bData = await resp.json();
-          if (bData && bData.leaflet_bounds && bData.leaflet_bounds.length === 2) {
+          if (bData && Array.isArray(bData[key]) && bData[key].length === 2) {
+            boundsOverlay = L.latLngBounds(bData[key][0], bData[key][1]);
+            break;
+          } else if (bData && bData[key] && bData[key].leaflet_bounds && bData[key].leaflet_bounds.length === 2) {
+            boundsOverlay = L.latLngBounds(bData[key].leaflet_bounds[0], bData[key].leaflet_bounds[1]);
+            break;
+          } else if (bData && bData.leaflet_bounds && bData.leaflet_bounds.length === 2) {
             boundsOverlay = L.latLngBounds(bData.leaflet_bounds[0], bData.leaflet_bounds[1]);
             break;
           } else if (bData && bData.bounds && bData.bounds.length === 2) {
             boundsOverlay = L.latLngBounds(bData.bounds[0], bData.bounds[1]);
-            break;
-          } else if (bData && bData[key] && bData[key].leaflet_bounds) {
-            boundsOverlay = L.latLngBounds(bData[key].leaflet_bounds[0], bData[key].leaflet_bounds[1]);
             break;
           }
         }
@@ -1059,6 +1090,14 @@ const ITPAMap = (function () {
     const subRight = document.querySelector('.swipe-tag.right .swipe-sub');
     if (subLeft && config.labelRecente) subLeft.textContent = config.labelRecente;
     if (subRight && config.labelAnterior) subRight.textContent = config.labelAnterior;
+
+    // 8. Integração dinâmica com o controle de camadas L.control.layers
+    if (layerControl) {
+      try {
+        layerControl.addOverlay(layerGroupRgbRecente, `🛰️ Satélite RGB: ${config.nome}`);
+        layerControl.addOverlay(layerGroupNdviRecente, `🌱 NDVI 2m: ${config.nome}`);
+      } catch (e) {}
+    }
 
     sincronizarEstadosUI();
     return boundsOverlay;
@@ -1215,7 +1254,10 @@ const ITPAMap = (function () {
    * @param {string} projetoKey Chave do projeto ('esec', 'nelito', 'guanai')
    */
   async function selecionarProjeto(projetoKey) {
-    if (!map) return;
+    if (!map) {
+      projetoPendente = projetoKey;
+      return;
+    }
     const projetos = window.PROJETOS || {};
     const key = (projetoKey || 'esec').toLowerCase().trim();
     const projeto = projetos[key] || (window.ITPA_DADOS_PROJETOS && window.ITPA_DADOS_PROJETOS[key]) || projetos.esec;
@@ -1252,7 +1294,7 @@ const ITPAMap = (function () {
     // =========================================================================
     // ETAPA 1 (IMEDIATA / SÍNCRONA): Voo instantâneo e ajuste da ortofoto do drone
     // =========================================================================
-    const coordsCentro = projeto.coordenadas_centro || projeto.coords || (key === 'nelito' ? [-22.540, -43.545] : key === 'guanai' ? [-22.552, -43.558] : [-22.705, -43.030]);
+    const coordsCentro = projeto.coordenadas_centro || projeto.coords || (key === 'nelito' ? [-22.544446, -43.546451] : key === 'guanai' ? [-22.551347, -43.551385] : [-22.705, -43.030]);
     const zoomAlvo = projeto.zoom || (key === 'esec' ? 14 : 15);
 
     if (key === 'esec') {
@@ -1622,6 +1664,14 @@ const ITPAMap = (function () {
           }
         }
         sincronizarEstadosUI();
+      };
+    }
+
+    const pillLimites = document.getElementById('pill-quick-limites');
+    if (pillLimites) {
+      pillLimites.onclick = (e) => {
+        e.preventDefault();
+        alternarLimitesTerritoriais();
       };
     }
 
@@ -2171,6 +2221,7 @@ const ITPAMap = (function () {
     setTempMarker,
     removerTempMarker,
     getMapInstance,
+    getLayerControl: () => layerControl,
     sincronizarEstadosUI,
     alternarLimitesTerritoriais,
     TIPO_CONFIG

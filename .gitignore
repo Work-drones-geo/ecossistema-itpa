@@ -20,4 +20,6 @@ QGIS/
 *.tif
 *.tiff
 *.zip
+*.aux.xml
+*.vrt
 dados_satelite/

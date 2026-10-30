@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 
   <!-- Estilos Customizados do ITPA -->
-  <link rel="stylesheet" href="styles.css?v=5.3">
+  <link rel="stylesheet" href="styles.css?v=5.4">
 </head>
 <body>
 
@@ -128,6 +128,10 @@
           <button type="button" class="map-quick-pill" id="pill-quick-rgb" title="Alternar Satélite RGB 2m">
             <span class="pill-dot"></span>
             <span>🛰️ Satélite RGB</span>
+          </button>
+          <button type="button" class="map-quick-pill active" id="pill-quick-limites" title="Alternar Limites Territoriais Oficiais" onclick="if(window.ITPAMap && window.ITPAMap.alternarLimitesTerritoriais) window.ITPAMap.alternarLimitesTerritoriais()">
+            <span class="pill-dot"></span>
+            <span>📐 Limites</span>
           </button>
           <button type="button" class="map-quick-pill swipe-pill" id="pill-quick-swipe" title="Comparador Antes e Depois (Swipe)">
             <span class="pill-dot"></span>
@@ -854,17 +858,17 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <!-- Módulos da Aplicação Ecossistema ITPA -->
-  <script src="script.js?v=5.3"></script>
-  <script src="js/config.js?v=5.3"></script>
-  <script src="js/db.js?v=5.3"></script>
-  <script src="js/camera.js?v=5.3"></script>
-  <script src="js/map.js?v=5.3"></script>
-  <script src="js/sync.js?v=5.3"></script>
-  <script src="js/report.js?v=5.3"></script>
-  <script src="js/assets_laudo.js?v=5.3"></script>
-  <script src="js/relatorio_talhao.js?v=5.3"></script>
-  <script src="js/auditoria.js?v=5.3"></script>
-  <script src="app.js?v=5.3"></script>
+  <script src="script.js?v=5.4"></script>
+  <script src="js/config.js?v=5.4"></script>
+  <script src="js/db.js?v=5.4"></script>
+  <script src="js/camera.js?v=5.4"></script>
+  <script src="js/map.js?v=5.4"></script>
+  <script src="js/sync.js?v=5.4"></script>
+  <script src="js/report.js?v=5.4"></script>
+  <script src="js/assets_laudo.js?v=5.4"></script>
+  <script src="js/relatorio_talhao.js?v=5.4"></script>
+  <script src="js/auditoria.js?v=5.4"></script>
+  <script src="app.js?v=5.4"></script>
 
 </body>
 </html>

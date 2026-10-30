@@ -174,8 +174,8 @@
       status_car: "Ativo",
       geojson: "DATA/nelito.geojson",
       arquivo_geojson: "DATA/nelito.geojson",
-      coords: [-22.540, -43.545],
-      coordenadas_centro: [-22.540, -43.545],
+      coords: [-22.544446, -43.546451],
+      coordenadas_centro: [-22.544446, -43.546451],
       zoom: 15,
       cmn_status: "CONFORME - Ausência de Sobreposição PRODES/DETER",
       elegibilidade_credito: "ELEGÍVEL (Resolução CMN nº 5.303/2026)"
@@ -190,8 +190,8 @@
       status_car: "Ativo",
       geojson: "DATA/guanai.geojson",
       arquivo_geojson: "DATA/guanai.geojson",
-      coords: [-22.552, -43.558],
-      coordenadas_centro: [-22.552, -43.558],
+      coords: [-22.551347, -43.551385],
+      coordenadas_centro: [-22.551347, -43.551385],
       zoom: 15,
       cmn_status: "CONFORME - Ausência de Sobreposição PRODES/DETER",
       elegibilidade_credito: "ELEGÍVEL (Resolução CMN nº 5.303/2026)"

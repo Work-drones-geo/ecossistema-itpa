@@ -30,7 +30,7 @@ const ITPA_DADOS_PROJETOS = {
     prodes: "0,00 ha (0.0%)",
     status: "CONFORME - Ausência de Sobreposição PRODES/DETER",
     elegibilidade: "ELEGÍVEL (Resolução CMN nº 5.303/2026)",
-    coords: [-22.540, -43.545]
+    coords: [-22.544446, -43.546451]
   },
   guanai: {
     key: "guanai",
@@ -43,7 +43,7 @@ const ITPA_DADOS_PROJETOS = {
     prodes: "0,00 ha (0.0%)",
     status: "CONFORME - Ausência de Sobreposição PRODES/DETER",
     elegibilidade: "ELEGÍVEL (Resolução CMN nº 5.303/2026)",
-    coords: [-22.552, -43.558]
+    coords: [-22.551347, -43.551385]
   }
 };
 window.ITPA_DADOS_PROJETOS = ITPA_DADOS_PROJETOS;
@@ -53,50 +53,50 @@ const ITPA_PROJETOS_RASTERS = {
   nelito: {
     chave: "nelito",
     nome: "Fazenda Nelito",
-    boundsJson: "assets/rasters/nelito_bounds.json",
-    boundsJsonFallback: "DATA/nelito_bounds.json",
+    boundsJson: "assets/satelite/bounds_expandido.json",
+    boundsJsonFallback: "assets/rasters/nelito_bounds.json",
     boundsFallback: [
-      [-22.55606067128168, -43.55337196761436],
-      [-22.53283148841984, -43.53953093530578]
+      [-22.556060671, -43.553371968],
+      [-22.532831488, -43.539530935]
     ],
-    rgb10m: "assets/rasters/nelito_rgb_10m.png",
-    ndvi2m: "assets/rasters/nelito_ndvi_2m.png",
+    rgb10m: "assets/satelite/nelito_rgb_10m.png",
+    ndvi2m: "assets/satelite/nelito_ndvi_2m.png",
+    fallbackRgb10m: "assets/rasters/nelito_rgb_10m.png",
+    fallbackNdvi2m: "assets/rasters/nelito_ndvi_2m.png",
     rgbAnterior: "assets/rasters/nelito_rgb_anterior.png",
-    ndviAnterior: "assets/rasters/nelito_ndvi_anterior.png",
-    fallbackRgb10m: "DATA/nelito_rgb_10m.png",
-    fallbackNdvi2m: "DATA/nelito_ndvi_2m.png"
+    ndviAnterior: "assets/rasters/nelito_ndvi_anterior.png"
   },
   guanai: {
     chave: "guanai",
     nome: "Fazenda Guanaí",
-    boundsJson: "assets/rasters/guanai_bounds.json",
-    boundsJsonFallback: "DATA/guanai_bounds.json",
+    boundsJson: "assets/satelite/bounds_expandido.json",
+    boundsJsonFallback: "assets/rasters/guanai_bounds.json",
     boundsFallback: [
-      [-22.56118214040626, -43.55855722892613],
-      [-22.5415121478366, -43.54421380740492]
+      [-22.561182140, -43.558557229],
+      [-22.541512148, -43.544213807]
     ],
-    rgb10m: "assets/rasters/guanai_rgb_10m.png",
-    ndvi2m: "assets/rasters/guanai_ndvi_2m.png",
+    rgb10m: "assets/satelite/guanai_rgb_10m.png",
+    ndvi2m: "assets/satelite/guanai_ndvi_2m.png",
+    fallbackRgb10m: "assets/rasters/guanai_rgb_10m.png",
+    fallbackNdvi2m: "assets/rasters/guanai_ndvi_2m.png",
     rgbAnterior: "assets/rasters/guanai_rgb_anterior.png",
-    ndviAnterior: "assets/rasters/guanai_ndvi_anterior.png",
-    fallbackRgb10m: "DATA/guanai_rgb_10m.png",
-    fallbackNdvi2m: "DATA/guanai_ndvi_2m.png"
+    ndviAnterior: "assets/rasters/guanai_ndvi_anterior.png"
   },
   esec: {
     chave: "esec",
     nome: "ESEC Guanabara",
-    boundsJson: "assets/rasters/esec_bounds.json",
-    boundsJsonFallback: "assets/satelite/bounds_expandido.json",
+    boundsJson: "assets/satelite/bounds_expandido.json",
+    boundsJsonFallback: "assets/rasters/esec_bounds.json",
     boundsFallback: [
       [-22.737766, -43.022287],
       [-22.691124, -42.949613]
     ],
-    rgb10m: "assets/rasters/esec_rgb_2m.png",
-    ndvi2m: "assets/rasters/esec_ndvi_2m.png",
-    rgbAnterior: "assets/rasters/esec_rgb_anterior.png",
-    ndviAnterior: "assets/rasters/esec_ndvi_anterior.png",
-    fallbackRgb10m: "assets/satelite/aoi_rgb_recente_2m.png",
-    fallbackNdvi2m: "assets/satelite/aoi_ndvi_recente_2m.png"
+    rgb10m: "assets/satelite/aoi_rgb_recente_2m.png",
+    ndvi2m: "assets/satelite/aoi_ndvi_recente_2m.png",
+    fallbackRgb10m: "assets/rasters/esec_rgb_2m.png",
+    fallbackNdvi2m: "assets/rasters/esec_ndvi_2m.png",
+    rgbAnterior: "assets/satelite/aoi_rgb_anterior_2m.png",
+    ndviAnterior: "assets/satelite/aoi_ndvi_anterior_2m.png"
   }
 };
 window.ITPA_PROJETOS_RASTERS = ITPA_PROJETOS_RASTERS;

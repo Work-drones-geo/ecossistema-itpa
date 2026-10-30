@@ -19,6 +19,7 @@ const ids = [
   'pill-quick-auditoria',
   'pill-quick-ndvi',
   'pill-quick-rgb',
+  'pill-quick-limites',
   'pill-quick-swipe',
   'project-buttons-group'
 ];
@@ -99,6 +100,22 @@ const rasters = [
 ];
 rasters.forEach(r => {
   const p = path.join('assets', 'rasters', r);
+  const ok = fs.existsSync(p);
+  console.assert(ok, `Arquivo ${p} existe`);
+  console.log(`✓ ${p}: ${ok ? 'OK' : 'FALHA'}`);
+});
+
+console.log('\n--- 7. Validando arquivos em assets/satelite/ ---');
+const satFiles = [
+  'nelito_rgb_10m.png',
+  'nelito_ndvi_2m.png',
+  'guanai_rgb_10m.png',
+  'guanai_ndvi_2m.png',
+  'bounds_expandido.json',
+  'bounds.json'
+];
+satFiles.forEach(f => {
+  const p = path.join('assets', 'satelite', f);
   const ok = fs.existsSync(p);
   console.assert(ok, `Arquivo ${p} existe`);
   console.log(`✓ ${p}: ${ok ? 'OK' : 'FALHA'}`);
