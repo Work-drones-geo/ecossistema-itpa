@@ -739,6 +739,159 @@ const ITPAMap = (function () {
   }
 
   // =========================================================================
+  // Polígonos Oficiais Embutidos (Zero-Fail / Suporte Offline Absoluto)
+  // Garante exibição imediata e infalível dos limites de Nelito e Guanaí
+  // =========================================================================
+  const POLIGONOS_EMBUTIDOS = {
+    nelito: {
+      type: "FeatureCollection",
+      name: "nelito",
+      crs: { type: "name", properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+      features: [
+        {
+          type: "Feature",
+          properties: { Name: "Fazenda Nelito - Limite Oficial" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [ [
+              [ -43.55319519261522, -22.536344969047811, 0.0 ],
+              [ -43.553271072707567, -22.53665849948041, 0.0 ],
+              [ -43.552720502167872, -22.537864734511491, 0.0 ],
+              [ -43.548734344815067, -22.545842954838701, 0.0 ],
+              [ -43.547919341969752, -22.547945421182479, 0.0 ],
+              [ -43.54501971742517, -22.553501096662242, 0.0 ],
+              [ -43.542956672367133, -22.556060671281681, 0.0 ],
+              [ -43.542514533094881, -22.554053436278721, 0.0 ],
+              [ -43.539530935305777, -22.548080081769079, 0.0 ],
+              [ -43.539609046180402, -22.54718841209111, 0.0 ],
+              [ -43.544255109585102, -22.537788236118232, 0.0 ],
+              [ -43.544495547353087, -22.537381472725361, 0.0 ],
+              [ -43.546068990321388, -22.533592757669929, 0.0 ],
+              [ -43.546363981142093, -22.532831488419841, 0.0 ],
+              [ -43.54787247242718, -22.53351847351168, 0.0 ],
+              [ -43.551202549443531, -22.535038032574949, 0.0 ],
+              [ -43.55337196761436, -22.53599642954639, 0.0 ],
+              [ -43.55319519261522, -22.536344969047811, 0.0 ]
+            ] ]
+          }
+        }
+      ]
+    },
+    guanai: {
+      type: "FeatureCollection",
+      name: "guanai",
+      crs: { type: "name", properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+      features: [
+        {
+          type: "Feature",
+          properties: { id: "046596D24E32B5E48B05", Name: "Fazenda Guanaí - Limite Oficial" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [ [
+              [ -43.551349433915597, -22.541512147836599, 0.0 ],
+              [ -43.558557228926126, -22.54522545399022, 0.0 ],
+              [ -43.557113755976793, -22.54906714864909, 0.0 ],
+              [ -43.553164446043127, -22.557978895598271, 0.0 ],
+              [ -43.5514540878807, -22.56118214040626, 0.0 ],
+              [ -43.547913125465243, -22.557691916547761, 0.0 ],
+              [ -43.545831270342141, -22.556157080222391, 0.0 ],
+              [ -43.544213807404923, -22.554931226733899, 0.0 ],
+              [ -43.545775900063468, -22.551945542584281, 0.0 ],
+              [ -43.547461670805127, -22.548525878429881, 0.0 ],
+              [ -43.549030103671782, -22.545217512266809, 0.0 ],
+              [ -43.550063963686192, -22.543317738791231, 0.0 ],
+              [ -43.551349433915597, -22.541512147836599, 0.0 ]
+            ] ]
+          }
+        }
+      ]
+    }
+  };
+
+  // =========================================================================
+  // Função Mestre de Sincronização Visual da Interface (Escopo do Módulo)
+  // Atualiza as pílulas flutuantes e os switches da gaveta de camadas
+  // =========================================================================
+  function sincronizarEstadosUI() {
+    if (!map) return;
+
+    const pillNdvi = document.getElementById('pill-quick-ndvi');
+    const pillDrone = document.getElementById('pill-quick-drone');
+    const pillRgb = document.getElementById('pill-quick-rgb');
+
+    const toggleDrone = document.getElementById('sheet-toggle-drone');
+    const toggleNdvi = document.getElementById('sheet-toggle-ndvi');
+    const toggleRgb = document.getElementById('sheet-toggle-rgb');
+    const toggleNdviAnt = document.getElementById('sheet-toggle-ndvi-ant');
+    const toggleRgbAnt = document.getElementById('sheet-toggle-rgb-ant');
+    const toggleTalhoes = document.getElementById('sheet-toggle-talhoes');
+    const toggleCar = document.getElementById('sheet-toggle-car');
+    const toggleProdes = document.getElementById('sheet-toggle-prodes');
+    const toggleIbama = document.getElementById('sheet-toggle-ibama');
+    const baseRadios = document.querySelectorAll('input[name="base-map-choice"]');
+
+    // 1. Ortofoto Drone (ESEC Guanabara)
+    const droneAtivo = ortofotoLayer && map.hasLayer(ortofotoLayer);
+    if (pillDrone) pillDrone.classList.toggle('active', !!droneAtivo);
+    if (toggleDrone) toggleDrone.checked = !!droneAtivo;
+
+    // 2. Talhões NDVI 2m
+    const ndviAtivo = layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente);
+    if (pillNdvi) pillNdvi.classList.toggle('active', !!ndviAtivo);
+    if (toggleNdvi) toggleNdvi.checked = !!ndviAtivo;
+
+    // 3. Talhões RGB 2m / 10m
+    const rgbAtivo = layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente);
+    if (pillRgb) pillRgb.classList.toggle('active', !!rgbAtivo);
+    if (toggleRgb) toggleRgb.checked = !!rgbAtivo;
+
+    // 4. Passagem Anterior NDVI (09/Set - 2m)
+    const ndviAntAtivo = layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior);
+    if (toggleNdviAnt) toggleNdviAnt.checked = !!ndviAntAtivo;
+
+    // 4b. Passagem Anterior RGB (09/Set - 2m)
+    const rgbAntAtivo = layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior);
+    if (toggleRgbAnt) toggleRgbAnt.checked = !!rgbAntAtivo;
+
+    // 5. Limites Territoriais Oficiais / Perímetro Imóvel vs CAR
+    const talhoesAtivo = talhoesLayer && map.hasLayer(talhoesLayer);
+    if (toggleTalhoes) toggleTalhoes.checked = !!talhoesAtivo;
+
+    // 5b. Conformidade e Auditoria de Crédito (CMN nº 5.303/2026)
+    const carAtivo = layerGroupCar && map.hasLayer(layerGroupCar);
+    if (toggleCar) toggleCar.checked = !!carAtivo;
+
+    const prodesAtivo = layerGroupProdes && map.hasLayer(layerGroupProdes);
+    if (toggleProdes) toggleProdes.checked = !!prodesAtivo;
+
+    const ibamaAtivo = layerGroupIbama && map.hasLayer(layerGroupIbama);
+    if (toggleIbama) toggleIbama.checked = !!ibamaAtivo;
+
+    // 6. Mapas Base (Radios)
+    if (baseRadios && baseRadios.length) {
+      baseRadios.forEach(radio => {
+        if (radio.value === 'satelite') {
+          radio.checked = !!(esriSatLayer && map.hasLayer(esriSatLayer));
+        } else if (radio.value === 'osm') {
+          radio.checked = !!(osmLayer && map.hasLayer(osmLayer));
+        } else if (radio.value === 'voyager') {
+          radio.checked = !!(cartoVoyagerLayer && map.hasLayer(cartoVoyagerLayer));
+        }
+      });
+    }
+
+    // Atualiza legenda flutuante de NDVI
+    const ndviLegendEl = document.getElementById('ndvi-legend');
+    if (ndviLegendEl) {
+      if (ndviAtivo || ndviAntAtivo) {
+        ndviLegendEl.style.display = 'block';
+      } else {
+        ndviLegendEl.style.display = 'none';
+      }
+    }
+  }
+
+  // =========================================================================
   // Configuração e Carregamento Dinâmico de Rasters (PNG / bounds.json) por Projeto
   // Permite que 'Satélite RGB', 'NDVI 2m' e 'Comparar' funcionem para Nelito, Guanaí e ESEC
   // =========================================================================
@@ -871,22 +1024,18 @@ const ITPAMap = (function () {
     };
 
     // 5. Instanciação das novas camadas PNG via L.imageOverlay
-    // a) 🌱 NDVI Recente (2m) -> leftPane
     if (layerGroupNdviRecente && config.ndviRecente) {
       layerGroupNdviRecente.addLayer(criarOverlay(config.ndviRecente, config.fallbackNdviRecente, 'leftPane'));
     }
 
-    // b) 🛰️ Satélite RGB Recente (10m / 2m) -> leftPane
     if (layerGroupRgbRecente && config.rgbRecente) {
       layerGroupRgbRecente.addLayer(criarOverlay(config.rgbRecente, config.fallbackRgbRecente, 'leftPane'));
     }
 
-    // c) 🌱 NDVI Anterior -> rightPane (utilizado pelo Swipe)
     if (layerGroupNdviAnterior && config.ndviAnterior) {
       layerGroupNdviAnterior.addLayer(criarOverlay(config.ndviAnterior, config.fallbackNdviAnterior, 'rightPane'));
     }
 
-    // d) 🛰️ Satélite RGB Anterior -> rightPane (utilizado pelo Swipe)
     if (layerGroupRgbAnterior && config.rgbAnterior) {
       layerGroupRgbAnterior.addLayer(criarOverlay(config.rgbAnterior, config.fallbackRgbAnterior, 'rightPane'));
     }
@@ -908,22 +1057,168 @@ const ITPAMap = (function () {
     // 7. Atualiza os rótulos de data e resolução do comparador (Swipe)
     const subLeft = document.querySelector('.swipe-tag.left .swipe-sub');
     const subRight = document.querySelector('.swipe-tag.right .swipe-sub');
-    if (subLeft) subLeft.textContent = config.labelRecente;
-    if (subRight) subRight.textContent = config.labelAnterior;
+    if (subLeft && config.labelRecente) subLeft.textContent = config.labelRecente;
+    if (subRight && config.labelAnterior) subRight.textContent = config.labelAnterior;
 
     sincronizarEstadosUI();
     return boundsOverlay;
   }
 
   /**
+   * Constrói a camada vetorial (talhoesLayer) para uma fazenda privada (Nelito ou Guanaí)
+   * Utiliza caminhos de arquivo DATA/ com contingência embutida POLIGONOS_EMBUTIDOS
+   * @param {string} key 'nelito' ou 'guanai'
+   * @param {Object} projeto Metadados do projeto
+   */
+  async function carregarLimitesFazendaPrivada(key, projeto) {
+    let geojsonData = null;
+    let urlSucesso = '';
+
+    const arquivoGeojson = projeto.arquivo_geojson || projeto.geojson || `DATA/${key}.geojson`;
+    const caminhos = [
+      arquivoGeojson,
+      './' + arquivoGeojson,
+      'DATA/' + arquivoGeojson.split('/').pop(),
+      './DATA/' + arquivoGeojson.split('/').pop(),
+      'data/' + arquivoGeojson.split('/').pop()
+    ];
+
+    for (const caminho of caminhos) {
+      try {
+        const resp = await fetch(caminho);
+        if (resp.ok) {
+          geojsonData = await resp.json();
+          urlSucesso = caminho;
+          break;
+        }
+      } catch (e) {}
+    }
+
+    // Fallback de contingência garantido em memória (zero-fail)
+    if (!geojsonData && POLIGONOS_EMBUTIDOS && POLIGONOS_EMBUTIDOS[key]) {
+      console.log(`[ITPAMap] Usando polígono GeoJSON embutido de contingência para: ${projeto.nome}`);
+      geojsonData = POLIGONOS_EMBUTIDOS[key];
+      urlSucesso = 'memoria_embutida';
+    }
+
+    if (!geojsonData) {
+      console.warn(`[ITPAMap] Não foi possível carregar limites para ${key}`);
+      return null;
+    }
+
+    console.log(`[ITPAMap] Limites de ${projeto.nome} carregados de: ${urlSucesso}`);
+
+    talhoesLayer = L.geoJSON(geojsonData, {
+      style: function () {
+        return {
+          color: '#16a34a',       // Contorno verde nítido e vibrante
+          weight: 3.5,
+          opacity: 1.0,
+          fillColor: '#22c55e',   // Preenchimento verde levemente translúcido
+          fillOpacity: 0.18
+        };
+      },
+      onEachFeature: function (feature, layer) {
+        layer.on({
+          mouseover: function (e) {
+            e.target.setStyle({ weight: 4.5, color: '#15803d', fillOpacity: 0.32 });
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) e.target.bringToFront();
+          },
+          mouseout: function (e) {
+            talhoesLayer.resetStyle(e.target);
+          }
+        });
+
+        const popupHtml = `
+          <div class="itpa-popup-card imovel-analytic-popup" style="padding: 12px 14px; min-width: 250px; font-family: inherit;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+              <span style="background: #eef7e6; color: #274D1E; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">🏛️ PROJETO ATIVO</span>
+              <span style="background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${key}</span>
+            </div>
+            
+            <h3 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 800; color: #0f172a; line-height: 1.25;">${projeto.nome}</h3>
+            
+            <div style="font-size: 12px; line-height: 1.5; color: #334155;">
+              <p style="margin: 3px 0;"><strong>Código CAR:</strong> <span style="font-family: monospace; font-size: 11px; word-break: break-all; color: #0f172a;">${projeto.car}</span></p>
+              <p style="margin: 3px 0;"><strong>Área Total:</strong> <span style="font-weight: 700; color: #047857;">${projeto.area_registrada || projeto.area}</span></p>
+              <p style="margin: 3px 0;"><strong>Status:</strong> <span style="font-weight: 700; color: #16a34a;">CONFORME CMN nº 5.303/2026</span></p>
+            </div>
+            
+            <div style="margin-top: 10px;">
+              <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" data-projeto="${key}" onclick="window.abrirAuditoriaDoProjeto('${key}')" style="width: 100%; justify-content: center; font-size: 12px; padding: 8px 12px; cursor: pointer; background: #82C325; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 6px;">
+                ⚖️ Ver Auditoria Territorial
+              </button>
+            </div>
+          </div>
+        `;
+        layer.bindPopup(popupHtml, { maxWidth: 320, className: 'itpa-leaflet-popup' });
+      }
+    });
+
+    if (map) {
+      talhoesLayer.addTo(map);
+    }
+
+    return talhoesLayer;
+  }
+
+  /**
+   * Recarrega sob demanda os limites oficiais da propriedade ativa caso ainda não estejam na memória.
+   */
+  async function recarregarLimitesDoProjetoAtivo() {
+    const key = (window.PROJETO_ATIVO_ID || 'esec').toLowerCase().trim();
+    const projetos = window.PROJETOS || {};
+    const projeto = projetos[key] || (window.ITPA_DADOS_PROJETOS && window.ITPA_DADOS_PROJETOS[key]);
+    if (!projeto) return null;
+
+    if (key === 'esec') {
+      return await carregarTalhoesGeoJSON(projeto.arquivo_geojson || projeto.geojson || './DATA/esec_poligono.geojson');
+    } else {
+      return await carregarLimitesFazendaPrivada(key, projeto);
+    }
+  }
+
+  /**
+   * Alterna a camada de Limites Territoriais Oficiais no mapa (ligar / desligar)
+   * Se a camada estiver nula, dispara recarga imediata do GeoJSON do projeto ativo.
+   * @param {boolean} [forcarAtivo]
+   */
+  async function alternarLimitesTerritoriais(forcarAtivo) {
+    if (!map) return;
+    const deveAtivar = (typeof forcarAtivo === 'boolean') 
+      ? forcarAtivo 
+      : !(talhoesLayer && map.hasLayer(talhoesLayer));
+
+    if (deveAtivar) {
+      if (!talhoesLayer) {
+        await recarregarLimitesDoProjetoAtivo();
+      } else if (!map.hasLayer(talhoesLayer)) {
+        map.addLayer(talhoesLayer);
+      }
+
+      if (talhoesLayer && talhoesLayer.getBounds && talhoesLayer.getBounds().isValid()) {
+        map.fitBounds(talhoesLayer.getBounds().pad(0.15), { maxZoom: 16 });
+      }
+    } else {
+      if (talhoesLayer && map.hasLayer(talhoesLayer)) {
+        map.removeLayer(talhoesLayer);
+      }
+    }
+
+    sincronizarEstadosUI();
+  }
+
+  /**
    * Alterna dinamicamente o projeto ativo no WebGIS (Arquitetura Multi-Projetos).
-   * Executa map.flyTo / map.fitBounds, remove o vetor anterior e renderiza o novo GeoJSON da pasta DATA/.
+   * Executa voo imediato (flyTo / fitBounds), remove ortofoto se for fazenda privada,
+   * carrega e exibe o GeoJSON oficial e sincroniza as imagens de satélite.
    * @param {string} projetoKey Chave do projeto ('esec', 'nelito', 'guanai')
    */
   async function selecionarProjeto(projetoKey) {
+    if (!map) return;
     const projetos = window.PROJETOS || {};
     const key = (projetoKey || 'esec').toLowerCase().trim();
-    const projeto = projetos[key] || (window.ITPA_DADOS_PROJETOS && window.ITPA_DADOS_PROJETOS[key]);
+    const projeto = projetos[key] || (window.ITPA_DADOS_PROJETOS && window.ITPA_DADOS_PROJETOS[key]) || projetos.esec;
 
     if (!projeto) {
       console.warn(`[ITPAMap] Projeto '${key}' não encontrado no catálogo.`);
@@ -954,167 +1249,80 @@ const ITPAMap = (function () {
 
     console.log(`[ITPAMap] Alternando para o projeto ativo: ${projeto.nome} (${key})`);
 
-    // 1. Remove vetor anterior do projeto se existir
-    if (talhoesLayer && map) {
-      map.removeLayer(talhoesLayer);
-      if (layerControl) {
-        layerControl.removeLayer(talhoesLayer);
-      }
-      talhoesLayer = null;
-    }
+    // =========================================================================
+    // ETAPA 1 (IMEDIATA / SÍNCRONA): Voo instantâneo e ajuste da ortofoto do drone
+    // =========================================================================
+    const coordsCentro = projeto.coordenadas_centro || projeto.coords || (key === 'nelito' ? [-22.540, -43.545] : key === 'guanai' ? [-22.552, -43.558] : [-22.705, -43.030]);
+    const zoomAlvo = projeto.zoom || (key === 'esec' ? 14 : 15);
 
-    let boundsRaster = null;
-
-    // 2. Se for a ESEC Guanabara (Guapimirim / APA)
     if (key === 'esec') {
-      // Para ESEC, ativa a ortofoto do drone e desativa o satélite RGB se estiver ativo para priorizar a ortofoto de 2cm
-      if (map && ortofotoLayer && !map.hasLayer(ortofotoLayer)) {
+      // ESEC: Ativa ortofoto do voo de drone, desativa satélite RGB concorrente
+      if (ortofotoLayer && !map.hasLayer(ortofotoLayer)) {
         map.addLayer(ortofotoLayer);
       }
-      if (map && layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) {
+      if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) {
         map.removeLayer(layerGroupRgbRecente);
       }
-
-      await carregarTalhoesGeoJSON(projeto.arquivo_geojson || projeto.geojson || './DATA/esec_poligono.geojson');
-      boundsRaster = await carregarRastersDoProjeto('esec');
-
-      if (map) {
-        if (talhoesLayer && talhoesLayer.getBounds && talhoesLayer.getBounds().isValid()) {
-          map.fitBounds(talhoesLayer.getBounds().pad(0.15), { padding: [30, 30], maxZoom: 15 });
-        } else if (boundsRaster && boundsRaster.isValid()) {
-          map.fitBounds(boundsRaster.pad(0.15), { padding: [30, 30], maxZoom: 15 });
-        } else {
-          map.flyTo(projeto.coordenadas_centro || projeto.coords || [-22.705, -43.030], projeto.zoom || 14, { duration: 1.5 });
-        }
-      }
     } else {
-      // 3. Fazenda Nelito ou Fazenda Guanaí (Miguel Pereira - RJ)
-      // Instancia os novos overlays PNG (RGB 10m e NDVI 2m) correspondentes usando os limites de bounds.json
-      boundsRaster = await carregarRastersDoProjeto(key);
-
-      // Oculta a ortofoto do drone (específica do voo na ESEC Guanabara)
-      if (map && ortofotoLayer && map.hasLayer(ortofotoLayer)) {
+      // Nelito e Guanaí: Desativa ortofoto do drone imediatamente
+      if (ortofotoLayer && map.hasLayer(ortofotoLayer)) {
         map.removeLayer(ortofotoLayer);
-      }
-
-      // Para as fazendas privadas, garante que a imagem de satélite RGB recente apareça imediatamente no mapa
-      // (a menos que o NDVI já esteja ligado pelo usuário)
-      const ndviAtivo = layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente);
-      if (!ndviAtivo) {
-        if (layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) {
-          map.addLayer(layerGroupRgbRecente);
-        }
-      }
-
-      // Caminhos candidatos para o GeoJSON oficial do projeto
-      const arquivoGeojson = projeto.arquivo_geojson || projeto.geojson;
-      const caminhos = [
-        arquivoGeojson,
-        './' + arquivoGeojson,
-        'DATA/' + arquivoGeojson.split('/').pop(),
-        './DATA/' + arquivoGeojson.split('/').pop(),
-        'data/' + arquivoGeojson.split('/').pop()
-      ];
-
-      let geojsonData = null;
-      let urlSucesso = '';
-
-      for (const caminho of caminhos) {
-        try {
-          const resp = await fetch(caminho);
-          if (resp.ok) {
-            geojsonData = await resp.json();
-            urlSucesso = caminho;
-            break;
-          }
-        } catch (e) {}
-      }
-
-      if (geojsonData) {
-        console.log(`[ITPAMap] Polígono da ${projeto.nome} carregado com sucesso de: ${urlSucesso}`);
-
-        talhoesLayer = L.geoJSON(geojsonData, {
-          style: function () {
-            return {
-              color: '#16a34a',       // Contorno verde nítido e vibrante
-              weight: 3.5,
-              opacity: 1.0,
-              fillColor: '#22c55e',   // Preenchimento verde levemente translúcido
-              fillOpacity: 0.18
-            };
-          },
-          onEachFeature: function (feature, layer) {
-            const props = feature.properties || {};
-
-            layer.on({
-              mouseover: function (e) {
-                e.target.setStyle({ weight: 4.5, color: '#15803d', fillOpacity: 0.32 });
-                if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) e.target.bringToFront();
-              },
-              mouseout: function (e) {
-                talhoesLayer.resetStyle(e.target);
-              }
-            });
-
-            const popupHtml = `
-              <div class="itpa-popup-card imovel-analytic-popup" style="padding: 12px 14px; min-width: 250px; font-family: inherit;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
-                  <span style="background: #eef7e6; color: #274D1E; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">🏛️ PROJETO ATIVO</span>
-                  <span style="background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${key}</span>
-                </div>
-                
-                <h3 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 800; color: #0f172a; line-height: 1.25;">${projeto.nome}</h3>
-                
-                <div style="font-size: 12px; line-height: 1.5; color: #334155;">
-                  <p style="margin: 3px 0;"><strong>Código CAR:</strong> <span style="font-family: monospace; font-size: 11px; word-break: break-all; color: #0f172a;">${projeto.car}</span></p>
-                  <p style="margin: 3px 0;"><strong>Área Total:</strong> <span style="font-weight: 700; color: #047857;">${projeto.area_registrada || projeto.area}</span></p>
-                  <p style="margin: 3px 0;"><strong>Status:</strong> <span style="font-weight: 700; color: #16a34a;">CONFORME CMN nº 5.303/2026</span></p>
-                </div>
-                
-                <div style="margin-top: 10px;">
-                  <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" data-projeto="${key}" onclick="window.abrirAuditoriaDoProjeto('${key}')" style="width: 100%; justify-content: center; font-size: 12px; padding: 8px 12px; cursor: pointer; background: #82C325; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 6px;">
-                    ⚖️ Ver Auditoria Territorial
-                  </button>
-                </div>
-              </div>
-            `;
-            layer.bindPopup(popupHtml, { maxWidth: 320, className: 'itpa-leaflet-popup' });
-          }
-        });
-
-        if (map) {
-          talhoesLayer.addTo(map);
-          if (layerControl) {
-            layerControl.addOverlay(talhoesLayer, `🟩 Limites Territoriais Oficiais: ${projeto.nome}`);
-          }
-          if (talhoesLayer.getBounds().isValid()) {
-            map.fitBounds(talhoesLayer.getBounds().pad(0.15), {
-              padding: [30, 30],
-              maxZoom: 16
-            });
-          } else if (boundsRaster && boundsRaster.isValid()) {
-            map.fitBounds(boundsRaster.pad(0.15), { padding: [30, 30], maxZoom: 16 });
-          } else {
-            map.flyTo(projeto.coordenadas_centro || projeto.coords, projeto.zoom || 15, { duration: 1.5 });
-          }
-        }
-      } else {
-        if (map) {
-          if (boundsRaster && boundsRaster.isValid()) {
-            map.fitBounds(boundsRaster.pad(0.15), { padding: [30, 30], maxZoom: 16 });
-          } else {
-            map.flyTo(projeto.coordenadas_centro || projeto.coords, projeto.zoom || 15, { duration: 1.5 });
-          }
-        }
       }
     }
 
-    // 4. Sincroniza a barra rápida flutuante (NDVI, RGB, Drone)
+    // Inicia voo imediato no mapa para a propriedade selecionada
+    map.flyTo(coordsCentro, zoomAlvo, { duration: 1.2 });
+
+    // =========================================================================
+    // ETAPA 2 (LIMITES TERRITORIAIS): Remove vetor anterior e carrega o novo
+    // =========================================================================
+    if (talhoesLayer && map.hasLayer(talhoesLayer)) {
+      map.removeLayer(talhoesLayer);
+    }
+    talhoesLayer = null;
+
+    if (key === 'esec') {
+      await carregarTalhoesGeoJSON(projeto.arquivo_geojson || projeto.geojson || './DATA/esec_poligono.geojson');
+    } else {
+      await carregarLimitesFazendaPrivada(key, projeto);
+    }
+
+    // Se a camada vetorial estiver válida, enquadra com precisão
+    if (talhoesLayer && talhoesLayer.getBounds && talhoesLayer.getBounds().isValid()) {
+      map.fitBounds(talhoesLayer.getBounds().pad(0.15), {
+        padding: [30, 30],
+        maxZoom: 16
+      });
+    }
+
+    // =========================================================================
+    // ETAPA 3 (RASTERS): Instanciação protegida das imagens PNG (RGB 10m e NDVI 2m)
+    // =========================================================================
+    try {
+      await carregarRastersDoProjeto(key);
+    } catch (errRaster) {
+      console.warn(`[ITPAMap] Falha não impeditiva ao carregar rasters de ${key}:`, errRaster);
+    }
+
+    // Para Nelito e Guanaí, ativa o Satélite RGB recente automaticamente (se NDVI não estiver ligado)
+    if (key !== 'esec') {
+      const ndviAtivo = layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente);
+      if (!ndviAtivo && layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) {
+        map.addLayer(layerGroupRgbRecente);
+      }
+    }
+
+    // =========================================================================
+    // ETAPA 4 (SINCRONIZAÇÃO UI & AUDITORIA): Atualiza botões e estados da tela
+    // =========================================================================
     sincronizarEstadosUI();
 
-    // 5. Notifica o módulo de auditoria territorial para atualizar o CAR, município, área e elegibilidade oficiais
     if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
-      window.ITPAAuditoria.definirProjetoAtivo(key);
+      try {
+        window.ITPAAuditoria.definirProjetoAtivo(key);
+      } catch (e) {
+        console.warn(`[ITPAMap] Aviso em ITPAAuditoria.definirProjetoAtivo:`, e);
+      }
     }
   }
 
@@ -1336,71 +1544,6 @@ const ITPAMap = (function () {
     const toggleProdes = document.getElementById('sheet-toggle-prodes');
     const toggleIbama = document.getElementById('sheet-toggle-ibama');
 
-    // Sincroniza o estado das pílulas e interruptores com o mapa Leaflet
-    function sincronizarEstadosUI() {
-      if (!map) return;
-
-      // 1. Ortofoto Drone
-      const droneAtivo = ortofotoLayer && map.hasLayer(ortofotoLayer);
-      if (pillDrone) pillDrone.classList.toggle('active', !!droneAtivo);
-      if (toggleDrone) toggleDrone.checked = !!droneAtivo;
-
-      // 2. Talhões NDVI 2m
-      const ndviAtivo = layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente);
-      if (pillNdvi) pillNdvi.classList.toggle('active', !!ndviAtivo);
-      if (toggleNdvi) toggleNdvi.checked = !!ndviAtivo;
-
-      // 3. Talhões RGB 2m
-      const rgbAtivo = layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente);
-      if (pillRgb) pillRgb.classList.toggle('active', !!rgbAtivo);
-      if (toggleRgb) toggleRgb.checked = !!rgbAtivo;
-
-      // 4. Passagem Anterior NDVI (09/Set - 2m)
-      const ndviAntAtivo = layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior);
-      if (toggleNdviAnt) toggleNdviAnt.checked = !!ndviAntAtivo;
-
-      // 4b. Passagem Anterior RGB (09/Set - 2m)
-      const rgbAntAtivo = layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior);
-      if (toggleRgbAnt) toggleRgbAnt.checked = !!rgbAntAtivo;
-
-      // 5. Limites dos Talhões
-      const talhoesAtivo = talhoesLayer && map.hasLayer(talhoesLayer);
-      if (toggleTalhoes) toggleTalhoes.checked = !!talhoesAtivo;
-
-      // 5b. Conformidade e Auditoria de Crédito (CMN nº 5.303/2026)
-      const carAtivo = layerGroupCar && map.hasLayer(layerGroupCar);
-      if (toggleCar) toggleCar.checked = !!carAtivo;
-
-      const prodesAtivo = layerGroupProdes && map.hasLayer(layerGroupProdes);
-      if (toggleProdes) toggleProdes.checked = !!prodesAtivo;
-
-      const ibamaAtivo = layerGroupIbama && map.hasLayer(layerGroupIbama);
-      if (toggleIbama) toggleIbama.checked = !!ibamaAtivo;
-
-      // 6. Mapas Base
-      if (baseRadios && baseRadios.length) {
-        baseRadios.forEach(radio => {
-          if (radio.value === 'satelite') {
-            radio.checked = !!(esriSatLayer && map.hasLayer(esriSatLayer));
-          } else if (radio.value === 'osm') {
-            radio.checked = !!(osmLayer && map.hasLayer(osmLayer));
-          } else if (radio.value === 'voyager') {
-            radio.checked = !!(cartoVoyagerLayer && map.hasLayer(cartoVoyagerLayer));
-          }
-        });
-      }
-
-      // Atualiza legenda flutuante de NDVI
-      const ndviLegendEl = document.getElementById('ndvi-legend');
-      if (ndviLegendEl) {
-        if (ndviAtivo || ndviAntAtivo) {
-          ndviLegendEl.style.display = 'block';
-        } else {
-          ndviLegendEl.style.display = 'none';
-        }
-      }
-    }
-
     function alternarCamada(camada) {
       if (!camada || !map) return;
       if (map.hasLayer(camada)) {
@@ -1607,13 +1750,19 @@ const ITPAMap = (function () {
 
     if (toggleTalhoes) {
       toggleTalhoes.onchange = () => {
-        if (toggleTalhoes.checked) {
-          if (talhoesLayer && !map.hasLayer(talhoesLayer)) map.addLayer(talhoesLayer);
-        } else {
-          if (talhoesLayer && map.hasLayer(talhoesLayer)) map.removeLayer(talhoesLayer);
-        }
-        sincronizarEstadosUI();
+        alternarLimitesTerritoriais(toggleTalhoes.checked);
       };
+
+      const rowTalhoes = toggleTalhoes.closest('.sheet-switch-row');
+      if (rowTalhoes) {
+        rowTalhoes.style.cursor = 'pointer';
+        rowTalhoes.addEventListener('click', (e) => {
+          if (e.target !== toggleTalhoes && !e.target.closest('.ios-toggle')) {
+            toggleTalhoes.checked = !toggleTalhoes.checked;
+            alternarLimitesTerritoriais(toggleTalhoes.checked);
+          }
+        });
+      }
     }
 
     if (toggleCar) {
@@ -2022,6 +2171,8 @@ const ITPAMap = (function () {
     setTempMarker,
     removerTempMarker,
     getMapInstance,
+    sincronizarEstadosUI,
+    alternarLimitesTerritoriais,
     TIPO_CONFIG
   };
 })();
