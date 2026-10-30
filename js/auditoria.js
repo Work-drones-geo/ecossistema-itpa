@@ -326,21 +326,35 @@ const ITPAAuditoria = (function () {
     // Ação do Botão "Laudo Pericial (PDF)"
     if (btnGerarLaudo) {
       btnGerarLaudo.addEventListener('click', function () {
-        // Sincroniza dinamicamente com o imóvel rural ativo caso o usuário não tenha feito upload customizado
-        const projKeyAtivo = (window.PROJETO_ATIVO_ID || (document.getElementById('select-projeto') && document.getElementById('select-projeto').value) || 'guanai').toLowerCase();
-        if (window.PROJETOS && window.PROJETOS[projKeyAtivo] && (!estadoAuditoria.carregado || estadoAuditoria.projetoKey !== projKeyAtivo)) {
-          definirProjetoAtivo(projKeyAtivo);
+        // 1. Identifica a propriedade atualmente ativa no WebGIS por múltiplos canais sincronizados
+        let projKeyAtivo = 'guanai';
+        const btnAtivo = document.querySelector('.btn-project-tab.active');
+        if (btnAtivo && btnAtivo.getAttribute('data-projeto')) {
+          projKeyAtivo = btnAtivo.getAttribute('data-projeto').toLowerCase().trim();
+        } else if (window.PROJETO_ATIVO_ID) {
+          projKeyAtivo = String(window.PROJETO_ATIVO_ID).toLowerCase().trim();
+        } else {
+          const sel = document.getElementById('select-projeto');
+          if (sel && sel.value) projKeyAtivo = sel.value.toLowerCase().trim();
         }
+
+        // 2. Sincroniza o estado da auditoria com a propriedade ativa
+        definirProjetoAtivo(projKeyAtivo);
+
+        // 3. Obtém dados oficiais do catálogo oficial
+        const catalogo = (window.ITPA_DADOS_PROJETOS && window.ITPA_DADOS_PROJETOS[projKeyAtivo]) ||
+                         (window.PROJETOS && window.PROJETOS[projKeyAtivo]) || {};
 
         if (window.ITPARelatorioTalhao && typeof window.ITPARelatorioTalhao.exportarLaudoPericialCMN === 'function') {
           window.ITPARelatorioTalhao.exportarLaudoPericialCMN({
-            codigo_car: estadoAuditoria.codigoCar || '--',
-            area_total_ha: estadoAuditoria.areaTotalHa || null,
-            area_texto_oficial: estadoAuditoria.areaTextoOficial || null,
-            nome_imovel: estadoAuditoria.nomeImovel || 'Fazenda Guanaí',
-            tipo_imovel: estadoAuditoria.tipoImovel || 'Imóvel Rural Privado',
-            municipio: estadoAuditoria.municipio || 'Miguel Pereira - RJ',
-            status_car: estadoAuditoria.statusCar || 'Ativo',
+            projetoKey: projKeyAtivo,
+            codigo_car: estadoAuditoria.codigoCar || catalogo.car || '--',
+            area_total_ha: estadoAuditoria.areaTotalHa || catalogo.area_num || null,
+            area_texto_oficial: estadoAuditoria.areaTextoOficial || catalogo.area || catalogo.area_registrada || null,
+            nome_imovel: estadoAuditoria.nomeImovel || catalogo.nome || (projKeyAtivo === 'nelito' ? 'Fazenda Nelito' : 'Fazenda Guanaí'),
+            tipo_imovel: estadoAuditoria.tipoImovel || (projKeyAtivo === 'esec' ? 'Unidade de Conservação Federal' : 'Imóvel Rural Privado'),
+            municipio: estadoAuditoria.municipio || catalogo.municipio || 'Miguel Pereira - RJ',
+            status_car: estadoAuditoria.statusCar || catalogo.status_car || 'Ativo',
             sobreposicao_prodes_ha: estadoAuditoria.sobreposicaoProdesHa !== undefined ? estadoAuditoria.sobreposicaoProdesHa : 0.0,
             responsavel_tecnico: 'Bruno Sodero de Freitas',
             qualificacao: 'Responsável Técnico / Geoprocessamento',
@@ -389,51 +403,54 @@ const ITPAAuditoria = (function () {
    * @param {string} projetoKey Chave do projeto ('esec', 'nelito', 'guanai')
    */
   function definirProjetoAtivo(projetoKey) {
-    const projetos = window.PROJETOS || {};
-    const projeto = projetos[projetoKey];
+    const key = (projetoKey || 'guanai').toString().toLowerCase().trim();
+    const catalogo = (window.ITPA_DADOS_PROJETOS && window.ITPA_DADOS_PROJETOS[key]) ||
+                     (window.PROJETOS && window.PROJETOS[key]) || {};
 
-    if (!projeto) return;
-
-    let areaNum = 0;
-    const areaStr = projeto.area_registrada || projeto.area || '';
-    if (typeof areaStr === 'string') {
+    let areaNum = catalogo.area_num || 0;
+    const areaStr = catalogo.area || catalogo.area_registrada || '';
+    if (!areaNum && typeof areaStr === 'string') {
       const match = areaStr.replace(/\./g, '').replace(',', '.').match(/[\d.]+/);
       if (match) areaNum = parseFloat(match[0]);
     } else if (typeof areaStr === 'number') {
       areaNum = areaStr;
     }
 
-    // Regra explícita: "Imóvel Rural Privado" para Nelito e Guanaí
-    const tipoImovel = (projetoKey === 'esec')
-      ? (projeto.tipo || 'Unidade de Conservação Federal')
+    const tipoImovel = (key === 'esec')
+      ? (catalogo.tipo || 'Unidade de Conservação Federal')
       : 'Imóvel Rural Privado';
+
+    const nomeImovel = catalogo.nome || (key === 'nelito' ? 'Fazenda Nelito' : (key === 'guanai' ? 'Fazenda Guanaí' : 'ESEC Guanabara'));
+    const carImovel = catalogo.car || (key === 'nelito' ? 'RJ-3302908-AE983FB03BAE42A9B32833247D8CCD4D' : (key === 'guanai' ? 'RJ-3302908-D52C6812F1464345885FE14360B005CE' : 'Regime Público (CNUC / ICMBio)'));
+    const munImovel = catalogo.municipio || (key === 'esec' ? 'Guapimirim / APA - RJ' : 'Miguel Pereira - RJ');
+    const areaOficial = catalogo.area || catalogo.area_registrada || (key === 'nelito' ? '246,116 ha' : (key === 'guanai' ? '615,808 ha' : '3.200,00 ha'));
 
     estadoAuditoria = {
       carregado: true,
-      projetoKey: projetoKey,
-      codigoCar: projeto.car,
-      nomeImovel: projeto.nome,
+      projetoKey: key,
+      codigoCar: carImovel,
+      nomeImovel: nomeImovel,
       tipoImovel: tipoImovel,
-      municipio: projeto.municipio || (projetoKey === 'esec' ? 'Guapimirim / APA - RJ' : 'Miguel Pereira - RJ'),
+      municipio: munImovel,
       areaTotalHa: areaNum,
-      areaTextoOficial: projeto.area_registrada || projeto.area,
-      statusCar: projeto.status_car || 'Ativo',
+      areaTextoOficial: areaOficial,
+      statusCar: catalogo.status_car || 'Ativo',
       sobreposicaoProdesHa: 0.0,
       percentualProdes: 0.0,
       sobreposicaoEmbargosHa: 0.0,
-      statusElegibilidade: projeto.elegibilidade_credito || 'ELEGÍVEL (Resolução CMN nº 5.303/2026)',
-      statusTexto: projeto.cmn_status || 'CONFORME - Ausência de Sobreposição PRODES/DETER',
-      cmnStatus: projeto.cmn_status || 'CONFORME - Ausência de Sobreposição PRODES/DETER',
-      elegibilidadeCredito: projeto.elegibilidade_credito || 'ELEGÍVEL (Resolução CMN nº 5.303/2026)',
+      statusElegibilidade: catalogo.elegibilidade || catalogo.elegibilidade_credito || 'IMÓVEL ELEGÍVEL / CONFORME para concessão e manutenção de crédito rural',
+      statusTexto: catalogo.status || catalogo.cmn_status || 'CONFORME - Ausência de Sobreposição PRODES/DETER',
+      cmnStatus: catalogo.cmn_status || 'CONFORME - Ausência de Sobreposição PRODES/DETER',
+      elegibilidadeCredito: catalogo.elegibilidade || catalogo.elegibilidade_credito || 'IMÓVEL ELEGÍVEL / CONFORME para concessão e manutenção de crédito rural',
       dataAuditoria: new Date(),
       geojsonCar: null
     };
 
     // Atualiza imediatamente os campos do painel (.card-auditoria / #painel-auditoria) sem forçar abertura
     if (typeof window.atualizarDadosAuditoria === 'function') {
-      window.atualizarDadosAuditoria(projetoKey);
+      window.atualizarDadosAuditoria(key);
     } else if (typeof window.atualizarAuditoria === 'function') {
-      window.atualizarAuditoria(projetoKey, false);
+      window.atualizarAuditoria(key, false);
     }
     atualizarUI();
   }

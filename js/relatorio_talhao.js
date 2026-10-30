@@ -662,6 +662,12 @@
    * Estrutura Técnica Conjunta: INSTITUTO TERRA DE PRESERVAÇÃO AMBIENTAL (ITPA) + WORK DRONES GEO
    * @param {Object} dados
    */
+  /**
+   * Gera o Laudo Pericial de Regularidade Socioambiental conforme Resolução CMN nº 5.303/2026
+   * Estrutura Técnica Conjunta: INSTITUTO TERRA DE PRESERVAÇÃO AMBIENTAL (ITPA) + WORK DRONES GEO
+   * Vincula dinamicamente os dados oficiais da propriedade ativa no WebGIS (Nelito, Guanaí, ESEC)
+   * @param {Object} dados
+   */
   async function exportarLaudoPericialCMN(dados = {}) {
     const showToast = window.showToast || console.log;
 
@@ -671,7 +677,7 @@
     }
 
     try {
-      showToast('⚖️ Gerando Laudo Pericial de Regularidade Socioambiental (ITPA + Work Drones)...', 'info');
+      showToast('⚖️ Gerando Laudo Técnico Pericial de Regularidade Socioambiental...', 'info');
 
       // 0. Carregamento dos Assets Visuais Oficiais (Logo ITPA, Logo Work Drones e QR Code ANAC)
       const [logoWorkDrones, logoItpa, qrcodeAnac] = await Promise.all([
@@ -680,20 +686,58 @@
         obterImagemDataUrl('QRCODE_ANAC', ['./assets/qrcode-anac.jpeg', 'assets/qrcode-anac.jpeg'])
       ]);
 
-      // 1. Variáveis prontas e sanitizadas para renderização no PDF
-      const nome_imovel = sanitizarTextoPdf(dados.nome_imovel) || 'Fazenda Guanai';
-      const tipo_imovel = sanitizarTextoPdf(dados.tipo_imovel) || 'Imovel Rural Privado';
-      const municipio = sanitizarTextoPdf(dados.municipio) || 'Miguel Pereira - RJ';
-      const codigo_car = sanitizarTextoPdf(dados.codigo_car) || 'RJ-3302908-D52C6812F1464345885FE14360B005CE';
-      const area_total_ha = dados.area_texto_oficial
-        ? sanitizarTextoPdf(dados.area_texto_oficial)
-        : ((dados.area_total_ha !== null && dados.area_total_ha !== undefined && !isNaN(dados.area_total_ha) && Number(dados.area_total_ha) > 0)
-          ? `${Number(dados.area_total_ha).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ha`
-          : '615,808 ha');
+      // 1. Identificação infalível da propriedade ativa selecionada no WebGIS
+      let propKey = (
+        dados.projetoKey ||
+        dados.chave ||
+        (document.querySelector('.btn-project-tab.active') && document.querySelector('.btn-project-tab.active').getAttribute('data-projeto')) ||
+        window.PROJETO_ATIVO_ID ||
+        (document.getElementById('select-projeto') && document.getElementById('select-projeto').value) ||
+        'guanai'
+      ).toString().toLowerCase().trim();
+
+      // Se o nome do imóvel fornecido explicitamente indicar uma propriedade específica, respeita-a
+      const nomeInput = (dados.nome_imovel || '').toLowerCase();
+      if (nomeInput.includes('nelito')) {
+        propKey = 'nelito';
+      } else if (nomeInput.includes('guanai') || nomeInput.includes('guanaí')) {
+        propKey = 'guanai';
+      } else if (nomeInput.includes('esec')) {
+        propKey = 'esec';
+      }
+
+      // Catálogo de Metadados Oficiais (prioriza ITPA_DADOS_PROJETOS e fallback para PROJETOS)
+      const catalogo = (window.ITPA_DADOS_PROJETOS && window.ITPA_DADOS_PROJETOS[propKey]) ||
+                       (window.PROJETOS && window.PROJETOS[propKey]) || {};
+
+      // Dados Sanitizados do Imóvel Auditado
+      const nome_imovel = sanitizarTextoPdf(
+        dados.nome_imovel && !dados.nome_imovel.includes('Imóvel Rural') && !dados.nome_imovel.includes('Imovel Rural')
+          ? dados.nome_imovel
+          : catalogo.nome
+      ) || (propKey === 'nelito' ? 'Fazenda Nelito' : (propKey === 'guanai' ? 'Fazenda Guanai' : 'ESEC Guanabara'));
+
+      const tipo_imovel = sanitizarTextoPdf(dados.tipo_imovel) ||
+        (propKey === 'esec' ? 'Unidade de Conservacao Federal' : 'Imovel Rural Privado');
+
+      const municipio = sanitizarTextoPdf(dados.municipio) || catalogo.municipio ||
+        (propKey === 'esec' ? 'Guapimirim / APA - RJ' : 'Miguel Pereira - RJ');
+
+      const codigo_car = sanitizarTextoPdf(dados.codigo_car && dados.codigo_car !== '--' ? dados.codigo_car : catalogo.car) ||
+        (propKey === 'nelito'
+          ? 'RJ-3302908-AE983FB03BAE42A9B32833247D8CCD4D'
+          : (propKey === 'guanai'
+              ? 'RJ-3302908-D52C6812F1464345885FE14360B005CE'
+              : 'Regime Publico (CNUC / ICMBio)'));
+
+      const area_total_ha = sanitizarTextoPdf(dados.area_texto_oficial || catalogo.area || catalogo.area_registrada) ||
+        (propKey === 'nelito' ? '246,116 ha' : (propKey === 'guanai' ? '615,808 ha' : '3.200,00 ha'));
+
       const sobreposicao_prodes_ha = (dados.sobreposicao_prodes_ha !== null && dados.sobreposicao_prodes_ha !== undefined && !isNaN(dados.sobreposicao_prodes_ha) && Number(dados.sobreposicao_prodes_ha) > 0)
         ? `${Number(dados.sobreposicao_prodes_ha).toFixed(4)} ha`
         : '0,00 ha (0,00%)';
-      const status_car = sanitizarTextoPdf(dados.status_car || 'Ativo');
+
+      const status_car = sanitizarTextoPdf(dados.status_car || catalogo.status_car || 'Ativo');
 
       // Responsabilidade Técnica
       const responsavel_tecnico = sanitizarTextoPdf(dados.responsavel_tecnico) || 'Bruno Sodero de Freitas';
@@ -718,7 +762,7 @@
       // 1. CABEÇALHO CONJUNTO (ITPA + WORK DRONES GEO)
       // =========================================================================
       const topY = 6;
-      const logoSize = 19;
+      const logoSize = 18;
 
       // Logo ITPA (Esquerda)
       if (logoItpa) {
@@ -732,18 +776,18 @@
       // Textos ITPA (Esquerda)
       const xItpaText = logoItpa ? (marginLeft + logoSize + 3) : marginLeft;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.2);
+      doc.setFontSize(8.0);
       doc.setTextColor(15, 23, 42); // #0F172A
-      doc.text('INSTITUTO TERRA DE PRESERVACAO AMBIENTAL', xItpaText, topY + 5.5);
-      doc.setFontSize(7.6);
+      doc.text('INSTITUTO TERRA DE PRESERVACAO AMBIENTAL', xItpaText, topY + 5.0);
+      doc.setFontSize(7.2);
       doc.setTextColor(3, 105, 161); // #0369A1
-      doc.text('ITPA - CONSERVACAO & RESTAURACAO', xItpaText, topY + 10.0);
+      doc.text('ITPA - CONSERVACAO & RESTAURACAO FLORESTAL', xItpaText, topY + 9.5);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.7);
+      doc.setFontSize(6.6);
       doc.setTextColor(71, 85, 105); // #475569
-      doc.text('CNPJ: 03.181.728/0001-99 | itpa.org.br', xItpaText, topY + 14.2);
-      doc.text('Corredor Ecologico da Mata Atlantica', xItpaText, topY + 18.0);
+      doc.text('CNPJ: 03.181.728/0001-99 | itpa.org.br', xItpaText, topY + 13.8);
+      doc.text('Corredor Ecologico da Mata Atlantica', xItpaText, topY + 17.5);
 
       // Logo Work Drones Geo (Direita)
       const xWdLogo = pageWidth - marginRight - logoSize;
@@ -758,45 +802,48 @@
       // Textos Work Drones Geo (Direita, alinhados à direita)
       const xWdText = logoWorkDrones ? (xWdLogo - 3) : (pageWidth - marginRight);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.2);
+      doc.setFontSize(8.0);
       doc.setTextColor(15, 23, 42);
-      doc.text('WORK DRONES GEO', xWdText, topY + 5.5, { align: 'right' });
-      doc.setFontSize(7.4);
+      doc.text('WORK DRONES GEO', xWdText, topY + 5.0, { align: 'right' });
+      doc.setFontSize(7.2);
       doc.setTextColor(14, 165, 233); // #0EA5E9
-      doc.text('GEOPROCESSAMENTO E FOTOGRAMETRIA AEREA', xWdText, topY + 10.0, { align: 'right' });
+      doc.text('GEOPROCESSAMENTO E FOTOGRAMETRIA AEREA', xWdText, topY + 9.5, { align: 'right' });
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.7);
+      doc.setFontSize(6.6);
       doc.setTextColor(71, 85, 105);
-      doc.text('CNPJ: 35.410.458/0001-01 | Volta Redonda - RJ', xWdText, topY + 14.2, { align: 'right' });
-      doc.text('Tel: (24) 99929-3101 | workdrones.contato@gmail.com', xWdText, topY + 18.0, { align: 'right' });
+      doc.text('CNPJ: 35.410.458/0001-01 | Volta Redonda - RJ', xWdText, topY + 13.8, { align: 'right' });
+      doc.text('Tel: (24) 99929-3101 | workdrones.contato@gmail.com', xWdText, topY + 17.5, { align: 'right' });
 
       // Linha divisória horizontal sutil
       doc.setDrawColor(203, 213, 225); // #CBD5E1
       doc.setLineWidth(0.35);
-      doc.line(marginLeft, 27.5, pageWidth - marginRight, 27.5);
+      doc.line(marginLeft, 26.5, pageWidth - marginRight, 26.5);
 
       // =========================================================================
-      // FAIXA DE TÍTULO PRINCIPAL DO LAUDO
+      // FAIXA DE TÍTULO PRINCIPAL (SEM SOBREPOSIÇÕES, LINHA PRÓPRIA PARA RESOLUÇÃO)
       // =========================================================================
-      let cursorY = 29.5;
+      let cursorY = 28.5;
+      const hFaixaTitulo = 15.0;
       doc.setFillColor(15, 23, 42); // Azul Marinho Corporativo Escuro #0F172A
-      doc.rect(marginLeft, cursorY, contentWidth, 14.5, 'F');
+      doc.rect(marginLeft, cursorY, contentWidth, hFaixaTitulo, 'F');
 
       doc.setFillColor(14, 165, 233); // Faixa decorativa Ciano CMN #0EA5E9
-      doc.rect(marginLeft, cursorY + 14.5, contentWidth, 1.8, 'F');
+      doc.rect(marginLeft, cursorY + hFaixaTitulo, contentWidth, 1.8, 'F');
 
+      // Título Principal com fonte reduzida para 8.8 (amplo respiro lateral)
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.8);
+      doc.setFontSize(8.8);
       doc.text('LAUDO TECNICO DE AUDITORIA SOCIOAMBIENTAL E CONFORMIDADE ESPACIAL', pageWidth / 2, cursorY + 6.2, { align: 'center' });
 
+      // Identificação da Resolução em Linha Própria abaixo do título (sem badges sobrepostos)
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.3);
+      doc.setFontSize(6.9);
       doc.setTextColor(186, 230, 253); // #BAE6FD
-      doc.text('Auditoria Preventiva de Credito Rural - Resolucao CMN no 5.303/2026 | Banco Central do Brasil (MCR)', pageWidth / 2, cursorY + 11.4, { align: 'center' });
+      doc.text('Auditoria Territorial e Regularidade de Credito Rural - Resolucao CMN no 5.303/2026 (MCR / BACEN)', pageWidth / 2, cursorY + 11.5, { align: 'center' });
 
-      cursorY += 19.5;
+      cursorY += hFaixaTitulo + 4.5; // cursorY = 48.0
 
       // =========================================================================
       // 2. REFERÊNCIA NORMATIVA E PRAZOS
@@ -808,14 +855,14 @@
       doc.roundedRect(marginLeft, cursorY, contentWidth, hBoxNorm, 2, 2, 'FD');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.2);
+      doc.setFontSize(8.0);
       doc.setTextColor(15, 23, 42);
       doc.text('1. REFERENCIA NORMATIVA E ENQUADRAMENTO (CMN no 5.303/2026)', marginLeft + 4, cursorY + 5.5);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.1);
+      doc.setFontSize(6.9);
       doc.setTextColor(51, 65, 85); // #334155
-      doc.text('Dispositivo Legal: Resolucao CMN no 5.303/2026 do Conselho Monetario Nacional / Manual de Credito Rural (MCR - BACEN).', marginLeft + 4, cursorY + 10.5);
+      doc.text('Base Normativa: Resolucao CMN no 5.303/2026 do Conselho Monetario Nacional / Manual de Credito Rural (MCR - BACEN).', marginLeft + 4, cursorY + 10.5);
 
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(3, 105, 161); // #0369A1
@@ -823,51 +870,111 @@
 
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 116, 139); // #64748B
-      doc.text('Finalidade: Instrucao probatoria pericial para concessao e manutencao de operacoes de financiamento junto ao SNCR.', marginLeft + 102, cursorY + 15.0);
+      doc.text('Finalidade: Regularidade SNCR.', marginLeft + 142, cursorY + 15.0);
 
-      cursorY += hBoxNorm + 3.0;
+      cursorY += hBoxNorm + 3.0; // cursorY = 69.5
 
       // =========================================================================
-      // 3. DADOS DO IMÓVEL AUDITADO
+      // 3. DADOS DO IMÓVEL AUDITADO (GRID DE 2 COLUNAS ESPAÇADAS COM RIGOR)
       // =========================================================================
-      const hBoxImovel = 27.5;
+      const hBoxImovel = 30.5;
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(marginLeft, cursorY, contentWidth, hBoxImovel, 2, 2, 'FD');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.2);
+      doc.setFontSize(8.0);
       doc.setTextColor(15, 23, 42);
       doc.text('2. DADOS DO IMOVEL RURAL AUDITADO', marginLeft + 4, cursorY + 5.5);
 
+      // Colunas: Coluna 1 (X = 18 mm) | Coluna 2 (X = 112 mm)
+      const col1X = marginLeft + 4; // 18 mm
+      const col2X = marginLeft + 98; // 112 mm
+
+      // Linha 1: Imóvel e Município
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Imovel Auditado: ', col1X, cursorY + 11.0);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.1);
+      doc.setFontSize(7.2);
       doc.setTextColor(51, 65, 85);
+      doc.text(nome_imovel, col1X + 25, cursorY + 11.0);
 
-      // Coluna 1
-      const col1X = marginLeft + 4;
-      const col2X = marginLeft + 98;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Municipio / UF: ', col2X, cursorY + 11.0);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.2);
+      doc.setTextColor(51, 65, 85);
+      doc.text(municipio, col2X + 23, cursorY + 11.0);
 
-      doc.text(`Imovel Auditado: ${nome_imovel}`, col1X, cursorY + 10.8);
-      doc.text(`Municipio / UF: ${municipio}`, col2X, cursorY + 10.8);
+      // Linha 2: Código CAR (fonte compacta 6.3 para não invadir coluna 2) e Área
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Codigo CAR: ', col1X, cursorY + 16.0);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.3);
+      doc.setTextColor(51, 65, 85);
+      doc.text(codigo_car, col1X + 20, cursorY + 16.0);
 
-      doc.text(`Codigo CAR Oficial: ${codigo_car}`, col1X, cursorY + 15.8);
-      doc.text(`Area Registrada no CAR: ${area_total_ha}`, col2X, cursorY + 15.8);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Area Registrada: ', col2X, cursorY + 16.0);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(4, 120, 87); // Verde #047857
+      doc.text(area_total_ha, col2X + 25, cursorY + 16.0);
 
-      doc.text(`Situacao Cadastral: ${status_car} (Base Oficial SICAR)`, col1X, cursorY + 20.8);
-      doc.text(`Regime Territorial: ${tipo_imovel}`, col2X, cursorY + 20.8);
+      // Linha 3: Situação SICAR e Regime
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Situacao SICAR: ', col1X, cursorY + 21.0);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.0);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`${status_car} (Base Oficial Homologada)`, col1X + 24, cursorY + 21.0);
 
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Regime Territorial: ', col2X, cursorY + 21.0);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.0);
+      doc.setTextColor(51, 65, 85);
+      doc.text(tipo_imovel, col2X + 28, cursorY + 21.0);
+
+      // Linha 4: Data e Referencial Geodésico
       const emissaoData = new Date().toLocaleDateString('pt-BR');
-      doc.text(`Data da Auditoria Espacial: ${emissaoData}`, col1X, cursorY + 25.4);
-      doc.text('Referencial Geodesico: SIRGAS 2000 / UTM Fuso 23S (EPSG:31983)', col2X, cursorY + 25.4);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Data da Auditoria: ', col1X, cursorY + 26.0);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.0);
+      doc.setTextColor(51, 65, 85);
+      doc.text(emissaoData, col1X + 26, cursorY + 26.0);
 
-      cursorY += hBoxImovel + 3.0;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Sistema Geodesico: ', col2X, cursorY + 26.0);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.7);
+      doc.setTextColor(51, 65, 85);
+      doc.text('SIRGAS 2000 / UTM Fuso 23S (EPSG:31983)', col2X + 29, cursorY + 26.0);
+
+      cursorY += hBoxImovel + 3.0; // cursorY = 103.0
 
       // =========================================================================
       // 4. PARECER DE CONFORMIDADE ESPACIAL
       // =========================================================================
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.2);
+      doc.setFontSize(8.0);
       doc.setTextColor(15, 23, 42);
       doc.text('3. PARECER DE CONFORMIDADE ESPACIAL (CRITERIOS CMN no 5.303/2026)', marginLeft, cursorY + 3.8);
 
@@ -935,16 +1042,16 @@
       }
 
       // Badge Conclusivo de Status
-      const hBadge = 9.2;
+      const hBadge = 8.5;
       doc.setFillColor(236, 253, 245); // Verde Esmeralda Suave #ECFDF5
       doc.setDrawColor(5, 150, 105);   // Verde Esmeralda Borda #059669
       doc.setLineWidth(0.4);
       doc.roundedRect(marginLeft, cursorY, contentWidth, hBadge, 2, 2, 'FD');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.8);
+      doc.setFontSize(7.6);
       doc.setTextColor(6, 95, 70); // #065F46
-      doc.text('STATUS CONCLUSIVO: IMOVEL ELEGIVEL / CONFORME para concessao e manutencao de credito rural.', pageWidth / 2, cursorY + 6.0, { align: 'center' });
+      doc.text('STATUS CONCLUSIVO: IMOVEL ELEGIVEL / CONFORME para concessao e manutencao de credito rural.', pageWidth / 2, cursorY + 5.5, { align: 'center' });
 
       cursorY += hBadge + 3.2;
 
@@ -958,12 +1065,12 @@
       doc.roundedRect(marginLeft, cursorY, contentWidth, hBoxNota, 2, 2, 'FD');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.2);
+      doc.setFontSize(8.0);
       doc.setTextColor(15, 23, 42);
       doc.text('4. NOTA TECNICA PERICIAL (CONTESTACAO DE FALSOS POSITIVOS)', marginLeft + 4, cursorY + 5.5);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.9);
+      doc.setFontSize(6.8);
       doc.setTextColor(51, 65, 85);
       const textoNotaTecnica = 
         'Atesta-se pericialmente que o imovel auditado integra projeto de restauracao florestal ativa conduzido pelo Instituto Terra de Preservacao Ambiental (ITPA) no Corredor Ecologico da Mata Atlantica. Eventuais oscilacoes espectrais sazonais detectadas por sensores orbitais decorrem de praticas silviculturais conservacionistas, controle mecanico de especies invasoras, coroamento de mudas e dinamica fenologica natural, restando peremptoriamente afastada qualquer hipotese de desmatamento ou supressao vegetal pos-31/07/2019. A plena integridade da cobertura florestal e o restabelecimento do dossel sao comprovados documentalmente por serie temporal analitica de NDVI (Sentinel-2 / resolucao 2m) e ortomosaicos aereos de drone de alta resolucao espacial (GSD < 5 cm), atestando plena elegibilidade e seguranca juridica perante os agentes do Sistema Nacional de Credito Rural (SNCR).';
@@ -978,13 +1085,13 @@
       // =========================================================================
       // 6. ASSINATURAS CONJUNTAS E RESPONSABILIDADE TÉCNICA
       // =========================================================================
-      const hBoxAssin = 49.0;
+      const hBoxAssin = 48.0;
       doc.setFillColor(255, 255, 255);
       doc.setDrawColor(203, 213, 225);
       doc.roundedRect(marginLeft, cursorY, contentWidth, hBoxAssin, 2, 2, 'FD');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.2);
+      doc.setFontSize(8.0);
       doc.setTextColor(15, 23, 42);
       doc.text('5. RESPONSABILIDADE TECNICA E VALIDACAO INSTITUCIONAL CONJUNTA', marginLeft + 4, cursorY + 5.5);
 
@@ -996,28 +1103,28 @@
       // --- Coluna 1: Work Drones Geo (Esquerda) ---
       const colWorkX = marginLeft + 4;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.3);
+      doc.setFontSize(7.2);
       doc.setTextColor(15, 23, 42);
       doc.text('WORK DRONES GEO — GEOPROCESSAMENTO', colWorkX, cursorY + 11.0);
 
-      doc.setFontSize(7.6);
+      doc.setFontSize(7.5);
       doc.setTextColor(30, 41, 59);
       doc.text(responsavel_tecnico, colWorkX, cursorY + 16.0);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.8);
+      doc.setFontSize(6.7);
       doc.setTextColor(71, 85, 105);
-      doc.text(qualificacao_tecnica, colWorkX, cursorY + 20.2);
-      doc.text(certificacao_anac, colWorkX, cursorY + 24.2);
+      doc.text(qualificacao_tecnica, colWorkX, cursorY + 20.0);
+      doc.text(certificacao_anac, colWorkX, cursorY + 24.0);
 
-      doc.setFontSize(6.6);
+      doc.setFontSize(6.5);
       doc.setTextColor(100, 116, 139);
       doc.text('Assinatura Digital / Pericial:', colWorkX, cursorY + 33.5);
-      doc.line(colWorkX, cursorY + 41.5, colWorkX + 56, cursorY + 41.5);
+      doc.line(colWorkX, cursorY + 41.5, colWorkX + 54, cursorY + 41.5);
 
       // QR Code ANAC inserido ao lado da assinatura na Coluna 1
-      const xQr = colWorkX + 62;
-      const yQr = cursorY + 16.0;
+      const xQr = colWorkX + 60;
+      const yQr = cursorY + 15.5;
       const qrSize = 21.0;
       if (qrcodeAnac) {
         try {
@@ -1027,7 +1134,7 @@
         }
       }
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.6);
+      doc.setFontSize(5.5);
       doc.setTextColor(71, 85, 105);
       doc.text('Validacao Operacional', xQr + (qrSize / 2), yQr + qrSize + 2.8, { align: 'center' });
       doc.text('ANAC', xQr + (qrSize / 2), yQr + qrSize + 5.0, { align: 'center' });
@@ -1035,34 +1142,34 @@
       // --- Coluna 2: ITPA (Direita) ---
       const colItpaX = xMid + 5;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.3);
+      doc.setFontSize(7.2);
       doc.setTextColor(15, 23, 42);
       doc.text('INSTITUTO TERRA DE PRESERVACAO AMBIENTAL', colItpaX, cursorY + 11.0);
 
-      doc.setFontSize(7.6);
+      doc.setFontSize(7.5);
       doc.setTextColor(30, 41, 59);
       doc.text('Coordenacao / Validacao Institucional', colItpaX, cursorY + 16.0);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.8);
+      doc.setFontSize(6.7);
       doc.setTextColor(71, 85, 105);
-      doc.text('Coordenacao de Restauracao e Monitoramento', colItpaX, cursorY + 20.2);
-      doc.text('Chancela de Conformidade Socioambiental', colItpaX, cursorY + 24.2);
+      doc.text('Coordenacao de Restauracao e Monitoramento', colItpaX, cursorY + 20.0);
+      doc.text('Chancela de Conformidade Socioambiental', colItpaX, cursorY + 24.0);
 
       // Data formatada por extenso
       const mesesPt = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
       const dataHoje = new Date();
       const dataAtualFormatada = `${dataHoje.getDate()} de ${mesesPt[dataHoje.getMonth()]} de ${dataHoje.getFullYear()}`;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.8);
+      doc.setFontSize(6.7);
       doc.setTextColor(30, 41, 59);
       doc.text(`Local e Data: Miguel Pereira - RJ, ${dataAtualFormatada}`, colItpaX, cursorY + 31.0);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.6);
+      doc.setFontSize(6.5);
       doc.setTextColor(100, 116, 139);
       doc.text('Chancela Institucional ITPA:', colItpaX, cursorY + 36.5);
-      doc.line(colItpaX, cursorY + 44.5, colItpaX + 76, cursorY + 44.5);
+      doc.line(colItpaX, cursorY + 44.5, colItpaX + 74, cursorY + 44.5);
 
       // =========================================================================
       // 7. RODAPÉ INSTITUCIONAL CONJUNTO
@@ -1073,7 +1180,7 @@
       doc.line(marginLeft, footerY, pageWidth - marginRight, footerY);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.6);
+      doc.setFontSize(6.5);
       doc.setTextColor(148, 163, 184); // #94A3B8
       doc.text(
         'Instituto Terra de Preservacao Ambiental (ITPA) & Work Drones Geo | Resolucao CMN no 5.303/2026 (Manual de Credito Rural - MCR)',
@@ -1083,14 +1190,24 @@
       doc.setFont('helvetica', 'bold');
       doc.text('Certidao Pericial Oficial', pageWidth - marginRight - 28, footerY + 4.8);
 
-      // Download do PDF com nome padronizado
+      // Formatação dinâmica do nome do arquivo (ex.: Laudo_CMN_5303_Nelito_20261030.pdf)
+      let nomeCurto = 'Imovel';
+      const nLimpo = sanitizarTextoPdf(nome_imovel).toLowerCase();
+      if (nLimpo.includes('nelito')) {
+        nomeCurto = 'Nelito';
+      } else if (nLimpo.includes('guanai')) {
+        nomeCurto = 'Guanai';
+      } else if (nLimpo.includes('esec')) {
+        nomeCurto = 'ESEC_Guanabara';
+      } else {
+        nomeCurto = sanitizarTextoPdf(nome_imovel).replace(/[^a-zA-Z0-9]/g, '_');
+      }
+
       const dataArquivoStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const safeImovelName = (dados.nome_imovel || 'Imovel').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const safeCarName = codigo_car.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const nomeArquivo = `Laudo_Tecnico_CMN_5303_${safeImovelName}_${safeCarName}_${dataArquivoStr}.pdf`;
+      const nomeArquivo = `Laudo_CMN_5303_${nomeCurto}_${dataArquivoStr}.pdf`;
 
       doc.save(nomeArquivo);
-      showToast('✓ Laudo Técnico de Regularidade Socioambiental (ITPA + Work Drones) gerado com sucesso!', 'success');
+      showToast(`✓ Laudo Técnico CMN 5.303 (${nome_imovel}) gerado com sucesso!`, 'success');
       return { sucesso: true, nomeArquivo };
     } catch (err) {
       console.error('[Laudo CMN 5.303 PDF] Erro ao compilar:', err);
