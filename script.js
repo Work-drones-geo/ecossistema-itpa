@@ -212,8 +212,8 @@ window.trocarProjeto = function(projetoKey) {
     }
   }
 
-  // 8. Toast discreto confirmando a fazenda ativa
-  if (typeof window.showToast === 'function') {
+  // 8. Toast discreto confirmando a fazenda ativa (apenas no desktop para manter mobile limpo)
+  if (typeof window.showToast === 'function' && window.innerWidth >= 768) {
     window.showToast(`Propriedade Ativa: ${p.nome}`, 'info');
   }
 };
@@ -230,39 +230,20 @@ window.abrirAuditoriaDoProjeto = function(projetoKey) {
   // Atualiza os dados de texto do imóvel selecionado
   window.atualizarDadosAuditoria(key);
 
-  // Expande e destaca o card lateral de auditoria
+  // Expande e destaca o card/gaveta de auditoria
+  window.toggleAuditoria(true);
+
   const cards = document.querySelectorAll('#card-auditoria, #card-auditoria-cmn, .card-auditoria, .map-audit-card');
   cards.forEach(card => {
-    card.classList.remove('collapsed');
-    card.style.display = 'block';
     card.classList.remove('audit-card-highlight');
     void card.offsetWidth; // Força reflow para animação visual de pulso
     card.classList.add('audit-card-highlight');
   });
 
-  const bodies = document.querySelectorAll('#auditoria-body, #painel-auditoria, .card-body, .audit-card-body');
-  bodies.forEach(body => {
-    body.style.display = 'block';
-  });
-
-  const buttons = document.querySelectorAll('#btn-toggle-audit, #btn-toggle-audit-card, .btn-toggle-audit-card');
-  buttons.forEach(btn => {
-    btn.innerText = '−';
-    const icon = btn.querySelector('.toggle-icon');
-    if (icon) icon.innerText = '−';
-  });
-
-  const pill = document.getElementById('pill-quick-auditoria');
-  if (pill) pill.classList.add('active');
-
   // Fecha qualquer pop-up no mapa para dar visão desobstruída do painel lateral
   if (window.ITPAMap && typeof window.ITPAMap.getMapInstance === 'function') {
     const m = window.ITPAMap.getMapInstance();
     if (m) m.closePopup();
-  }
-
-  if (typeof window.showToast === 'function') {
-    window.showToast(`Auditoria: ${p.nome} • CONFORME CMN nº 5.303/2026`, 'success');
   }
 };
 
@@ -288,29 +269,32 @@ window.toggleAuditoria = function(forcarEstado) {
   const shouldOpen = (typeof forcarEstado === 'boolean') ? forcarEstado : !isCurrentlyOpen;
 
   if (!shouldOpen) {
-    // Recolher (Estado Compacto na barra inferior)
-    cards.forEach(c => c.classList.add('collapsed'));
+    // Recolher (Estado Compacto: Botão Flutuante Discreto)
+    cards.forEach(c => {
+      c.classList.add('collapsed');
+      c.style.display = '';
+    });
     bodies.forEach(b => {
-      b.style.display = 'none';
+      b.style.display = '';
     });
     carets.forEach(el => el.textContent = '▲');
-    closeGlyphs.forEach(el => el.textContent = '▼');
+    closeGlyphs.forEach(el => el.textContent = '✕');
     buttons.forEach(btn => {
       const icon = btn.querySelector('.toggle-icon');
       if (icon) icon.innerText = '+';
       const closeG = btn.querySelector('.close-icon-glyph');
-      if (closeG) closeG.innerText = '▼';
+      if (closeG) closeG.innerText = '✕';
     });
     const pill = document.getElementById('pill-quick-auditoria');
     if (pill) pill.classList.remove('active');
   } else {
-    // Expandir (Slide-Up mostrando dados cadastrais completos)
+    // Expandir (Janela Modal Grande solicitada pelo usuário)
     cards.forEach(c => {
       c.classList.remove('collapsed');
-      c.style.display = 'flex';
+      c.style.display = '';
     });
     bodies.forEach(b => {
-      b.style.display = 'block';
+      b.style.display = '';
     });
     carets.forEach(el => el.textContent = '▼');
     closeGlyphs.forEach(el => el.textContent = '✕');

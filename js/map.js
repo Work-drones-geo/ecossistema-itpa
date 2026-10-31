@@ -301,12 +301,36 @@ const ITPAMap = (function () {
 
     map.addLayer(clusterGroup);
 
-    // 5. Clique no mapa para capturar coordenadas
+    // 5. Clique no mapa para capturar coordenadas ou abrir talhões
     map.on('click', (e) => {
       if (typeof onPointSelectedCallback === 'function') {
         const { lat, lng } = e.latlng;
         setTempMarker(lat, lng);
         onPointSelectedCallback(lat, lng);
+        return;
+      }
+
+      // Detecção de clique complementar: se o clique incidiu no interior de algum polígono, abre seu pop-up
+      if (talhoesLayer && map.hasLayer(talhoesLayer) && e && e.latlng) {
+        let aberto = false;
+        talhoesLayer.eachLayer((polyLayer) => {
+          if (aberto) return;
+          if (polyLayer.getBounds && polyLayer.getBounds().contains(e.latlng)) {
+            const f = polyLayer.feature;
+            if (f && f.geometry) {
+              const geom = f.geometry;
+              const coords = geom.type === 'Polygon' ? geom.coordinates : (geom.type === 'MultiPolygon' ? geom.coordinates[0] : null);
+              if (coords && verificarPontoNoPoligono(e.latlng.lat, e.latlng.lng, coords)) {
+                aberto = true;
+                polyLayer.openPopup(e.latlng);
+                return;
+              }
+            }
+            // Fallback pelos bounds se não houver coordenadas inspecionáveis
+            aberto = true;
+            polyLayer.openPopup(e.latlng);
+          }
+        });
       }
     });
 
@@ -408,6 +432,116 @@ const ITPAMap = (function () {
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/^_+|_+$/g, '');
+  }
+
+  /**
+   * Algoritmo Ray-Casting leve para verificar se coordenada [lat, lng] incide no interior de polígono GeoJSON
+   * Usado para garantir detecção à prova de falhas em cliques/toques móveis.
+   */
+  function verificarPontoNoPoligono(lat, lng, coordinates) {
+    if (!coordinates || !coordinates.length) return false;
+    const ring = Array.isArray(coordinates[0][0]) ? coordinates[0] : coordinates;
+    let dentro = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0], yi = ring[i][1];
+      const xj = ring[j][0], yj = ring[j][1];
+      const intersect = ((yi > lat) !== (yj > lat)) && (lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi);
+      if (intersect) dentro = !dentro;
+    }
+    return dentro;
+  }
+
+  /**
+   * Constrói o HTML estruturado e padronizado para Pop-ups (ESEC Guanabara, Nelito e Guanaí)
+   * Seguindo rigorosamente a identidade visual Agritech do Ecossistema ITPA.
+   */
+  function gerarHtmlPopupPadronizado(p) {
+    const isEsec = p.tipo === 'esec';
+    return `
+      <div class="itpa-popup-card talhao-analytic-popup imovel-analytic-popup">
+        <!-- 1. Header do Pop-up Padronizado: Status e Código Pill -->
+        <div class="talhao-popup-header">
+          <span class="talhao-badge">${p.badge || 'MONITORAMENTO ATIVO'}</span>
+          <span class="talhao-code-pill">${p.codigoPill || (p.key ? p.key.toUpperCase() : 'GEO')}</span>
+        </div>
+
+        <!-- 2. Título do Imóvel / Talhão -->
+        <h4 class="talhao-popup-title">${p.nome}</h4>
+
+        <!-- 3. Grid de Métricas Principais (2 colunas padronizadas) -->
+        <div class="talhao-metrics-grid">
+          <div class="metric-card">
+            <span class="metric-icon">📍</span>
+            <div class="metric-data">
+              <span class="metric-label">Município / Região</span>
+              <span class="metric-value" style="font-size: 0.76rem;">${p.municipio}</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <span class="metric-icon">📐</span>
+            <div class="metric-data">
+              <span class="metric-label">Área Total</span>
+              <span class="metric-value" style="font-size: 0.80rem; color: #15803d; font-weight: 700;">${p.areaTexto}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Bloco Analítico / Conformidade Pericial -->
+        ${isEsec ? `
+          <div class="talhao-ndvi-card" style="margin-bottom: 8px;">
+            <div class="ndvi-card-header">
+              <div class="ndvi-header-left">
+                <span class="ndvi-header-icon">🌿</span>
+                <span class="ndvi-header-title">Vigor NDVI Médio (2m)</span>
+              </div>
+              <span class="ndvi-value-badge">${p.ndviMeanTexto || '--'}</span>
+            </div>
+            <div class="ndvi-progress-wrapper">
+              <div class="ndvi-progress-track">
+                <div class="ndvi-progress-pin" style="left: ${p.ndviPct || 50}%;" title="Média: ${p.ndviMeanTexto || '--'}"></div>
+              </div>
+              <div class="ndvi-progress-scale-labels">
+                <span>Solo (0.1)</span>
+                <span>Médio (0.4)</span>
+                <span>Dossel (0.8)</span>
+              </div>
+            </div>
+            <div class="ndvi-card-footer">
+              <span class="ndvi-range-tag">Conformidade: <strong>CNUC / ICMBio</strong></span>
+              <span class="ndvi-class-tag">${p.ndviClasse || 'Vigor Vegetativo'}</span>
+            </div>
+          </div>
+        ` : `
+          <div class="imovel-popup-details" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px 10px; margin-bottom: 10px; font-size: 11px; line-height: 1.45;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+              <span style="color: #64748b; font-weight: 600;">Status CMN:</span>
+              <span style="color: #16a34a; font-weight: 700;">${p.statusCmn || 'CONFORME CMN nº 5.303/2026'}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #64748b; font-weight: 600;">Código CAR:</span>
+              <span style="color: #334155; font-family: monospace; font-size: 10px;">${p.carCurto || p.car}</span>
+            </div>
+          </div>
+        `}
+
+        <!-- 5. Rodapé Padronizado de Ações Interativas (com botão Comparar em destaque!) -->
+        <div class="talhao-popup-actions">
+          <button type="button" class="btn-popup-action primary swipe-action-btn btn-popup-comparar" data-projeto="${p.key}" data-foco="${p.focoSwipe}">
+            ↔️ Comparar Passagens Temporais
+          </button>
+          <div style="display: grid; grid-template-columns: ${isEsec ? '1fr 1fr' : '1fr'}; gap: 6px;">
+            ${isEsec ? `
+              <button type="button" class="btn-popup-action secondary btn-talhao-grafico" data-talhao="${p.nomeTalhao}">
+                📈 Histórico
+              </button>
+            ` : ''}
+            <button type="button" class="btn-popup-action secondary btn-abrir-auditoria-proj" data-projeto="${p.key}">
+              ⚖️ Laudo & Auditoria
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   /**
@@ -526,36 +660,38 @@ const ITPAMap = (function () {
         );
       }
 
-      // Estilo oficial da identidade do ITPA (Contorno vetorial nítido com preenchimento 100% transparente):
+      // Estilo oficial da identidade do ITPA (Contorno vetorial nítido com captura confiável de cliques):
       talhoesLayer = L.geoJSON(geojsonData, {
         style: function () {
           return {
             stroke: true,
             color: '#2E7D32',       // Contorno verde nítido oficial
-            weight: 2,              // Linha precisa sem preenchimento
+            weight: 2.5,            // Linha precisa sem preenchimento visível
             opacity: 1.0,           // Opacidade total no traço
-            fill: false,
-            fillColor: 'transparent',
-            fillOpacity: 0.0        // Preenchimento 100% transparente (sem quadriculados ou padrões)
+            fill: true,
+            fillColor: '#2E7D32',
+            fillOpacity: 0.001,     // 100% transparente para a visão humana, mas força o SVG a registrar cliques em todo o interior
+            interactive: true
           };
         },
         onEachFeature: function (feature, layer) {
           const props = feature.properties || {};
-          const nomeTalhao = props.Name || props.nome || props.Nome || props.talhao || 'Área de Monitoramento';
+          const nomeTalhao = props.Name || props.nome || props.Nome || props.talhao || 'Área de Manejo';
           const layerOrigem = props.layer || '';
           const descricao = props.description || '';
           const codigo = props.id || props.codigo || '';
 
-          // Efeito hover interativo nos polígonos (mantém preenchimento transparente)
+          // Efeito hover interativo nos polígonos
           layer.on({
             mouseover: function (e) {
               const poly = e.target;
               poly.setStyle({
                 stroke: true,
-                weight: 3,
+                weight: 3.5,
                 color: '#1B5E20',
-                fill: false,
-                fillOpacity: 0.0
+                fill: true,
+                fillColor: '#2E7D32',
+                fillOpacity: 0.05
               });
               if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
                 poly.bringToFront();
@@ -591,128 +727,79 @@ const ITPAMap = (function () {
           const ndviMinTexto = ndviMin !== null ? ndviMin.toFixed(3) : '--';
           const ndviMaxTexto = ndviMax !== null ? ndviMax.toFixed(3) : '--';
 
-          // Pop-up analítico moderno e touch-friendly (Etapa 1)
-          const popupHtml = `
-            <div class="itpa-popup-card talhao-analytic-popup">
-              <div class="talhao-popup-header">
-                <span class="talhao-badge">🌱 ÁREA DE MANEJO FLORESTAL</span>
-                ${codigo ? `<span class="talhao-code-pill">${codigo}</span>` : ''}
-              </div>
-
-              <h4 class="talhao-popup-title">${nomeTalhao}</h4>
-
-              <!-- Métricas de Geometria: Área Líquida e Perímetro (UTM 23S) -->
-              <div class="talhao-metrics-grid">
-                <div class="metric-card">
-                  <span class="metric-icon">📐</span>
-                  <div class="metric-data">
-                    <span class="metric-label">Área Líquida</span>
-                    <span class="metric-value">${areaTexto}</span>
-                  </div>
-                </div>
-                <div class="metric-card">
-                  <span class="metric-icon">📏</span>
-                  <div class="metric-data">
-                    <span class="metric-label">Perímetro</span>
-                    <span class="metric-value">${perimetroTexto}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Cartão Analítico de Vigor Vegetativo (NDVI a 2 metros) -->
-              <div class="talhao-ndvi-card">
-                <div class="ndvi-card-header">
-                  <div class="ndvi-header-left">
-                    <span class="ndvi-header-icon">🌿</span>
-                    <span class="ndvi-header-title">NDVI Médio (2m)</span>
-                  </div>
-                  <span class="ndvi-value-badge">${ndviMeanTexto}</span>
-                </div>
-
-                <!-- Barra de Progresso com Escala RdYlGn e Indicador -->
-                <div class="ndvi-progress-wrapper">
-                  <div class="ndvi-progress-track">
-                    <div class="ndvi-progress-pin" style="left: ${ndviPct}%;" title="Média: ${ndviMeanTexto}"></div>
-                  </div>
-                  <div class="ndvi-progress-scale-labels">
-                    <span>Solo (0.1)</span>
-                    <span>Médio (0.4)</span>
-                    <span>Dossel (0.8)</span>
-                  </div>
-                </div>
-
-                <div class="ndvi-card-footer">
-                  <span class="ndvi-range-tag">Intervalo: <strong>${ndviMinTexto}</strong> a <strong>${ndviMaxTexto}</strong></span>
-                  <span class="ndvi-class-tag">${ndviClasse}</span>
-                </div>
-              </div>
-
-              <!-- Botões de Ação Operacional -->
-              <div class="talhao-popup-actions">
-                <button class="btn-popup-action primary btn-talhao-grafico" data-talhao="${nomeTalhao}">
-                  📈 Evolução Histórica (Gráfico)
-                </button>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                  <button class="btn-popup-action swipe-action-btn btn-talhao-swipe" data-talhao="${nomeTalhao}">
-                    ↔️ Comparar
-                  </button>
-                  <button class="btn-popup-action pdf-action-btn btn-talhao-pdf" data-talhao="${nomeTalhao}">
-                    📄 Ficha (PDF)
-                  </button>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                  <button class="btn-popup-action secondary btn-talhao-preencher" data-talhao="${nomeTalhao}">
-                    ➕ Ocorrência
-                  </button>
-                  <button class="btn-popup-action secondary btn-talhao-documentos" data-talhao="${nomeTalhao}">
-                    📂 Documentos
-                  </button>
-                </div>
-              </div>
-            </div>
-          `;
+          // Pop-up Padronizado Oficial com Destaque para [ Comparar ]
+          const popupHtml = gerarHtmlPopupPadronizado({
+            tipo: 'esec',
+            key: 'esec',
+            focoSwipe: nomeTalhao,
+            nomeTalhao: nomeTalhao,
+            badge: 'MONITORAMENTO ATIVO',
+            codigoPill: codigo || 'ESEC',
+            nome: nomeTalhao,
+            municipio: 'Guapimirim / APA - RJ',
+            areaTexto: areaTexto,
+            statusCmn: 'CONFORME CNUC / ICMBio',
+            ndviMeanTexto: ndviMeanTexto,
+            ndviPct: ndviPct,
+            ndviClasse: ndviClasse
+          });
 
           layer.bindPopup(popupHtml, {
             maxWidth: 320,
-            className: 'talhao-popup-custom-wrapper'
+            minWidth: 260,
+            className: 'talhao-popup-custom-wrapper',
+            autoPan: true,
+            autoPanPadding: [20, 20]
+          });
+
+          // Listener de clique explícito para abrir o popup em qualquer toque/clique no interior do polígono
+          layer.on('click', function (e) {
+            if (e) {
+              if (e.originalEvent) {
+                L.DomEvent.stopPropagation(e.originalEvent);
+                L.DomEvent.preventDefault(e.originalEvent);
+              }
+              L.DomEvent.stopPropagation(e);
+            }
+            const clickPos = (e && e.latlng) ? e.latlng : (layer.getBounds ? layer.getBounds().getCenter() : null);
+            if (clickPos) {
+              layer.openPopup(clickPos);
+            } else {
+              layer.openPopup();
+            }
           });
 
           layer.on('popupopen', () => {
-            const btnGrafico = document.querySelector(`.btn-talhao-grafico[data-talhao="${nomeTalhao}"]`);
-            if (btnGrafico && typeof window.ITPA_OnTalhaoGrafico === 'function') {
-              btnGrafico.onclick = () => {
-                window.ITPA_OnTalhaoGrafico(nomeTalhao, props, layer.getBounds ? layer.getBounds() : null);
-              };
-            }
+            const popupEl = layer.getPopup() ? layer.getPopup().getElement() : null;
+            if (!popupEl) return;
 
-            const btnSwipe = document.querySelector(`.btn-talhao-swipe[data-talhao="${nomeTalhao}"]`);
-            if (btnSwipe) {
-              btnSwipe.onclick = () => {
+            const btnComp = popupEl.querySelector('.btn-popup-comparar');
+            if (btnComp) {
+              btnComp.onclick = (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
                 ativarModoSwipe(nomeTalhao, layer.getBounds ? layer.getBounds() : null);
               };
             }
 
-            const btnPdf = document.querySelector(`.btn-talhao-pdf[data-talhao="${nomeTalhao}"]`);
-            if (btnPdf) {
-              btnPdf.onclick = () => {
-                if (window.ITPARelatorioTalhao && typeof window.ITPARelatorioTalhao.exportarFichaTecnica === 'function') {
-                  window.ITPARelatorioTalhao.exportarFichaTecnica(props, layer.getBounds ? layer.getBounds() : null);
+            const btnAudit = popupEl.querySelector('.btn-abrir-auditoria-proj');
+            if (btnAudit) {
+              btnAudit.onclick = (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (typeof window.abrirAuditoriaDoProjeto === 'function') {
+                  window.abrirAuditoriaDoProjeto('esec');
                 }
+                map.closePopup();
               };
             }
 
-            const btn = document.querySelector(`.btn-talhao-preencher[data-talhao="${nomeTalhao}"]`);
-            if (btn && typeof window.ITPA_OnTalhaoSelecionado === 'function') {
-              btn.onclick = () => {
-                const center = layer.getBounds ? layer.getBounds().getCenter() : null;
-                window.ITPA_OnTalhaoSelecionado(nomeTalhao, center);
-              };
-            }
-
-            const btnDocs = document.querySelector(`.btn-talhao-documentos[data-talhao="${nomeTalhao}"]`);
-            if (btnDocs && typeof window.ITPA_OnTalhaoDocumentos === 'function') {
-              btnDocs.onclick = () => {
-                window.ITPA_OnTalhaoDocumentos(nomeTalhao, props, 'tab-talhao-docs');
+            const btnGrafico = popupEl.querySelector('.btn-talhao-grafico');
+            if (btnGrafico && typeof window.ITPA_OnTalhaoGrafico === 'function') {
+              btnGrafico.onclick = (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                window.ITPA_OnTalhaoGrafico(nomeTalhao, props, layer.getBounds ? layer.getBounds() : null);
               };
             }
           });
@@ -1221,17 +1308,25 @@ const ITPAMap = (function () {
         return {
           stroke: true,
           color: '#2E7D32',       // Contorno vetorial nítido oficial
-          weight: 2,              // Traço exato sem preenchimento
+          weight: 2.5,            // Traço exato sem preenchimento visível
           opacity: 1.0,           // Opacidade total no traço
-          fill: false,
-          fillColor: 'transparent',
-          fillOpacity: 0.0        // 100% transparente (sem preenchimento quadriculado ou SVG patterns)
+          fill: true,
+          fillColor: '#2E7D32',
+          fillOpacity: 0.001,     // 100% transparente para a visão humana, mas força o SVG a registrar cliques em todo o interior
+          interactive: true
         };
       },
       onEachFeature: function (feature, layer) {
         layer.on({
           mouseover: function (e) {
-            e.target.setStyle({ stroke: true, weight: 3, color: '#1B5E20', fill: false, fillOpacity: 0.0 });
+            e.target.setStyle({
+              stroke: true,
+              weight: 3.5,
+              color: '#1B5E20',
+              fill: true,
+              fillColor: '#2E7D32',
+              fillOpacity: 0.05
+            });
             if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) e.target.bringToFront();
           },
           mouseout: function (e) {
@@ -1243,69 +1338,70 @@ const ITPAMap = (function () {
         const municipioProp = projeto.municipio || 'Miguel Pereira - RJ';
         const areaProp = projeto.area_registrada || projeto.area || (key === 'nelito' ? '246,116 ha' : '615,808 ha');
         const carProp = projeto.car || (key === 'nelito' ? 'RJ-3302908-AE983FB03BAE42A9B32833247D8CCD4D' : 'RJ-3302908-D52C6812F1464345885FE14360B005CE');
-        const statusMonitoramento = 'MONITORAMENTO ATIVO';
-        const statusCmn = 'CONFORME CMN nº 5.303/2026';
+        const carCurto = carProp.length > 20 ? carProp.substring(0, 18) + '...' : carProp;
 
-        // Pop-up Padronizado com o Padrão Gráfico Agritech Oficial do Projeto
-        const popupHtml = `
-          <div class="itpa-popup-card talhao-analytic-popup imovel-analytic-popup">
-            <div class="talhao-popup-header">
-              <span class="talhao-badge">${statusMonitoramento}</span>
-              <span class="talhao-code-pill">${key.toUpperCase()}</span>
-            </div>
+        // Pop-up Padronizado Oficial com Destaque para [ Comparar ]
+        const popupHtml = gerarHtmlPopupPadronizado({
+          tipo: 'fazenda',
+          key: key,
+          focoSwipe: key,
+          badge: 'MONITORAMENTO ATIVO',
+          codigoPill: key.toUpperCase(),
+          nome: nomeProp,
+          municipio: municipioProp,
+          areaTexto: areaProp,
+          statusCmn: 'CONFORME CMN nº 5.303/2026',
+          car: carProp,
+          carCurto: carCurto
+        });
 
-            <h4 class="talhao-popup-title">${nomeProp}</h4>
+        layer.bindPopup(popupHtml, {
+          maxWidth: 320,
+          minWidth: 260,
+          className: 'talhao-popup-custom-wrapper',
+          autoPan: true,
+          autoPanPadding: [20, 20]
+        });
 
-            <!-- Grid de Métricas Principais (Município/Região e Área Total em Hectares) -->
-            <div class="talhao-metrics-grid">
-              <div class="metric-card">
-                <span class="metric-icon">📍</span>
-                <div class="metric-data">
-                  <span class="metric-label">Município / Região</span>
-                  <span class="metric-value" style="font-size: 0.76rem;">${municipioProp}</span>
-                </div>
-              </div>
-              <div class="metric-card">
-                <span class="metric-icon">📐</span>
-                <div class="metric-data">
-                  <span class="metric-label">Área Total</span>
-                  <span class="metric-value" style="font-size: 0.80rem; color: #15803d;">${areaProp}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Dados Estruturais e Status de Monitoramento -->
-            <div class="imovel-popup-details" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; margin-bottom: 10px; font-size: 11px; line-height: 1.4;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                <span style="color: #64748b; font-weight: 600;">Status CMN:</span>
-                <span style="color: #16a34a; font-weight: 700;">${statusCmn}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between;">
-                <span style="color: #64748b; font-weight: 600;">Código CAR:</span>
-                <span style="color: #334155; font-family: monospace; font-size: 10px;">${carProp.length > 20 ? carProp.substring(0, 18) + '...' : carProp}</span>
-              </div>
-            </div>
-
-            <!-- Rodapé com Botão Interativo [ Comparar ] em Destaque Visual Consistente -->
-            <div class="talhao-popup-actions">
-              <button type="button" class="btn-popup-action primary swipe-action-btn btn-popup-comparar" data-projeto="${key}">
-                Comparar Passagens Temporais
-              </button>
-              <button type="button" class="btn-popup-action secondary btn-abrir-auditoria-proj" data-projeto="${key}" onclick="window.abrirAuditoriaDoProjeto('${key}')">
-                Laudo & Auditoria Territorial
-              </button>
-            </div>
-          </div>
-        `;
-
-        layer.bindPopup(popupHtml, { maxWidth: 320, className: 'talhao-popup-custom-wrapper' });
+        // Listener explícito para abrir popup em qualquer toque/clique no interior do polígono
+        layer.on('click', function (e) {
+          if (e) {
+            if (e.originalEvent) {
+              L.DomEvent.stopPropagation(e.originalEvent);
+              L.DomEvent.preventDefault(e.originalEvent);
+            }
+            L.DomEvent.stopPropagation(e);
+          }
+          const clickPos = (e && e.latlng) ? e.latlng : (layer.getBounds ? layer.getBounds().getCenter() : null);
+          if (clickPos) {
+            layer.openPopup(clickPos);
+          } else {
+            layer.openPopup();
+          }
+        });
 
         layer.on('popupopen', () => {
-          const btnComp = document.querySelector(`.btn-popup-comparar[data-projeto="${key}"]`);
+          const popupEl = layer.getPopup() ? layer.getPopup().getElement() : null;
+          if (!popupEl) return;
+
+          const btnComp = popupEl.querySelector('.btn-popup-comparar');
           if (btnComp) {
             btnComp.onclick = (e) => {
               e.preventDefault();
+              e.stopPropagation();
               ativarModoSwipe(key, layer.getBounds ? layer.getBounds() : null);
+            };
+          }
+
+          const btnAudit = popupEl.querySelector('.btn-abrir-auditoria-proj');
+          if (btnAudit) {
+            btnAudit.onclick = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (typeof window.abrirAuditoriaDoProjeto === 'function') {
+                window.abrirAuditoriaDoProjeto(key);
+              }
+              map.closePopup();
             };
           }
         });

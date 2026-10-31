@@ -2402,16 +2402,23 @@ iframe[title*="Netlify"] {
 }
 
 .btn-popup-action.btn-popup-comparar {
-  background-color: #0f172a !important;
+  background-color: #2E7D32 !important;
   color: #ffffff !important;
-  border: 1px solid #334155 !important;
-  font-weight: 700;
+  border: 1px solid #1B5E20 !important;
+  font-weight: 700 !important;
   letter-spacing: 0.3px;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25) !important;
+  box-shadow: 0 2px 6px rgba(46, 125, 50, 0.3) !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 36px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
 }
 
 .btn-popup-action.btn-popup-comparar:hover {
-  background-color: #1e293b !important;
+  background-color: #1B5E20 !important;
   transform: translateY(-1px);
 }
 
@@ -3018,62 +3025,155 @@ iframe[title*="Netlify"] {
 /* ==========================================================================
    Gaveta de Laudo e Auditoria (Bottom Sheet Encostado Diretamente no Rodapé)
    ========================================================================== */
-.audit-bottom-sheet,
-#card-auditoria.audit-bottom-sheet {
-  position: absolute;
-  bottom: var(--bottom-bar-height);
-  left: 0;
-  right: 0;
+/* ==========================================================================
+   Gaveta de Laudo e Auditoria (Mobile-First: Botão Flutuante Compacto quando
+   recolhido e Janela Modal Grande quando solicitado pelo usuário)
+   ========================================================================== */
+
+/* 1. Estado Recolhido (.collapsed): Botão Flutuante Compacto e Discreto */
+.audit-bottom-sheet.collapsed,
+#card-auditoria.audit-bottom-sheet.collapsed {
+  position: absolute !important;
+  bottom: calc(var(--bottom-bar-height) + 12px) !important;
+  left: 14px !important;
+  right: auto !important;
+  top: auto !important;
+  width: auto !important;
+  max-width: calc(100vw - 28px) !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  border-radius: 20px !important;
+  background-color: #ffffff !important;
+  border: 1px solid #d0d7de !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.16) !important;
+  padding: 0 !important;
+  z-index: 920 !important;
+  overflow: hidden !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
+}
+
+#card-auditoria.audit-bottom-sheet.collapsed .audit-drag-bar {
+  display: none !important;
+}
+
+#card-auditoria.audit-bottom-sheet.collapsed .audit-sheet-expanded-body {
+  display: none !important;
+}
+
+#card-auditoria.audit-bottom-sheet.collapsed .audit-sheet-summary-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 0 14px !important;
+  height: 38px !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  white-space: nowrap !important;
+}
+
+#card-auditoria.audit-bottom-sheet.collapsed .audit-sheet-prop-info {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+#card-auditoria.audit-bottom-sheet.collapsed .audit-status-badge-cmn {
+  display: none !important; /* Oculta badge comprido no botão compacto para não poluir o mapa */
+}
+
+#card-auditoria.audit-bottom-sheet.collapsed .audit-sheet-prop-name {
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  max-width: 140px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+#card-auditoria.audit-bottom-sheet.collapsed .audit-sheet-prop-name::before {
+  content: '⚖️ ';
+  font-size: 0.8rem;
+}
+
+#card-auditoria.audit-bottom-sheet.collapsed .btn-tech-pdf {
+  display: none !important; /* Na pílula pequena o Laudo fica dentro da janela grande */
+}
+
+#card-auditoria.audit-bottom-sheet.collapsed .btn-audit-caret-trigger {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  background: #f1f5f9 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid #cbd5e1 !important;
+  padding: 0 !important;
+}
+
+#card-auditoria.audit-bottom-sheet.collapsed .expand-caret-glyph {
+  font-size: 9px !important;
+  color: #1e293b !important;
+  line-height: 1 !important;
+}
+
+/* 2. Estado Expandido (:not(.collapsed)): Janela Grande / Modal Completo */
+.audit-bottom-sheet:not(.collapsed),
+#card-auditoria.audit-bottom-sheet:not(.collapsed) {
+  position: absolute !important;
+  bottom: var(--bottom-bar-height) !important;
+  left: 0 !important;
+  right: 0 !important;
   top: auto !important;
   width: 100% !important;
   max-width: 100% !important;
-  z-index: 950;
-  background-color: #ffffff;
-  border-top: 1px solid #d0d7de;
-  border-left: none;
-  border-right: none;
-  border-bottom: none;
-  border-radius: 12px 12px 0 0;
-  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.10);
-  pointer-events: auto;
-  font-family: inherit;
+  max-height: 80vh !important;
+  z-index: 950 !important;
+  background-color: #ffffff !important;
+  border-top: 1px solid #d0d7de !important;
+  border-radius: 16px 16px 0 0 !important;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.22) !important;
+  pointer-events: auto !important;
+  font-family: inherit !important;
   display: flex !important;
-  flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-sizing: border-box;
+  flex-direction: column !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 
 @media (min-width: 768px) {
-  .audit-bottom-sheet,
-  #card-auditoria.audit-bottom-sheet {
-    left: 16px;
-    right: auto;
+  .audit-bottom-sheet:not(.collapsed),
+  #card-auditoria.audit-bottom-sheet:not(.collapsed) {
+    left: 16px !important;
+    right: auto !important;
     width: 460px !important;
-    border-left: 1px solid #d0d7de;
-    border-right: 1px solid #d0d7de;
-    border-radius: 8px 8px 0 0;
+    border-left: 1px solid #d0d7de !important;
+    border-right: 1px solid #d0d7de !important;
+    border-radius: 12px 12px 0 0 !important;
   }
 }
 
-/* 1. Barra Superior de Arraste (Drag Handle) - Altura Mínima 44px */
-.audit-drag-bar {
-  min-height: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  background-color: #f8fafc;
-  border-top-left-radius: inherit;
-  border-top-right-radius: inherit;
-  border-bottom: 1px solid #f1f5f9;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  padding: 0 14px;
+/* Barra Superior de Arraste na Janela Grande com Botão Fechar */
+.audit-bottom-sheet:not(.collapsed) .audit-drag-bar {
+  min-height: 44px !important;
+  height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  position: relative !important;
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  user-select: none !important;
+  padding: 0 14px !important;
 }
 
-/* Traço central cinza arredondado: largura 40px, altura 4px */
 .audit-drag-pill {
   width: 40px;
   height: 4px;
@@ -3086,48 +3186,49 @@ iframe[title*="Netlify"] {
   background-color: #94a3b8;
 }
 
-/* Botão explícito de fechar/minimizar no canto superior direito (40x40px touch area) */
+/* Botão explícito de fechar/minimizar no canto superior direito */
 .btn-audit-sheet-close {
-  position: absolute;
-  right: 6px;
-  top: 2px;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: #64748b;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  opacity: 0;
-  pointer-events: none;
+  position: absolute !important;
+  right: 10px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #e2e8f0 !important;
+  border: none !important;
+  border-radius: 50% !important;
+  color: #334155 !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
-
-.audit-bottom-sheet:not(.collapsed) .btn-audit-sheet-close {
-  opacity: 1;
-  pointer-events: auto;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .btn-audit-sheet-close:hover {
-  background-color: #e2e8f0;
-  color: #0f172a;
+  background-color: #cbd5e1 !important;
+  color: #0f172a !important;
 }
 
-/* 2. Linha Única Compacta (Visível no Estado Recolhido) */
-.audit-sheet-summary-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 14px;
-  cursor: pointer;
-  background-color: #ffffff;
-  user-select: none;
+/* Linha Resumida visível no topo da Janela Grande */
+.audit-bottom-sheet:not(.collapsed) .audit-sheet-summary-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 10px 16px !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  cursor: default !important;
 }
 
 .audit-sheet-prop-info {
@@ -3140,7 +3241,7 @@ iframe[title*="Netlify"] {
 }
 
 .audit-sheet-prop-name {
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #0f172a;
   white-space: nowrap;
@@ -3202,12 +3303,26 @@ iframe[title*="Netlify"] {
 }
 
 .audit-bottom-sheet:not(.collapsed) .audit-sheet-expanded-body {
-  max-height: 480px;
-  opacity: 1;
-  padding: 6px 14px 14px 14px;
-  overflow-y: auto;
-  pointer-events: auto;
-  border-top: 1px solid #f1f5f9;
+  max-height: calc(80vh - 110px) !important;
+  opacity: 1 !important;
+  padding: 10px 16px 16px 16px !important;
+  overflow-y: auto !important;
+  pointer-events: auto !important;
+  border-top: none !important;
+}
+
+/* Garante que polígonos Leaflet capturem cliques com 100% de confiabilidade em qualquer ponto */
+.leaflet-pane.leaflet-overlay-pane {
+  pointer-events: auto !important;
+}
+
+.leaflet-pane.leaflet-overlay-pane svg {
+  pointer-events: auto !important;
+}
+
+.leaflet-pane.leaflet-overlay-pane path.leaflet-interactive {
+  pointer-events: all !important;
+  cursor: pointer !important;
 }
 
 .audit-grid-details {

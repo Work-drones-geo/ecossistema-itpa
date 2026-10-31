@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 
   <!-- Estilos Customizados do ITPA -->
-  <link rel="stylesheet" href="styles.css?v=6.2">
+  <link rel="stylesheet" href="styles.css?v=6.3">
 </head>
 <body>
 
@@ -233,11 +233,14 @@
               </div>
             </div>
 
-            <div class="audit-sheet-expanded-actions">
-              <label class="btn-itpa-pill secondary btn-audit-upload-car" for="input-car-upload" style="cursor: pointer; padding: 6px 12px; font-size: 0.74rem;">
+            <div class="audit-sheet-expanded-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 10px;">
+              <label class="btn-itpa-pill secondary btn-audit-upload-car" for="input-car-upload" style="cursor: pointer; padding: 7px 12px; font-size: 0.74rem; border: 1px solid #cbd5e1; border-radius: 6px;">
                 Importar CAR
               </label>
               <input type="file" id="input-car-upload" accept=".geojson,.kml,.json" style="display: none;">
+              <button type="button" class="btn-tech-pdf btn-modal-emitir-laudo" onclick="document.getElementById('btn-gerar-laudo-cmn').click();" style="padding: 7px 14px; font-size: 0.78rem; font-weight: 700; background-color: #2E7D32; color: #ffffff; border: 1px solid #1B5E20; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                📄 Emitir Laudo PDF
+              </button>
             </div>
 
             <!-- Identificadores mantidos para retrocompatibilidade -->
@@ -881,17 +884,17 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <!-- Módulos da Aplicação Ecossistema ITPA -->
-  <script src="script.js?v=6.2"></script>
-  <script src="js/config.js?v=6.2"></script>
-  <script src="js/db.js?v=6.2"></script>
-  <script src="js/camera.js?v=6.2"></script>
-  <script src="js/map.js?v=6.2"></script>
-  <script src="js/sync.js?v=6.2"></script>
-  <script src="js/report.js?v=6.2"></script>
-  <script src="js/assets_laudo.js?v=6.2"></script>
-  <script src="js/relatorio_talhao.js?v=6.2"></script>
-  <script src="js/auditoria.js?v=6.2"></script>
-  <script src="app.js?v=6.2"></script>
+  <script src="script.js?v=6.3"></script>
+  <script src="js/config.js?v=6.3"></script>
+  <script src="js/db.js?v=6.3"></script>
+  <script src="js/camera.js?v=6.3"></script>
+  <script src="js/map.js?v=6.3"></script>
+  <script src="js/sync.js?v=6.3"></script>
+  <script src="js/report.js?v=6.3"></script>
+  <script src="js/assets_laudo.js?v=6.3"></script>
+  <script src="js/relatorio_talhao.js?v=6.3"></script>
+  <script src="js/auditoria.js?v=6.3"></script>
+  <script src="app.js?v=6.3"></script>
 
 </body>
 </html>
