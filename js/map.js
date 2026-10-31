@@ -899,6 +899,65 @@ const ITPAMap = (function () {
         ndviLegendEl.style.display = 'none';
       }
     }
+
+    // 7. Atualização do Badge Temporal Flutuante de Rastreabilidade das Imagens
+    atualizarBadgeTemporal();
+
+    // 8. Atualização Dinâmica do Texto do Switch de Drone no Menu de Camadas
+    const labelDroneEl = document.getElementById('sheet-label-drone');
+    if (labelDroneEl) {
+      labelDroneEl.textContent = (keyAtiva === 'esec')
+        ? 'Ortofoto Drone (Base 2025)'
+        : 'Ortofoto Drone (Voo Recente 2026)';
+    }
+  }
+
+  // =========================================================================
+  // Rastreabilidade Temporal das Imagens (Badge Flutuante no Canto Superior Esquerdo)
+  // Atualiza dinamicamente o badge conforme a camada ativa e a propriedade selecionada
+  // =========================================================================
+  function atualizarBadgeTemporal(textoCustomizado) {
+    const badgeTextEl = document.getElementById('temporal-badge-text');
+    if (!badgeTextEl) return;
+
+    if (textoCustomizado) {
+      badgeTextEl.textContent = textoCustomizado;
+      return;
+    }
+
+    const keyAtiva = (window.PROJETO_ATIVO_ID || 'esec').toLowerCase().trim();
+    const droneAtivo = ortofotoLayer && map.hasLayer(ortofotoLayer);
+    const ndviAtivo = layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente);
+    const rgbAtivo = layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente);
+    const ndviAntAtivo = layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior);
+    const rgbAntAtivo = layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior);
+
+    let texto = '';
+
+    // Prioridade de exibição conforme as camadas ativas na visualização
+    if (ndviAntAtivo && !ndviAtivo) {
+      texto = 'NDVI HISTÓRICO: 09/Set/2026';
+    } else if (rgbAntAtivo && !rgbAtivo) {
+      texto = 'SATÉLITE HISTÓRICO: 09/Set/2026';
+    } else if (ndviAtivo) {
+      texto = 'NDVI: 24/Out/2026 (Super-resolvido 2m)';
+    } else if (rgbAtivo) {
+      texto = 'SATÉLITE: 24/Out/2026 (Sentinel-2 L2A)';
+    } else if (droneAtivo) {
+      if (keyAtiva === 'esec') {
+        texto = 'DRONE: Voo Base 2025 (Alta Resolução)';
+      } else {
+        texto = 'DRONE: Voo Recente 2026';
+      }
+    } else if (ndviAntAtivo) {
+      texto = 'NDVI HISTÓRICO: 09/Set/2026';
+    } else if (rgbAntAtivo) {
+      texto = 'SATÉLITE HISTÓRICO: 09/Set/2026';
+    } else {
+      texto = 'MAPA BASE: Esri World Imagery';
+    }
+
+    badgeTextEl.textContent = texto;
   }
 
   // =========================================================================
@@ -1636,9 +1695,12 @@ const ITPAMap = (function () {
       pillDrone.onclick = (e) => {
         e.preventDefault();
         const keyAtiva = (window.PROJETO_ATIVO_ID || 'esec').toLowerCase().trim();
-        if (keyAtiva !== 'esec' && (!ortofotoLayer || !map.hasLayer(ortofotoLayer))) {
-          if (window.showToast) {
-            window.showToast('Ortofoto de drone cadastrada na ESEC Guanabara. Em Nelito e Guanaí utilize as coberturas RGB e NDVI.', 'info');
+        const vaiAtivar = (!ortofotoLayer || !map.hasLayer(ortofotoLayer));
+        if (vaiAtivar) {
+          if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
+          if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
+          if (keyAtiva !== 'esec' && window.showToast) {
+            window.showToast('Ortofoto Drone (Voo Recente 2026) ativada.', 'info');
           }
         }
         alternarCamada(ortofotoLayer);
@@ -2228,6 +2290,7 @@ const ITPAMap = (function () {
     getMapInstance,
     getLayerControl: () => layerControl,
     sincronizarEstadosUI,
+    atualizarBadgeTemporal,
     alternarLimitesTerritoriais,
     TIPO_CONFIG
   };
@@ -2235,3 +2298,4 @@ const ITPAMap = (function () {
 
 // Exportação global
 window.ITPAMap = ITPAMap;
+window.atualizarBadgeTemporal = ITPAMap.atualizarBadgeTemporal;

@@ -1930,6 +1930,54 @@ iframe[title*="Netlify"] {
   background-color: #e8f5e9;
 }
 
+/* ==========================================================================
+   Badge Temporal Flutuante de Rastreabilidade das Imagens
+   Posicionado no canto superior esquerdo (logo abaixo dos botões de zoom Leaflet)
+   ========================================================================== */
+.map-temporal-badge {
+  position: absolute;
+  top: 86px;
+  left: 12px;
+  z-index: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: 4px 8px;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #333333;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: calc(100vw - 120px);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.temporal-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #2E7D32;
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+}
+
+.temporal-badge-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #333333;
+}
+
 /* Tag Técnica Agritech para o Bottom Sheet de Camadas */
 .sheet-tech-tag {
   display: inline-flex;

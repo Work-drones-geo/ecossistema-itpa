@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 
   <!-- Estilos Customizados do ITPA -->
-  <link rel="stylesheet" href="styles.css?v=5.9">
+  <link rel="stylesheet" href="styles.css?v=6.0">
 </head>
 <body>
 
@@ -114,6 +114,12 @@
       <!-- Vista 1: Mapa WebGIS -->
       <section id="map-view">
         <div id="map"></div>
+
+        <!-- Badge Temporal Flutuante de Rastreabilidade das Imagens (Canto Superior Esquerdo - Abaixo do Zoom) -->
+        <div class="map-temporal-badge" id="map-temporal-badge" title="Rastreabilidade Temporal e Fonte da Camada Ativa">
+          <span class="temporal-badge-dot"></span>
+          <span class="temporal-badge-text" id="temporal-badge-text">DRONE: Voo Base 2025 (Alta Resolução)</span>
+        </div>
 
         <!-- Controles de Camada Rápidos (Coluna Vertical Técnica - Canto Superior Direito) -->
         <div class="map-quick-tech-column" id="map-quick-tech-column">
@@ -709,8 +715,8 @@
               <div class="sheet-switch-left">
                 <span class="sheet-tech-tag">DRONE</span>
                 <div class="sheet-choice-text">
-                  <span class="sheet-choice-label">Ortofoto Drone (Alta Resolução)</span>
-                  <span class="sheet-choice-sub">Voo aerofotogramétrico georreferenciado</span>
+                  <span class="sheet-choice-label" id="sheet-label-drone">Ortofoto Drone (Base 2025)</span>
+                  <span class="sheet-choice-sub" id="sheet-sub-drone">Voo aerofotogramétrico de alta resolução</span>
                 </div>
               </div>
               <label class="ios-toggle" for="sheet-toggle-drone">
@@ -719,28 +725,13 @@
               </label>
             </div>
 
-            <!-- NDVI Satélite 2m -->
-            <div class="sheet-switch-row">
-              <div class="sheet-switch-left">
-                <span class="sheet-tech-tag">NDVI</span>
-                <div class="sheet-choice-text">
-                  <span class="sheet-choice-label">NDVI Satélite 2m</span>
-                  <span class="sheet-choice-sub">Vigor vegetativo super-resolvido (Recente)</span>
-                </div>
-              </div>
-              <label class="ios-toggle" for="sheet-toggle-ndvi">
-                <input type="checkbox" id="sheet-toggle-ndvi">
-                <span class="ios-toggle-track"></span>
-              </label>
-            </div>
-
-            <!-- Satélite RGB 2m -->
+            <!-- Satélite RGB Recente -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
                 <span class="sheet-tech-tag">RGB</span>
                 <div class="sheet-choice-text">
-                  <span class="sheet-choice-label">Satélite RGB 2m</span>
-                  <span class="sheet-choice-sub">Cor verdadeira super-resolvida (Recente)</span>
+                  <span class="sheet-choice-label">Satélite RGB Recente (24/Out/2026)</span>
+                  <span class="sheet-choice-sub">Sentinel-2 L2A cor verdadeira (10m/2m)</span>
                 </div>
               </div>
               <label class="ios-toggle" for="sheet-toggle-rgb">
@@ -749,32 +740,47 @@
               </label>
             </div>
 
-            <!-- Passagem Anterior -15d (NDVI) -->
+            <!-- Índice NDVI Recente -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
-                <span class="sheet-tech-tag">T0-NDVI</span>
+                <span class="sheet-tech-tag">NDVI</span>
                 <div class="sheet-choice-text">
-                  <span class="sheet-choice-label">NDVI - Passagem Anterior (2m)</span>
-                  <span class="sheet-choice-sub">Comparativo temporal de vigor (09/Set)</span>
+                  <span class="sheet-choice-label">Índice NDVI Recente (24/Out/2026)</span>
+                  <span class="sheet-choice-sub">Vigor vegetativo super-resolvido (2m)</span>
                 </div>
               </div>
-              <label class="ios-toggle" for="sheet-toggle-ndvi-ant">
-                <input type="checkbox" id="sheet-toggle-ndvi-ant">
+              <label class="ios-toggle" for="sheet-toggle-ndvi">
+                <input type="checkbox" id="sheet-toggle-ndvi">
                 <span class="ios-toggle-track"></span>
               </label>
             </div>
 
-            <!-- Satélite RGB - Passagem Anterior (2m) -->
+            <!-- Satélite RGB Histórico -->
             <div class="sheet-switch-row">
               <div class="sheet-switch-left">
                 <span class="sheet-tech-tag">T0-RGB</span>
                 <div class="sheet-choice-text">
-                  <span class="sheet-choice-label">Satélite RGB - Passagem Anterior (2m)</span>
-                  <span class="sheet-choice-sub">Cor verdadeira super-resolvida (09/Set)</span>
+                  <span class="sheet-choice-label">Satélite RGB Histórico (09/Set/2026)</span>
+                  <span class="sheet-choice-sub">Passagem anterior cor verdadeira (2m)</span>
                 </div>
               </div>
               <label class="ios-toggle" for="sheet-toggle-rgb-ant">
                 <input type="checkbox" id="sheet-toggle-rgb-ant">
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+
+            <!-- Índice NDVI Histórico -->
+            <div class="sheet-switch-row">
+              <div class="sheet-switch-left">
+                <span class="sheet-tech-tag">T0-NDVI</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">Índice NDVI Histórico (09/Set/2026)</span>
+                  <span class="sheet-choice-sub">Comparativo temporal de vigor (2m)</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-ndvi-ant">
+                <input type="checkbox" id="sheet-toggle-ndvi-ant">
                 <span class="ios-toggle-track"></span>
               </label>
             </div>
@@ -875,17 +881,17 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <!-- Módulos da Aplicação Ecossistema ITPA -->
-  <script src="script.js?v=5.9"></script>
-  <script src="js/config.js?v=5.9"></script>
-  <script src="js/db.js?v=5.9"></script>
-  <script src="js/camera.js?v=5.9"></script>
-  <script src="js/map.js?v=5.9"></script>
-  <script src="js/sync.js?v=5.9"></script>
-  <script src="js/report.js?v=5.9"></script>
-  <script src="js/assets_laudo.js?v=5.9"></script>
-  <script src="js/relatorio_talhao.js?v=5.9"></script>
-  <script src="js/auditoria.js?v=5.9"></script>
-  <script src="app.js?v=5.9"></script>
+  <script src="script.js?v=6.0"></script>
+  <script src="js/config.js?v=6.0"></script>
+  <script src="js/db.js?v=6.0"></script>
+  <script src="js/camera.js?v=6.0"></script>
+  <script src="js/map.js?v=6.0"></script>
+  <script src="js/sync.js?v=6.0"></script>
+  <script src="js/report.js?v=6.0"></script>
+  <script src="js/assets_laudo.js?v=6.0"></script>
+  <script src="js/relatorio_talhao.js?v=6.0"></script>
+  <script src="js/auditoria.js?v=6.0"></script>
+  <script src="app.js?v=6.0"></script>
 
 </body>
 </html>
