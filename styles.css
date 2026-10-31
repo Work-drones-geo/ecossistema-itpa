@@ -966,10 +966,20 @@ html, body {
   border: 1px solid var(--itpa-border);
 }
 
+.leaflet-pane.leaflet-popup-pane {
+  z-index: 950 !important;
+}
+
+.leaflet-popup {
+  z-index: 950 !important;
+  pointer-events: auto !important;
+}
+
 .talhao-popup-custom-wrapper .leaflet-popup-content-wrapper {
   border-radius: 18px !important;
   box-shadow: 0 12px 36px rgba(15, 23, 42, 0.22) !important;
   border: 1px solid #e2e8f0 !important;
+  pointer-events: auto !important;
 }
 
 .talhao-popup-custom-wrapper .leaflet-popup-close-button {
@@ -2412,14 +2422,26 @@ iframe[title*="Netlify"] {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 36px !important;
+  height: 40px !important;
+  min-height: 40px !important;
   border-radius: 6px !important;
   cursor: pointer !important;
+  position: relative !important;
+  z-index: 960 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: rgba(46, 125, 50, 0.4);
 }
 
 .btn-popup-action.btn-popup-comparar:hover {
   background-color: #1B5E20 !important;
   transform: translateY(-1px);
+}
+
+.btn-popup-action.btn-popup-comparar:active {
+  background-color: #14532d !important;
+  transform: scale(0.98);
 }
 
 /* Card Analítico Padronizado para Imóveis / Propriedades Rurais */

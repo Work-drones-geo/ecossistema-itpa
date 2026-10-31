@@ -526,7 +526,7 @@ const ITPAMap = (function () {
 
         <!-- 5. Rodapé Padronizado de Ações Interativas (com botão Comparar em destaque!) -->
         <div class="talhao-popup-actions">
-          <button type="button" class="btn-popup-action primary swipe-action-btn btn-popup-comparar" data-projeto="${p.key}" data-foco="${p.focoSwipe}">
+          <button type="button" class="btn-popup-action primary swipe-action-btn btn-popup-comparar" data-projeto="${p.key}" data-foco="${p.focoSwipe}" onclick="window.acionarComparacaoSwipe('${p.key || p.focoSwipe}')" ontouchend="window.acionarComparacaoSwipe('${p.key || p.focoSwipe}')">
             ↔️ Comparar Passagens Temporais
           </button>
           <div style="display: grid; grid-template-columns: ${isEsec ? '1fr 1fr' : '1fr'}; gap: 6px;">
@@ -2196,6 +2196,9 @@ const ITPAMap = (function () {
     if (!map) return;
     swipeAtivo = true;
 
+    // Fecha imediatamente qualquer pop-up para visão desobstruída do comparador
+    map.closePopup();
+
     const swipeContainer = document.getElementById('map-swipe-container');
     const pillSwipe = document.getElementById('pill-quick-swipe');
     if (pillSwipe) pillSwipe.classList.add('active');
@@ -2258,11 +2261,18 @@ const ITPAMap = (function () {
       swipeContainer.style.display = 'block';
     }
 
-    // Se fornecido bounds do talhão ou da propriedade ativa, aproxima e fecha popup
-    const targetBounds = (bounds && bounds.isValid && bounds.isValid()) ? bounds : (typeof obterBoundsPropriedadeAtiva === 'function' ? obterBoundsPropriedadeAtiva() : null);
+    // Se fornecido bounds do talhão ou da propriedade ativa, aproxima
+    let targetBounds = (bounds && bounds.isValid && bounds.isValid()) ? bounds : null;
+    if (!targetBounds && talhaoFoco && typeof talhaoFoco === 'string' && CONFIG_RASTERS_PROJETOS[talhaoFoco.toLowerCase()]) {
+      const cfg = CONFIG_RASTERS_PROJETOS[talhaoFoco.toLowerCase()];
+      targetBounds = L.latLngBounds(cfg.fallbackBounds[0], cfg.fallbackBounds[1]);
+    }
+    if (!targetBounds && typeof obterBoundsPropriedadeAtiva === 'function') {
+      targetBounds = obterBoundsPropriedadeAtiva();
+    }
+
     if (targetBounds && targetBounds.isValid && targetBounds.isValid()) {
-      map.fitBounds(targetBounds.pad(0.15), { padding: [40, 40], maxZoom: 17 });
-      map.closePopup();
+      map.fitBounds(targetBounds.pad(0.12), { padding: [30, 30], maxZoom: 17 });
     }
 
     // Posiciona o divisor inicialmente a 50%
@@ -2276,6 +2286,28 @@ const ITPAMap = (function () {
 
     sincronizarEstadosUI();
   }
+
+  // Função global de disparo infalível para o Comparador Swipe
+  window.acionarComparacaoSwipe = function (projetoOuTalhao) {
+    console.log('[Comparador Swipe] Disparado via ação direta:', projetoOuTalhao);
+    if (map) map.closePopup();
+    ativarModoSwipe(projetoOuTalhao);
+  };
+  window.ativarModoSwipe = window.acionarComparacaoSwipe;
+
+  // Capturador delegado global para cliques e toques no botão [ Comparar ]
+  ['click', 'touchend'].forEach(evt => {
+    document.addEventListener(evt, function (e) {
+      const btn = e.target && e.target.closest ? e.target.closest('.btn-popup-comparar, .btn-talhao-swipe') : null;
+      if (btn) {
+        console.log(`[Swipe] Capturado evento ${evt} no botão Comparar`);
+        e.preventDefault();
+        e.stopPropagation();
+        const alvo = btn.getAttribute('data-projeto') || btn.getAttribute('data-foco') || btn.getAttribute('data-talhao') || window.PROJETO_ATIVO_ID || 'nelito';
+        window.acionarComparacaoSwipe(alvo);
+      }
+    }, { capture: true, passive: false });
+  });
 
   function desativarModoSwipe() {
     swipeAtivo = false;

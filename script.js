@@ -325,6 +325,24 @@ document.addEventListener('click', function(e) {
   }
 }, true);
 
+// Capturador global de cliques e toques para o botão de Comparação Temporal (Swipe)
+['click', 'touchend'].forEach(evt => {
+  document.addEventListener(evt, function(e) {
+    const btn = e.target && e.target.closest ? e.target.closest('.btn-popup-comparar, .btn-talhao-swipe') : null;
+    if (btn) {
+      console.log(`[Swipe] Interceptado ${evt} em botão Comparar via Delegated Event Listener`);
+      e.preventDefault();
+      e.stopPropagation();
+      const projKey = btn.getAttribute('data-projeto') || btn.getAttribute('data-foco') || btn.getAttribute('data-talhao') || window.PROJETO_ATIVO_ID || 'nelito';
+      if (typeof window.acionarComparacaoSwipe === 'function') {
+        window.acionarComparacaoSwipe(projKey);
+      } else if (window.ITPAMap && typeof window.ITPAMap.ativarModoSwipe === 'function') {
+        window.ITPAMap.ativarModoSwipe(projKey);
+      }
+    }
+  }, true);
+});
+
 // Instanciação explícita das camadas raster no Leaflet via bounds.json
 window.instanciarRastersLeaflet = async function(projetoKey, mapInstance) {
   const map = mapInstance || (window.ITPAMap && window.ITPAMap.getMapInstance ? window.ITPAMap.getMapInstance() : null);
