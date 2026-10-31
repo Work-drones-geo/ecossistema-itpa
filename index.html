@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 
   <!-- Estilos Customizados do ITPA -->
-  <link rel="stylesheet" href="styles.css?v=5.8">
+  <link rel="stylesheet" href="styles.css?v=5.9">
 </head>
 <body>
 
@@ -118,19 +118,26 @@
         <!-- Controles de Camada Rápidos (Coluna Vertical Técnica - Canto Superior Direito) -->
         <div class="map-quick-tech-column" id="map-quick-tech-column">
           <button type="button" class="btn-tech-control active" id="pill-quick-drone" title="Alternar Ortofoto Drone">DRONE</button>
-          <button type="button" class="btn-tech-control" id="pill-quick-rgb" title="Alternar Satélite RGB">RGB</button>
+          <button type="button" class="btn-tech-control" id="pill-quick-rgb" title="Alternar Satélite de Alta Resolução">SATÉLITE</button>
           <button type="button" class="btn-tech-control" id="pill-quick-ndvi" title="Alternar Índice de Vegetação NDVI">NDVI</button>
+          <button type="button" class="btn-tech-control active" id="pill-quick-limites" title="Alternar Limites Territoriais Oficiais" onclick="if(window.ITPAMap && window.ITPAMap.alternarLimitesTerritoriais) window.ITPAMap.alternarLimitesTerritoriais()">LIMITES</button>
           <button type="button" class="btn-tech-control" id="btn-open-layers-sheet" title="Abrir Gerenciador de Camadas">CAMADAS</button>
           
-          <!-- Botão Circular de GPS logo abaixo da coluna técnica -->
+          <!-- Botão Circular de GPS com Mira de Alta Precisão (Centralização Perfeita) -->
           <button type="button" class="btn-tech-gps" id="btn-gps-locate" title="Minha Localização GPS" aria-label="Localização GPS">
-            <span class="gps-crosshair-icon">⌖</span>
+            <svg class="gps-target-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="7"></circle>
+              <line x1="12" y1="1" x2="12" y2="5"></line>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="1" y1="12" x2="5" y2="12"></line>
+              <line x1="19" y1="12" x2="23" y2="12"></line>
+              <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+            </svg>
           </button>
         </div>
 
         <!-- Elementos de suporte mantidos ocultos para retrocompatibilidade -->
         <div style="display: none;" aria-hidden="true">
-          <button type="button" id="pill-quick-limites" onclick="if(window.ITPAMap && window.ITPAMap.alternarLimitesTerritoriais) window.ITPAMap.alternarLimitesTerritoriais()">Limites</button>
           <button type="button" id="pill-quick-swipe">Comparar</button>
           <button type="button" id="pill-quick-auditoria" onclick="window.toggleAuditoria()">Auditoria</button>
           <button type="button" id="btn-pick-point">Marcar Ponto</button>
@@ -160,37 +167,76 @@
           </div>
         </div>
 
-        <!-- Painel de Auditoria e Emissão do Laudo (Bottom Sheet Minimalista Acima do Rodapé) -->
-        <div id="card-auditoria" class="audit-bottom-strip">
-          <div class="audit-strip-content">
-            <div class="audit-strip-info">
-              <div class="audit-strip-header">
-                <span class="audit-prop-name" id="audit-nome-propriedade">ESEC Guanabara</span>
-                <span class="audit-prop-divider">•</span>
-                <span class="audit-prop-area" id="audit-area">3.200,00 ha</span>
-              </div>
-              <div class="audit-strip-badge-wrap">
-                <span class="audit-status-badge-cmn" id="audit-status">CONFORME CMN nº 5.303/2026</span>
-              </div>
+        <!-- Gaveta de Laudo e Auditoria (Bottom Sheet Encostado no Rodapé) -->
+        <div id="card-auditoria" class="audit-bottom-sheet collapsed">
+          
+          <!-- Barra Superior de Arraste (Drag Handle) - Altura 44px com Traço Central de 40x4px -->
+          <div class="audit-drag-bar" id="audit-drag-bar" onclick="window.toggleAuditoria()" role="button" aria-label="Alternar detalhes da auditoria">
+            <span class="audit-drag-pill" title="Toque para expandir ou recolher"></span>
+            
+            <!-- Botão explícito de minimizar no canto superior direito -->
+            <button type="button" class="btn-audit-sheet-close" id="btn-toggle-audit" onclick="event.stopPropagation(); window.toggleAuditoria();" title="Minimizar auditoria" aria-label="Minimizar auditoria">
+              <span class="close-icon-glyph">✕</span>
+            </button>
+          </div>
+
+          <!-- Linha Única Compacta (Estado Recolhido) -->
+          <div class="audit-sheet-summary-row" onclick="window.toggleAuditoria()" role="button" aria-label="Expandir detalhes">
+            <div class="audit-sheet-prop-info">
+              <span class="audit-sheet-prop-name" id="audit-nome-propriedade">ESEC Guanabara</span>
+              <span class="audit-status-badge-cmn" id="audit-status">CONFORME CMN nº 5.303/2026</span>
             </div>
-            <div class="audit-strip-actions">
+            
+            <div class="audit-sheet-actions-compact" onclick="event.stopPropagation()">
               <button type="button" class="btn-tech-pdf" id="btn-gerar-laudo-cmn" title="Exportar Laudo Pericial em PDF">
                 Laudo PDF
+              </button>
+              
+              <button type="button" class="btn-audit-caret-trigger" onclick="window.toggleAuditoria()" title="Expandir dados cadastrais" aria-label="Expandir detalhes">
+                <span class="expand-caret-glyph">▲</span>
               </button>
             </div>
           </div>
 
-          <!-- Campos auxiliares ocultos para retrocompatibilidade com scripts legados -->
-          <div id="auditoria-body" style="display: none;" aria-hidden="true">
-            <span id="audit-car">Regime Público (CNUC / ICMBio)</span>
-            <span id="audit-tipo">Unidade de Conservação Federal</span>
-            <span id="audit-municipio">Guapimirim / APA - RJ</span>
-            <span id="audit-prodes">0,00 ha (0.0%)</span>
-            <span id="audit-elegibilidade">ELEGÍVEL</span>
-            <span id="audit-card-header-title">Auditoria de Crédito</span>
-            <span id="audit-card-header-sub">ESEC Guanabara</span>
-            <button type="button" id="btn-toggle-audit">+</button>
-            <input type="file" id="input-car-upload" accept=".geojson,.kml,.json">
+          <!-- Conteúdo Cadastral Completo (Abre Suavemente via Slide-Up) -->
+          <div id="auditoria-body" class="audit-sheet-expanded-body">
+            <div class="audit-grid-details">
+              <div class="audit-grid-item">
+                <span class="audit-grid-label">Código do CAR:</span>
+                <span class="audit-grid-val code-font" id="audit-car">Regime Público (CNUC / ICMBio)</span>
+              </div>
+              <div class="audit-grid-item">
+                <span class="audit-grid-label">Regime Territorial:</span>
+                <span class="audit-grid-val" id="audit-tipo">Unidade de Conservação Federal</span>
+              </div>
+              <div class="audit-grid-item">
+                <span class="audit-grid-label">Município / UF:</span>
+                <span class="audit-grid-val" id="audit-municipio">Guapimirim / APA - RJ</span>
+              </div>
+              <div class="audit-grid-item">
+                <span class="audit-grid-label">Área Registrada:</span>
+                <span class="audit-grid-val highlight-green" id="audit-area">3.200,00 ha</span>
+              </div>
+              <div class="audit-grid-item">
+                <span class="audit-grid-label">PRODES pós-2019:</span>
+                <span class="audit-grid-val" id="audit-prodes">0,00 ha (0.0%)</span>
+              </div>
+              <div class="audit-grid-item">
+                <span class="audit-grid-label">Conformidade MCR:</span>
+                <span class="audit-grid-val highlight-green" id="audit-elegibilidade">ELEGÍVEL</span>
+              </div>
+            </div>
+
+            <div class="audit-sheet-expanded-actions">
+              <label class="btn-itpa-pill secondary btn-audit-upload-car" for="input-car-upload" style="cursor: pointer; padding: 6px 12px; font-size: 0.74rem;">
+                Importar CAR
+              </label>
+              <input type="file" id="input-car-upload" accept=".geojson,.kml,.json" style="display: none;">
+            </div>
+
+            <!-- Identificadores mantidos para retrocompatibilidade -->
+            <span id="audit-card-header-title" style="display:none;">Auditoria de Crédito</span>
+            <span id="audit-card-header-sub" style="display:none;"></span>
           </div>
         </div>
 
@@ -829,17 +875,17 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <!-- Módulos da Aplicação Ecossistema ITPA -->
-  <script src="script.js?v=5.8"></script>
-  <script src="js/config.js?v=5.8"></script>
-  <script src="js/db.js?v=5.8"></script>
-  <script src="js/camera.js?v=5.8"></script>
-  <script src="js/map.js?v=5.8"></script>
-  <script src="js/sync.js?v=5.8"></script>
-  <script src="js/report.js?v=5.8"></script>
-  <script src="js/assets_laudo.js?v=5.8"></script>
-  <script src="js/relatorio_talhao.js?v=5.8"></script>
-  <script src="js/auditoria.js?v=5.8"></script>
-  <script src="app.js?v=5.8"></script>
+  <script src="script.js?v=5.9"></script>
+  <script src="js/config.js?v=5.9"></script>
+  <script src="js/db.js?v=5.9"></script>
+  <script src="js/camera.js?v=5.9"></script>
+  <script src="js/map.js?v=5.9"></script>
+  <script src="js/sync.js?v=5.9"></script>
+  <script src="js/report.js?v=5.9"></script>
+  <script src="js/assets_laudo.js?v=5.9"></script>
+  <script src="js/relatorio_talhao.js?v=5.9"></script>
+  <script src="js/auditoria.js?v=5.9"></script>
+  <script src="app.js?v=5.9"></script>
 
 </body>
 </html>

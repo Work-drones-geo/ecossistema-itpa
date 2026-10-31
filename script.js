@@ -274,9 +274,11 @@ window.atualizarAuditoria = window.atualizarDadosAuditoria;
  * @param {boolean} [forcarEstado] true para expandir, false para recolher
  */
 window.toggleAuditoria = function(forcarEstado) {
-  const cards = document.querySelectorAll('#card-auditoria, #card-auditoria-cmn, .card-auditoria, .map-audit-card');
-  const bodies = document.querySelectorAll('#auditoria-body, #painel-auditoria, .card-body, .audit-card-body');
-  const buttons = document.querySelectorAll('#btn-toggle-audit, #btn-toggle-audit-card, .btn-toggle-audit-card');
+  const cards = document.querySelectorAll('#card-auditoria, #card-auditoria-cmn, .card-auditoria, .map-audit-card, .audit-bottom-sheet');
+  const bodies = document.querySelectorAll('#auditoria-body, #painel-auditoria, .card-body, .audit-card-body, .audit-sheet-expanded-body');
+  const buttons = document.querySelectorAll('#btn-toggle-audit, #btn-toggle-audit-card, .btn-toggle-audit-card, .btn-audit-sheet-close');
+  const carets = document.querySelectorAll('.expand-caret-glyph');
+  const closeGlyphs = document.querySelectorAll('.close-icon-glyph');
 
   let isCurrentlyOpen = false;
   cards.forEach(c => {
@@ -286,27 +288,37 @@ window.toggleAuditoria = function(forcarEstado) {
   const shouldOpen = (typeof forcarEstado === 'boolean') ? forcarEstado : !isCurrentlyOpen;
 
   if (!shouldOpen) {
-    // Recolher
+    // Recolher (Estado Compacto na barra inferior)
     cards.forEach(c => c.classList.add('collapsed'));
-    bodies.forEach(b => b.style.display = 'none');
+    bodies.forEach(b => {
+      b.style.display = 'none';
+    });
+    carets.forEach(el => el.textContent = '▲');
+    closeGlyphs.forEach(el => el.textContent = '▼');
     buttons.forEach(btn => {
-      btn.innerText = '+';
       const icon = btn.querySelector('.toggle-icon');
       if (icon) icon.innerText = '+';
+      const closeG = btn.querySelector('.close-icon-glyph');
+      if (closeG) closeG.innerText = '▼';
     });
     const pill = document.getElementById('pill-quick-auditoria');
     if (pill) pill.classList.remove('active');
   } else {
-    // Expandir
+    // Expandir (Slide-Up mostrando dados cadastrais completos)
     cards.forEach(c => {
       c.classList.remove('collapsed');
-      c.style.display = 'block';
+      c.style.display = 'flex';
     });
-    bodies.forEach(b => b.style.display = 'block');
+    bodies.forEach(b => {
+      b.style.display = 'block';
+    });
+    carets.forEach(el => el.textContent = '▼');
+    closeGlyphs.forEach(el => el.textContent = '✕');
     buttons.forEach(btn => {
-      btn.innerText = '−';
       const icon = btn.querySelector('.toggle-icon');
-      if (icon) icon.innerText = '−';
+      if (icon) icon.innerText = '✕';
+      const closeG = btn.querySelector('.close-icon-glyph');
+      if (closeG) closeG.innerText = '✕';
     });
     const pill = document.getElementById('pill-quick-auditoria');
     if (pill) pill.classList.add('active');

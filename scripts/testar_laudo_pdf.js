@@ -57,11 +57,11 @@ console.assert(relatorioContent.includes('Bruno Sodero de Freitas'), 'Bruno Sode
 console.assert(relatorioContent.includes('Responsavel Tecnico / Geoprocessamento'), 'Responsável Técnico / Geoprocessamento presente');
 console.assert(relatorioContent.includes('Piloto Remoto Certificado ANAC'), 'Certificação ANAC presente');
 
-console.log('--- 3. Testando conteúdo e versionamento v=5.8 no index.html ---');
+console.log('--- 3. Testando conteúdo e versionamento v=5.9 no index.html ---');
 const indexContent = fs.readFileSync('index.html', 'utf8');
-console.assert(indexContent.includes('js/assets_laudo.js?v=5.8'), 'assets_laudo.js v5.8 incluído no HTML');
-console.assert(indexContent.includes('js/relatorio_talhao.js?v=5.8'), 'relatorio_talhao.js v5.8 incluído no HTML');
-console.assert(indexContent.includes('js/auditoria.js?v=5.8'), 'auditoria.js v5.8 incluído no HTML');
-console.assert(indexContent.includes('styles.css?v=5.8'), 'styles.css v5.8 incluído no HTML');
+console.assert(indexContent.includes('js/assets_laudo.js?v=5.9'), 'assets_laudo.js v5.9 incluído no HTML');
+console.assert(indexContent.includes('js/relatorio_talhao.js?v=5.9'), 'relatorio_talhao.js v5.9 incluído no HTML');
+console.assert(indexContent.includes('js/auditoria.js?v=5.9'), 'auditoria.js v5.9 incluído no HTML');
+console.assert(indexContent.includes('styles.css?v=5.9'), 'styles.css v5.9 incluído no HTML');
 
 console.log('✅ TODOS OS TESTES PASSARAM COM 100% DE SUCESSO!');
