@@ -90,6 +90,16 @@ const ITPAMap = (function () {
     // Reposiciona o controle de zoom no topo esquerdo para liberar a lateral direita aos atalhos rápidos
     L.control.zoom({ position: 'topleft' }).addTo(map);
 
+    // Gerencia classe de elevação do contexto de popup para evitar colisão com a coluna técnica lateral
+    map.on('popupopen', () => {
+      const mapEl = document.getElementById(containerId) || document.getElementById('map');
+      if (mapEl) mapEl.classList.add('has-open-popup');
+    });
+    map.on('popupclose', () => {
+      const mapEl = document.getElementById(containerId) || document.getElementById('map');
+      if (mapEl) mapEl.classList.remove('has-open-popup');
+    });
+
     // 3. Panes dedicados para sobreposição e controle de swipe (Recente = leftPane, Anterior = rightPane)
     // Ficam entre os tiles base (200) e os vetores de contorno (overlayPane: 400)
     if (!map.getPane('leftPane')) {
@@ -471,14 +481,12 @@ const ITPAMap = (function () {
         <!-- 3. Grid de Métricas Principais (2 colunas padronizadas) -->
         <div class="talhao-metrics-grid">
           <div class="metric-card">
-            <span class="metric-icon">📍</span>
             <div class="metric-data">
               <span class="metric-label">Município / Região</span>
               <span class="metric-value" style="font-size: 0.76rem;">${p.municipio}</span>
             </div>
           </div>
           <div class="metric-card">
-            <span class="metric-icon">📐</span>
             <div class="metric-data">
               <span class="metric-label">Área Total</span>
               <span class="metric-value" style="font-size: 0.80rem; color: #15803d; font-weight: 700;">${p.areaTexto}</span>
@@ -491,7 +499,6 @@ const ITPAMap = (function () {
           <div class="talhao-ndvi-card" style="margin-bottom: 8px;">
             <div class="ndvi-card-header">
               <div class="ndvi-header-left">
-                <span class="ndvi-header-icon">🌿</span>
                 <span class="ndvi-header-title">Vigor NDVI Médio (2m)</span>
               </div>
               <span class="ndvi-value-badge">${p.ndviMeanTexto || '--'}</span>
@@ -524,19 +531,19 @@ const ITPAMap = (function () {
           </div>
         `}
 
-        <!-- 5. Rodapé Padronizado de Ações Interativas (com botão Comparar em destaque!) -->
+        <!-- 5. Rodapé Padronizado de Ações Interativas (com botão Comparar em destaque) -->
         <div class="talhao-popup-actions">
-          <button type="button" class="btn-popup-action primary swipe-action-btn btn-popup-comparar" data-projeto="${p.key}" data-foco="${p.focoSwipe}" onclick="window.acionarComparacaoSwipe('${p.key || p.focoSwipe}')" ontouchend="window.acionarComparacaoSwipe('${p.key || p.focoSwipe}')">
-            ↔️ Comparar Passagens Temporais
+          <button type="button" class="btn-popup-action primary swipe-action-btn btn-popup-comparar" data-projeto="${p.key}" data-foco="${p.focoSwipe}" onclick="window.acionarComparacaoSwipe('${p.key || p.focoSwipe}'); return false;" ontouchend="window.acionarComparacaoSwipe('${p.key || p.focoSwipe}'); return false;">
+            Comparar Passagens (Swipe)
           </button>
           <div style="display: grid; grid-template-columns: ${isEsec ? '1fr 1fr' : '1fr'}; gap: 6px;">
             ${isEsec ? `
               <button type="button" class="btn-popup-action secondary btn-talhao-grafico" data-talhao="${p.nomeTalhao}">
-                📈 Histórico
+                Histórico NDVI
               </button>
             ` : ''}
             <button type="button" class="btn-popup-action secondary btn-abrir-auditoria-proj" data-projeto="${p.key}">
-              ⚖️ Laudo & Auditoria
+              Laudo & Auditoria
             </button>
           </div>
         </div>
@@ -749,7 +756,8 @@ const ITPAMap = (function () {
             minWidth: 260,
             className: 'talhao-popup-custom-wrapper',
             autoPan: true,
-            autoPanPadding: [20, 20]
+            autoPanPaddingTopLeft: [20, 20],
+            autoPanPaddingBottomRight: [110, 80]
           });
 
           // Listener de clique explícito para abrir o popup em qualquer toque/clique no interior do polígono
@@ -1074,6 +1082,8 @@ const ITPAMap = (function () {
         [-22.556060671, -43.553371968],
         [-22.532831488, -43.539530935]
       ],
+      // Clip-path SVG/CSS de altíssima precisão baseado no GeoJSON oficial de Nelito
+      clipPolygon: 'polygon(1.28% 15.13%, 0.73% 16.48%, 4.71% 21.67%, 33.51% 56.01%, 39.39% 65.06%, 60.34% 88.98%, 75.25% 100.00%, 78.44% 91.36%, 100.00% 65.64%, 99.44% 61.81%, 65.87% 21.34%, 64.13% 19.59%, 52.76% 3.28%, 50.63% 0.00%, 39.73% 2.96%, 15.67% 9.50%, 0.00% 13.62%, 1.28% 15.13%)',
       rgbRecente: 'DATA/nelito_rgb_10m.png',
       ndviRecente: 'DATA/nelito_ndvi_2m.png',
       fallbackRgbRecente: 'assets/satelite/nelito_rgb_10m.png',
@@ -1099,6 +1109,8 @@ const ITPAMap = (function () {
         [-22.561182140, -43.558557229],
         [-22.541512148, -43.544213807]
       ],
+      // Clip-path SVG/CSS de altíssima precisão baseado no GeoJSON oficial de Guanaí
+      clipPolygon: 'polygon(50.25% 0.00%, 0.00% 18.88%, 10.06% 38.41%, 37.60% 83.72%, 49.52% 100.00%, 74.21% 82.26%, 88.72% 74.45%, 100.00% 68.22%, 89.11% 53.04%, 77.36% 35.66%, 66.42% 18.84%, 59.21% 9.18%, 50.25% 0.00%)',
       rgbRecente: 'DATA/guanai_rgb_10m.png',
       ndviRecente: 'DATA/guanai_ndvi_2m.png',
       fallbackRgbRecente: 'assets/satelite/guanai_rgb_10m.png',
@@ -1188,7 +1200,7 @@ const ITPAMap = (function () {
       }
     }
 
-    // 4. Helper seguro para criar ImageOverlay georreferenciado com suporte a fallback de URL
+    // 4. Helper seguro para criar ImageOverlay georreferenciado com suporte a fallback de URL e clip vetorial
     const criarOverlay = (caminhoImg, caminhoFallback, paneName = 'leftPane', opacity = 0.95) => {
       let currentSrc = caminhoImg;
       const overlay = L.imageOverlay(currentSrc, boundsOverlay, {
@@ -1198,11 +1210,27 @@ const ITPAMap = (function () {
         minZoom: 9,
         maxZoom: 22
       });
+
+      // Aplica o recorte vetorial CSS/SVG no elemento da imagem para garantir visual 100% dentro da fazenda
+      const aplicarMascaraVetorial = () => {
+        if (!config.clipPolygon) return;
+        const el = overlay.getElement();
+        if (el) {
+          el.style.clipPath = config.clipPolygon;
+          el.style.webkitClipPath = config.clipPolygon;
+        }
+      };
+
+      overlay.on('load', aplicarMascaraVetorial);
+      setTimeout(aplicarMascaraVetorial, 60);
+      setTimeout(aplicarMascaraVetorial, 300);
+
       overlay.on('error', () => {
         if (caminhoFallback && currentSrc !== caminhoFallback) {
           console.warn(`[ITPAMap] Fallback para imagem alternativa: ${caminhoFallback}`);
           currentSrc = caminhoFallback;
           overlay.setUrl(caminhoFallback);
+          setTimeout(aplicarMascaraVetorial, 60);
         } else if (overlay.getElement()) {
           overlay.getElement().style.display = 'none';
         }
@@ -1360,7 +1388,8 @@ const ITPAMap = (function () {
           minWidth: 260,
           className: 'talhao-popup-custom-wrapper',
           autoPan: true,
-          autoPanPadding: [20, 20]
+          autoPanPaddingTopLeft: [20, 20],
+          autoPanPaddingBottomRight: [110, 80]
         });
 
         // Listener explícito para abrir popup em qualquer toque/clique no interior do polígono

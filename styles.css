@@ -967,12 +967,17 @@ html, body {
 }
 
 .leaflet-pane.leaflet-popup-pane {
-  z-index: 950 !important;
+  z-index: 1000 !important;
 }
 
 .leaflet-popup {
-  z-index: 950 !important;
+  z-index: 1000 !important;
   pointer-events: auto !important;
+}
+
+#map.has-open-popup .leaflet-map-pane,
+.has-open-popup .leaflet-map-pane {
+  z-index: 950 !important;
 }
 
 .talhao-popup-custom-wrapper .leaflet-popup-content-wrapper {
@@ -1853,7 +1858,7 @@ iframe[title*="Netlify"] {
   position: absolute;
   top: 14px;
   right: 14px;
-  z-index: 870;
+  z-index: 600;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3056,18 +3061,18 @@ iframe[title*="Netlify"] {
 .audit-bottom-sheet.collapsed,
 #card-auditoria.audit-bottom-sheet.collapsed {
   position: absolute !important;
-  bottom: calc(var(--bottom-bar-height) + 12px) !important;
+  bottom: calc(var(--bottom-bar-height) + 10px) !important;
   left: 14px !important;
   right: auto !important;
   top: auto !important;
   width: auto !important;
   max-width: calc(100vw - 28px) !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  border-radius: 20px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  border-radius: 4px !important;
   background-color: #ffffff !important;
   border: 1px solid #d0d7de !important;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.16) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12) !important;
   padding: 0 !important;
   z-index: 920 !important;
   overflow: hidden !important;
@@ -3089,8 +3094,8 @@ iframe[title*="Netlify"] {
   display: inline-flex !important;
   align-items: center !important;
   gap: 8px !important;
-  padding: 0 14px !important;
-  height: 38px !important;
+  padding: 0 10px !important;
+  height: 32px !important;
   cursor: pointer !important;
   background: transparent !important;
   white-space: nowrap !important;
@@ -3107,18 +3112,19 @@ iframe[title*="Netlify"] {
 }
 
 #card-auditoria.audit-bottom-sheet.collapsed .audit-sheet-prop-name {
-  font-size: 0.76rem !important;
+  font-size: 0.72rem !important;
   font-weight: 700 !important;
   color: #1e293b !important;
-  max-width: 140px !important;
+  max-width: 130px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
+  letter-spacing: 0.2px;
 }
 
 #card-auditoria.audit-bottom-sheet.collapsed .audit-sheet-prop-name::before {
-  content: '⚖️ ';
-  font-size: 0.8rem;
+  content: '';
+  display: none !important;
 }
 
 #card-auditoria.audit-bottom-sheet.collapsed .btn-tech-pdf {
@@ -3126,11 +3132,11 @@ iframe[title*="Netlify"] {
 }
 
 #card-auditoria.audit-bottom-sheet.collapsed .btn-audit-caret-trigger {
-  width: 22px !important;
-  height: 22px !important;
-  min-width: 22px !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
   background: #f1f5f9 !important;
-  border-radius: 50% !important;
+  border-radius: 3px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -3139,7 +3145,7 @@ iframe[title*="Netlify"] {
 }
 
 #card-auditoria.audit-bottom-sheet.collapsed .expand-caret-glyph {
-  font-size: 9px !important;
+  font-size: 8px !important;
   color: #1e293b !important;
   line-height: 1 !important;
 }
