@@ -30,8 +30,8 @@ console.log('--- 3. Validando Novas Datas no Menu de Camadas (#sheet-camadas-mod
 console.assert(html.includes('Ortofoto Drone (Base 2025)'), 'Data Base 2025 no Drone presente');
 console.assert(html.includes('Satélite RGB Recente (24/Out/2026)'), 'Data 24/Out/2026 no Satélite RGB Recente presente');
 console.assert(html.includes('Índice NDVI Recente (24/Out/2026)'), 'Data 24/Out/2026 no NDVI Recente presente');
-console.assert(html.includes('Satélite RGB Histórico (09/Set/2026)'), 'Data 09/Set/2026 no Satélite RGB Histórico presente');
-console.assert(html.includes('Índice NDVI Histórico (09/Set/2026)'), 'Data 09/Set/2026 no NDVI Histórico presente');
+console.assert(html.includes('Satélite RGB Histórico (04/Set/2026)'), 'Data 04/Set/2026 no Satélite RGB Histórico presente');
+console.assert(html.includes('Índice NDVI Histórico (04/Set/2026)'), 'Data 04/Set/2026 no NDVI Histórico presente');
 
 console.log('--- 4. Validando Lógica Dinâmica em js/map.js ---');
 const mapJs = fs.readFileSync('js/map.js', 'utf8');
@@ -41,14 +41,14 @@ console.assert(mapJs.includes('DRONE: Voo Base 2025 (Alta Resolução)'), 'Strin
 console.assert(mapJs.includes('DRONE: Voo Recente 2026'), 'String Drone Recente 2026 presente');
 console.assert(mapJs.includes('SATÉLITE: 24/Out/2026 (Sentinel-2 L2A)'), 'String Satélite Sentinel-2 L2A presente');
 console.assert(mapJs.includes('NDVI: 24/Out/2026 (Super-resolvido 2m)'), 'String NDVI Super-resolvido 2m presente');
-console.assert(mapJs.includes('SATÉLITE HISTÓRICO: 09/Set/2026'), 'String Satélite Histórico 09/Set presente');
-console.assert(mapJs.includes('NDVI HISTÓRICO: 09/Set/2026'), 'String NDVI Histórico 09/Set presente');
+console.assert(mapJs.includes('SATÉLITE HISTÓRICO: 04/Set/2026'), 'String Satélite Histórico 04/Set presente');
+console.assert(mapJs.includes('NDVI HISTÓRICO: 04/Set/2026'), 'String NDVI Histórico 04/Set presente');
 console.assert(mapJs.includes('atualizarBadgeTemporal,'), 'atualizarBadgeTemporal exportado em ITPAMap');
 
-console.log('--- 5. Validando Versionamento v=6.0 ---');
-console.assert(html.includes('styles.css?v=6.0'), 'styles.css atualizado para v=6.0');
-console.assert(html.includes('js/map.js?v=6.0'), 'js/map.js atualizado para v=6.0');
-console.assert(html.includes('app.js?v=6.0'), 'app.js atualizado para v=6.0');
-console.assert(html.includes('js/relatorio_talhao.js?v=6.0'), 'js/relatorio_talhao.js atualizado para v=6.0');
+console.log('--- 5. Validando Versionamento v=6.2 ---');
+console.assert(html.includes('styles.css?v=6.2'), 'styles.css atualizado para v=6.2');
+console.assert(html.includes('js/map.js?v=6.2'), 'js/map.js atualizado para v=6.2');
+console.assert(html.includes('app.js?v=6.2'), 'app.js atualizado para v=6.2');
+console.assert(html.includes('js/relatorio_talhao.js?v=6.2'), 'js/relatorio_talhao.js atualizado para v=6.2');
 
 console.log('✅ TESTE DE RASTREABILIDADE TEMPORAL CONCLUÍDO COM 100% DE SUCESSO!');

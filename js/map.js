@@ -526,16 +526,17 @@ const ITPAMap = (function () {
         );
       }
 
-      // Estilo oficial da identidade do ITPA:
-      // Contorno verde vibrante destacado (#82C325, 2.5px) e preenchimento quase transparente para permitir visualização de satélite/NDVI
+      // Estilo oficial da identidade do ITPA (Contorno vetorial nítido com preenchimento 100% transparente):
       talhoesLayer = L.geoJSON(geojsonData, {
         style: function () {
           return {
-            color: '#82C325',       // Contorno verde vibrante oficial ITPA
-            weight: 2.5,            // Borda destacada
-            opacity: 1.0,           // Opacidade total na borda
-            fillColor: '#82C325',   // Preenchimento verde ITPA
-            fillOpacity: 0.04       // Sem preenchimento opaco (mantém visibilidade sobre satélite/NDVI)
+            stroke: true,
+            color: '#2E7D32',       // Contorno verde nítido oficial
+            weight: 2,              // Linha precisa sem preenchimento
+            opacity: 1.0,           // Opacidade total no traço
+            fill: false,
+            fillColor: 'transparent',
+            fillOpacity: 0.0        // Preenchimento 100% transparente (sem quadriculados ou padrões)
           };
         },
         onEachFeature: function (feature, layer) {
@@ -545,14 +546,16 @@ const ITPAMap = (function () {
           const descricao = props.description || '';
           const codigo = props.id || props.codigo || '';
 
-          // Efeito hover interativo nos polígonos
+          // Efeito hover interativo nos polígonos (mantém preenchimento transparente)
           layer.on({
             mouseover: function (e) {
               const poly = e.target;
               poly.setStyle({
-                weight: 3.5,
-                color: '#6EB31A',
-                fillOpacity: 0.22
+                stroke: true,
+                weight: 3,
+                color: '#1B5E20',
+                fill: false,
+                fillOpacity: 0.0
               });
               if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
                 poly.bringToFront();
@@ -925,6 +928,11 @@ const ITPAMap = (function () {
       return;
     }
 
+    if (swipeAtivo) {
+      badgeTextEl.textContent = 'COMPARAÇÃO TEMPORAL: 24/Out vs 04/Set';
+      return;
+    }
+
     const keyAtiva = (window.PROJETO_ATIVO_ID || 'esec').toLowerCase().trim();
     const droneAtivo = ortofotoLayer && map.hasLayer(ortofotoLayer);
     const ndviAtivo = layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente);
@@ -936,9 +944,9 @@ const ITPAMap = (function () {
 
     // Prioridade de exibição conforme as camadas ativas na visualização
     if (ndviAntAtivo && !ndviAtivo) {
-      texto = 'NDVI HISTÓRICO: 09/Set/2026';
+      texto = 'NDVI HISTÓRICO: 04/Set/2026';
     } else if (rgbAntAtivo && !rgbAtivo) {
-      texto = 'SATÉLITE HISTÓRICO: 09/Set/2026';
+      texto = 'SATÉLITE HISTÓRICO: 04/Set/2026';
     } else if (ndviAtivo) {
       texto = 'NDVI: 24/Out/2026 (Super-resolvido 2m)';
     } else if (rgbAtivo) {
@@ -950,9 +958,9 @@ const ITPAMap = (function () {
         texto = 'DRONE: Voo Recente 2026';
       }
     } else if (ndviAntAtivo) {
-      texto = 'NDVI HISTÓRICO: 09/Set/2026';
+      texto = 'NDVI HISTÓRICO: 04/Set/2026';
     } else if (rgbAntAtivo) {
-      texto = 'SATÉLITE HISTÓRICO: 09/Set/2026';
+      texto = 'SATÉLITE HISTÓRICO: 04/Set/2026';
     } else {
       texto = 'MAPA BASE: Esri World Imagery';
     }
@@ -968,6 +976,7 @@ const ITPAMap = (function () {
     nelito: {
       nome: 'Fazenda Nelito',
       boundsJson: [
+        'DATA/bounds.json',
         'assets/satelite/bounds_expandido.json',
         'assets/satelite/bounds.json',
         'assets/rasters/bounds.json',
@@ -978,20 +987,21 @@ const ITPAMap = (function () {
         [-22.556060671, -43.553371968],
         [-22.532831488, -43.539530935]
       ],
-      rgbRecente: 'assets/satelite/nelito_rgb_10m.png',
-      ndviRecente: 'assets/satelite/nelito_ndvi_2m.png',
-      fallbackRgbRecente: 'assets/rasters/nelito_rgb_10m.png',
-      fallbackNdviRecente: 'assets/rasters/nelito_ndvi_2m.png',
-      rgbAnterior: 'assets/rasters/nelito_rgb_anterior.png',
-      ndviAnterior: 'assets/rasters/nelito_ndvi_anterior.png',
-      fallbackRgbAnterior: 'DATA/nelito_rgb_anterior.png',
-      fallbackNdviAnterior: 'DATA/nelito_ndvi_anterior.png',
-      labelRecente: '28/Out (10m)',
-      labelAnterior: '09/Set (10m)'
+      rgbRecente: 'DATA/nelito_rgb_10m.png',
+      ndviRecente: 'DATA/nelito_ndvi_2m.png',
+      fallbackRgbRecente: 'assets/satelite/nelito_rgb_10m.png',
+      fallbackNdviRecente: 'assets/satelite/nelito_ndvi_2m.png',
+      rgbAnterior: 'DATA/nelito_rgb_anterior.png',
+      ndviAnterior: 'DATA/nelito_ndvi_anterior.png',
+      fallbackRgbAnterior: 'assets/rasters/nelito_rgb_anterior.png',
+      fallbackNdviAnterior: 'assets/rasters/nelito_ndvi_anterior.png',
+      labelRecente: '24/Out (10m)',
+      labelAnterior: '04/Set (10m)'
     },
     guanai: {
       nome: 'Fazenda Guanaí',
       boundsJson: [
+        'DATA/bounds.json',
         'assets/satelite/bounds_expandido.json',
         'assets/satelite/bounds.json',
         'assets/rasters/bounds.json',
@@ -1002,20 +1012,21 @@ const ITPAMap = (function () {
         [-22.561182140, -43.558557229],
         [-22.541512148, -43.544213807]
       ],
-      rgbRecente: 'assets/satelite/guanai_rgb_10m.png',
-      ndviRecente: 'assets/satelite/guanai_ndvi_2m.png',
-      fallbackRgbRecente: 'assets/rasters/guanai_rgb_10m.png',
-      fallbackNdviRecente: 'assets/rasters/guanai_ndvi_2m.png',
-      rgbAnterior: 'assets/rasters/guanai_rgb_anterior.png',
-      ndviAnterior: 'assets/rasters/guanai_ndvi_anterior.png',
-      fallbackRgbAnterior: 'DATA/guanai_rgb_anterior.png',
-      fallbackNdviAnterior: 'DATA/guanai_ndvi_anterior.png',
-      labelRecente: '28/Out (10m)',
-      labelAnterior: '09/Set (10m)'
+      rgbRecente: 'DATA/guanai_rgb_10m.png',
+      ndviRecente: 'DATA/guanai_ndvi_2m.png',
+      fallbackRgbRecente: 'assets/satelite/guanai_rgb_10m.png',
+      fallbackNdviRecente: 'assets/satelite/guanai_ndvi_2m.png',
+      rgbAnterior: 'DATA/guanai_rgb_anterior.png',
+      ndviAnterior: 'DATA/guanai_ndvi_anterior.png',
+      fallbackRgbAnterior: 'assets/rasters/guanai_rgb_anterior.png',
+      fallbackNdviAnterior: 'assets/rasters/guanai_ndvi_anterior.png',
+      labelRecente: '24/Out (10m)',
+      labelAnterior: '04/Set (10m)'
     },
     esec: {
       nome: 'ESEC Guanabara',
       boundsJson: [
+        'DATA/bounds.json',
         'assets/satelite/bounds_expandido.json',
         'assets/satelite/bounds.json',
         'assets/rasters/esec_bounds.json',
@@ -1027,14 +1038,14 @@ const ITPAMap = (function () {
       ],
       rgbRecente: 'assets/satelite/aoi_rgb_recente_2m.png',
       ndviRecente: 'assets/satelite/aoi_ndvi_recente_2m.png',
-      fallbackRgbRecente: 'assets/rasters/esec_rgb_2m.png',
-      fallbackNdviRecente: 'assets/rasters/esec_ndvi_2m.png',
+      fallbackRgbRecente: 'DATA/esec_rgb_2m.png',
+      fallbackNdviRecente: 'DATA/esec_ndvi_2m.png',
       rgbAnterior: 'assets/satelite/aoi_rgb_anterior_2m.png',
       ndviAnterior: 'assets/satelite/aoi_ndvi_anterior_2m.png',
-      fallbackRgbAnterior: 'assets/rasters/esec_rgb_anterior.png',
-      fallbackNdviAnterior: 'assets/rasters/esec_ndvi_anterior.png',
-      labelRecente: '28/Out (2m)',
-      labelAnterior: '09/Set (2m)'
+      fallbackRgbAnterior: 'DATA/esec_rgb_anterior.png',
+      fallbackNdviAnterior: 'DATA/esec_ndvi_anterior.png',
+      labelRecente: '24/Out (2m)',
+      labelAnterior: '04/Set (2m)'
     }
   };
 
@@ -1208,17 +1219,19 @@ const ITPAMap = (function () {
     talhoesLayer = L.geoJSON(geojsonData, {
       style: function () {
         return {
-          color: '#16a34a',       // Contorno verde nítido e vibrante
-          weight: 3.5,
-          opacity: 1.0,
-          fillColor: '#22c55e',   // Preenchimento verde levemente translúcido
-          fillOpacity: 0.18
+          stroke: true,
+          color: '#2E7D32',       // Contorno vetorial nítido oficial
+          weight: 2,              // Traço exato sem preenchimento
+          opacity: 1.0,           // Opacidade total no traço
+          fill: false,
+          fillColor: 'transparent',
+          fillOpacity: 0.0        // 100% transparente (sem preenchimento quadriculado ou SVG patterns)
         };
       },
       onEachFeature: function (feature, layer) {
         layer.on({
           mouseover: function (e) {
-            e.target.setStyle({ weight: 4.5, color: '#15803d', fillOpacity: 0.32 });
+            e.target.setStyle({ stroke: true, weight: 3, color: '#1B5E20', fill: false, fillOpacity: 0.0 });
             if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) e.target.bringToFront();
           },
           mouseout: function (e) {
@@ -1226,29 +1239,76 @@ const ITPAMap = (function () {
           }
         });
 
+        const nomeProp = projeto.nome || (key === 'nelito' ? 'Fazenda Nelito' : 'Fazenda Guanaí');
+        const municipioProp = projeto.municipio || 'Miguel Pereira - RJ';
+        const areaProp = projeto.area_registrada || projeto.area || (key === 'nelito' ? '246,116 ha' : '615,808 ha');
+        const carProp = projeto.car || (key === 'nelito' ? 'RJ-3302908-AE983FB03BAE42A9B32833247D8CCD4D' : 'RJ-3302908-D52C6812F1464345885FE14360B005CE');
+        const statusMonitoramento = 'MONITORAMENTO ATIVO';
+        const statusCmn = 'CONFORME CMN nº 5.303/2026';
+
+        // Pop-up Padronizado com o Padrão Gráfico Agritech Oficial do Projeto
         const popupHtml = `
-          <div class="itpa-popup-card imovel-analytic-popup" style="padding: 12px 14px; min-width: 250px; font-family: inherit;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
-              <span style="background: #eef7e6; color: #274D1E; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">🏛️ PROJETO ATIVO</span>
-              <span style="background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${key}</span>
+          <div class="itpa-popup-card talhao-analytic-popup imovel-analytic-popup">
+            <div class="talhao-popup-header">
+              <span class="talhao-badge">${statusMonitoramento}</span>
+              <span class="talhao-code-pill">${key.toUpperCase()}</span>
             </div>
-            
-            <h3 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 800; color: #0f172a; line-height: 1.25;">${projeto.nome}</h3>
-            
-            <div style="font-size: 12px; line-height: 1.5; color: #334155;">
-              <p style="margin: 3px 0;"><strong>Código CAR:</strong> <span style="font-family: monospace; font-size: 11px; word-break: break-all; color: #0f172a;">${projeto.car}</span></p>
-              <p style="margin: 3px 0;"><strong>Área Total:</strong> <span style="font-weight: 700; color: #047857;">${projeto.area_registrada || projeto.area}</span></p>
-              <p style="margin: 3px 0;"><strong>Status:</strong> <span style="font-weight: 700; color: #16a34a;">CONFORME CMN nº 5.303/2026</span></p>
+
+            <h4 class="talhao-popup-title">${nomeProp}</h4>
+
+            <!-- Grid de Métricas Principais (Município/Região e Área Total em Hectares) -->
+            <div class="talhao-metrics-grid">
+              <div class="metric-card">
+                <span class="metric-icon">📍</span>
+                <div class="metric-data">
+                  <span class="metric-label">Município / Região</span>
+                  <span class="metric-value" style="font-size: 0.76rem;">${municipioProp}</span>
+                </div>
+              </div>
+              <div class="metric-card">
+                <span class="metric-icon">📐</span>
+                <div class="metric-data">
+                  <span class="metric-label">Área Total</span>
+                  <span class="metric-value" style="font-size: 0.80rem; color: #15803d;">${areaProp}</span>
+                </div>
+              </div>
             </div>
-            
-            <div style="margin-top: 10px;">
-              <button type="button" class="btn-itpa-pill btn-abrir-auditoria-proj" data-projeto="${key}" onclick="window.abrirAuditoriaDoProjeto('${key}')" style="width: 100%; justify-content: center; font-size: 12px; padding: 8px 12px; cursor: pointer; background: #82C325; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 6px;">
-                ⚖️ Ver Auditoria Territorial
+
+            <!-- Dados Estruturais e Status de Monitoramento -->
+            <div class="imovel-popup-details" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; margin-bottom: 10px; font-size: 11px; line-height: 1.4;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                <span style="color: #64748b; font-weight: 600;">Status CMN:</span>
+                <span style="color: #16a34a; font-weight: 700;">${statusCmn}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: #64748b; font-weight: 600;">Código CAR:</span>
+                <span style="color: #334155; font-family: monospace; font-size: 10px;">${carProp.length > 20 ? carProp.substring(0, 18) + '...' : carProp}</span>
+              </div>
+            </div>
+
+            <!-- Rodapé com Botão Interativo [ Comparar ] em Destaque Visual Consistente -->
+            <div class="talhao-popup-actions">
+              <button type="button" class="btn-popup-action primary swipe-action-btn btn-popup-comparar" data-projeto="${key}">
+                Comparar Passagens Temporais
+              </button>
+              <button type="button" class="btn-popup-action secondary btn-abrir-auditoria-proj" data-projeto="${key}" onclick="window.abrirAuditoriaDoProjeto('${key}')">
+                Laudo & Auditoria Territorial
               </button>
             </div>
           </div>
         `;
-        layer.bindPopup(popupHtml, { maxWidth: 320, className: 'itpa-leaflet-popup' });
+
+        layer.bindPopup(popupHtml, { maxWidth: 320, className: 'talhao-popup-custom-wrapper' });
+
+        layer.on('popupopen', () => {
+          const btnComp = document.querySelector(`.btn-popup-comparar[data-projeto="${key}"]`);
+          if (btnComp) {
+            btnComp.onclick = (e) => {
+              e.preventDefault();
+              ativarModoSwipe(key, layer.getBounds ? layer.getBounds() : null);
+            };
+          }
+        });
       }
     });
 
@@ -1667,6 +1727,11 @@ const ITPAMap = (function () {
     if (pillNdvi) {
       pillNdvi.onclick = (e) => {
         e.preventDefault();
+        if (swipeAtivo) {
+          alternarModoSwipeTipo('ndvi');
+          return;
+        }
+
         const estaAtivo = layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente);
         if (estaAtivo) {
           map.removeLayer(layerGroupNdviRecente);
@@ -1710,6 +1775,11 @@ const ITPAMap = (function () {
     if (pillRgb) {
       pillRgb.onclick = (e) => {
         e.preventDefault();
+        if (swipeAtivo) {
+          alternarModoSwipeTipo('rgb');
+          return;
+        }
+
         const estaAtivo = layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente);
         if (estaAtivo) {
           map.removeLayer(layerGroupRgbRecente);
@@ -1974,6 +2044,58 @@ const ITPAMap = (function () {
     }
   }
 
+  function atualizarTextosSwipe(isRgb) {
+    const titleLeft = document.querySelector('.swipe-tag.left .swipe-title');
+    const titleRight = document.querySelector('.swipe-tag.right .swipe-title');
+    const subLeft = document.querySelector('.swipe-tag.left .swipe-sub');
+    const subRight = document.querySelector('.swipe-tag.right .swipe-sub');
+
+    if (isRgb) {
+      if (titleLeft) titleLeft.textContent = 'Satélite RGB';
+      if (subLeft) subLeft.textContent = '24/Out/2026';
+      if (titleRight) titleRight.textContent = 'Satélite Histórico';
+      if (subRight) subRight.textContent = '04/Set/2026';
+    } else {
+      if (titleLeft) titleLeft.textContent = 'Índice NDVI (2m)';
+      if (subLeft) subLeft.textContent = '24/Out/2026';
+      if (titleRight) titleRight.textContent = 'NDVI Histórico (2m)';
+      if (subRight) subRight.textContent = '04/Set/2026';
+    }
+  }
+
+  function alternarModoSwipeTipo(tipo) {
+    if (!swipeAtivo || !map) return;
+    const isRgb = tipo === 'rgb';
+
+    if (isRgb) {
+      // Isola modo RGB: remove NDVI
+      if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
+      if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
+
+      // Adiciona RGB Recente (leftPane) e RGB Anterior (rightPane)
+      if (layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) map.addLayer(layerGroupRgbRecente);
+      if (layerGroupRgbAnterior && !map.hasLayer(layerGroupRgbAnterior)) map.addLayer(layerGroupRgbAnterior);
+
+      const ndviLegendEl = document.getElementById('ndvi-legend');
+      if (ndviLegendEl) ndviLegendEl.style.display = 'none';
+    } else {
+      // Isola modo NDVI: remove RGB
+      if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
+      if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
+
+      // Adiciona NDVI Recente (leftPane) e NDVI Anterior (rightPane)
+      if (layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) map.addLayer(layerGroupNdviRecente);
+      if (layerGroupNdviAnterior && !map.hasLayer(layerGroupNdviAnterior)) map.addLayer(layerGroupNdviAnterior);
+
+      const ndviLegendEl = document.getElementById('ndvi-legend');
+      if (ndviLegendEl) ndviLegendEl.style.display = 'block';
+    }
+
+    atualizarTextosSwipe(isRgb);
+    atualizarPosicaoSwipe(swipePctAtual);
+    sincronizarEstadosUI();
+  }
+
   function ativarModoSwipe(talhaoFoco = null, bounds = null) {
     if (!map) return;
     swipeAtivo = true;
@@ -1990,13 +2112,9 @@ const ITPAMap = (function () {
       rgbAnterior: !!(layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior))
     };
 
-    // 2. Determina o modo ativo: prioriza RGB se qualquer uma das camadas RGB estiver ligada
-    const isModoRgb = swipeCamadasPrevias.rgbRecente || swipeCamadasPrevias.rgbAnterior;
-
-    const titleLeft = document.querySelector('.swipe-tag.left .swipe-title');
-    const titleRight = document.querySelector('.swipe-tag.right .swipe-title');
-    const subLeft = document.querySelector('.swipe-tag.left .swipe-sub');
-    const subRight = document.querySelector('.swipe-tag.right .swipe-sub');
+    // 2. Determina o modo ativo: se NDVI estava ativo, prioriza NDVI; caso contrário, RGB
+    const isModoNdvi = swipeCamadasPrevias.ndviRecente || swipeCamadasPrevias.ndviAnterior;
+    const isModoRgb = !isModoNdvi;
 
     if (isModoRgb) {
       // Isola modo RGB: desativa temporariamente NDVI para evitar sobreposição/mistura
@@ -2007,7 +2125,7 @@ const ITPAMap = (function () {
         map.removeLayer(layerGroupNdviAnterior);
       }
 
-      // Garante RGB Recente (leftPane) e RGB Anterior (rightPane) ativos no mapa
+      // Garante RGB Recente (leftPane - 24/Out) e RGB Anterior (rightPane - 04/Set) ativos no mapa
       if (layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) {
         map.addLayer(layerGroupRgbRecente);
       }
@@ -2015,16 +2133,10 @@ const ITPAMap = (function () {
         map.addLayer(layerGroupRgbAnterior);
       }
 
-      if (titleLeft) titleLeft.textContent = '🛰️ RGB Recente (2m)';
-      if (subLeft) subLeft.textContent = '28/Out';
-      if (titleRight) titleRight.textContent = '⏪ RGB Anterior (2m)';
-      if (subRight) subRight.textContent = '09/Set';
-
-      // Esconde legenda de NDVI no modo RGB
       const ndviLegendEl = document.getElementById('ndvi-legend');
       if (ndviLegendEl) ndviLegendEl.style.display = 'none';
     } else {
-      // Padrão NDVI: isola modo NDVI, desativando RGB
+      // Isola modo NDVI: desativa RGB
       if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) {
         map.removeLayer(layerGroupRgbRecente);
       }
@@ -2032,7 +2144,7 @@ const ITPAMap = (function () {
         map.removeLayer(layerGroupRgbAnterior);
       }
 
-      // Garante NDVI Recente (leftPane) e NDVI Anterior (rightPane) ativos no mapa
+      // Garante NDVI Recente (leftPane - 24/Out) e NDVI Anterior (rightPane - 04/Set) ativos no mapa
       if (layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) {
         map.addLayer(layerGroupNdviRecente);
       }
@@ -2040,15 +2152,11 @@ const ITPAMap = (function () {
         map.addLayer(layerGroupNdviAnterior);
       }
 
-      if (titleLeft) titleLeft.textContent = '🌱 NDVI Recente (2m)';
-      if (subLeft) subLeft.textContent = '28/Out';
-      if (titleRight) titleRight.textContent = '⏪ NDVI Anterior (2m)';
-      if (subRight) subRight.textContent = '09/Set';
-
-      // Exibe legenda de NDVI no modo NDVI
       const ndviLegendEl = document.getElementById('ndvi-legend');
       if (ndviLegendEl) ndviLegendEl.style.display = 'block';
     }
+
+    atualizarTextosSwipe(isModoRgb);
 
     if (swipeContainer) {
       swipeContainer.style.display = 'block';
@@ -2069,6 +2177,8 @@ const ITPAMap = (function () {
     setTimeout(() => {
       atualizarPosicaoSwipe(50);
     }, 300);
+
+    sincronizarEstadosUI();
   }
 
   function desativarModoSwipe() {
@@ -2292,6 +2402,7 @@ const ITPAMap = (function () {
     sincronizarEstadosUI,
     atualizarBadgeTemporal,
     alternarLimitesTerritoriais,
+    alternarModoSwipeTipo,
     TIPO_CONFIG
   };
 })();
