@@ -3636,3 +3636,13 @@ iframe[title*="Netlify"] {
 .card-auditoria.audit-card-highlight {
   animation: auditCardPulseHighlight 1.4s ease-out;
 }
+
+/* Desativa bloqueio do Swipe e destrava cliques na interface */
+.leaflet-sbs, #swipe-controls, .swipe-panel { 
+  pointer-events: none !important; 
+  display: none !important; 
+}
+.map-controls, #btn-open-layers-sheet, .floating-controls, button, .leaflet-interactive { 
+  pointer-events: auto !important; 
+  z-index: 9999 !important; 
+}

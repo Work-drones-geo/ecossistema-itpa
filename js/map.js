@@ -1203,6 +1203,7 @@ const ITPAMap = (function () {
     nelito: {
       nome: 'Fazenda Nelito',
       boundsJson: [
+        'DATA/nelito_bounds.json',
         'DATA/bounds.json',
         'assets/satelite/bounds_expandido.json',
         'assets/satelite/bounds.json',
@@ -1340,11 +1341,23 @@ const ITPAMap = (function () {
     const manterNdviAnt = layerGroupNdviAnterior ? map.hasLayer(layerGroupNdviAnterior) : false;
     const manterRgbAnt = layerGroupRgbAnterior ? map.hasLayer(layerGroupRgbAnterior) : false;
 
-    // 2. Limpa os overlays anteriores para evitar sobreposição de áreas geográficas distintas
-    if (layerGroupNdviRecente) layerGroupNdviRecente.clearLayers();
-    if (layerGroupRgbRecente) layerGroupRgbRecente.clearLayers();
-    if (layerGroupNdviAnterior) layerGroupNdviAnterior.clearLayers();
-    if (layerGroupRgbAnterior) layerGroupRgbAnterior.clearLayers();
+    // 2. Limpa e remove os overlays anteriores do mapa para evitar sobreposição de áreas geográficas distintas
+    if (layerGroupNdviRecente) {
+      if (map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
+      layerGroupNdviRecente.clearLayers();
+    }
+    if (layerGroupRgbRecente) {
+      if (map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
+      layerGroupRgbRecente.clearLayers();
+    }
+    if (layerGroupNdviAnterior) {
+      if (map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
+      layerGroupNdviAnterior.clearLayers();
+    }
+    if (layerGroupRgbAnterior) {
+      if (map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
+      layerGroupRgbAnterior.clearLayers();
+    }
 
     // 3. Lê assincronamente os limites do bounds.json correspondente
     let boundsOverlay = L.latLngBounds(config.fallbackBounds[0], config.fallbackBounds[1]);
@@ -1652,6 +1665,41 @@ const ITPAMap = (function () {
       console.warn(`[ITPAMap] Projeto '${key}' não encontrado no catálogo.`);
       return;
     }
+
+    // =========================================================================
+    // REMOÇÃO DAS CAMADAS DA FAZENDA ANTERIOR DO MAPA (map.removeLayer)
+    // =========================================================================
+    if (talhoesLayer && map.hasLayer(talhoesLayer)) {
+      map.removeLayer(talhoesLayer);
+      talhoesLayer = null;
+    }
+
+    if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) {
+      map.removeLayer(layerGroupRgbRecente);
+    }
+    if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) {
+      map.removeLayer(layerGroupNdviRecente);
+    }
+    if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) {
+      map.removeLayer(layerGroupRgbAnterior);
+    }
+    if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) {
+      map.removeLayer(layerGroupNdviAnterior);
+    }
+
+    if (typeof gruposCenasSatelite === 'object' && gruposCenasSatelite) {
+      Object.keys(gruposCenasSatelite).forEach(k => {
+        const grp = gruposCenasSatelite[k];
+        if (grp && map.hasLayer(grp)) {
+          map.removeLayer(grp);
+        }
+      });
+    }
+
+    if (layerGroupRgbRecente) layerGroupRgbRecente.clearLayers();
+    if (layerGroupNdviRecente) layerGroupNdviRecente.clearLayers();
+    if (layerGroupRgbAnterior) layerGroupRgbAnterior.clearLayers();
+    if (layerGroupNdviAnterior) layerGroupNdviAnterior.clearLayers();
 
     window.PROJETO_ATIVO_ID = key;
 
@@ -2414,32 +2462,6 @@ const ITPAMap = (function () {
 
     // Aplica as cenas configuradas nos seletores (ou defaults)
     atualizarCenasSwipe(swipeDataEsquerdaId, swipeDataDireitaId, swipeModoTipo);
-
-    // Se fornecido bounds do talhão ou da propriedade ativa, aproxima
-    let targetBounds = (bounds && bounds.isValid && bounds.isValid()) ? bounds : null;
-    if (!targetBounds && talhaoFoco && typeof talhaoFoco === 'string' && CONFIG_RASTERS_PROJETOS[talhaoFoco.toLowerCase()]) {
-      const cfg = CONFIG_RASTERS_PROJETOS[talhaoFoco.toLowerCase()];
-      targetBounds = L.latLngBounds(cfg.fallbackBounds[0], cfg.fallbackBounds[1]);
-    }
-    if (!targetBounds && typeof obterBoundsPropriedadeAtiva === 'function') {
-      targetBounds = obterBoundsPropriedadeAtiva();
-    }
-
-    if (targetBounds && targetBounds.isValid && targetBounds.isValid()) {
-      map.fitBounds(targetBounds.pad(0.12), { padding: [30, 30], maxZoom: 17 });
-    }
-
-    // Posiciona o divisor inicialmente a 50%
-    atualizarPosicaoSwipe(50);
-    setTimeout(() => {
-      atualizarPosicaoSwipe(50);
-    }, 80);
-    setTimeout(() => {
-      atualizarPosicaoSwipe(50);
-    }, 300);
-
-    sincronizarEstadosUI();
-  }
 
     // Se fornecido bounds do talhão ou da propriedade ativa, aproxima
     let targetBounds = (bounds && bounds.isValid && bounds.isValid()) ? bounds : null;
