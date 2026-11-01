@@ -117,6 +117,16 @@ const ITPAMap = (function () {
       rp.style.height = '100%';
     }
 
+    // Pane dedicado para Ortofoto Drone: zIndex 365 garante que o Drone fique ACIMA do Satélite (355/345)
+    // e logo ABAIXO dos contornos vetoriais (overlayPane: 400)
+    if (!map.getPane('dronePane')) {
+      const dp = map.createPane('dronePane');
+      dp.style.zIndex = 365;
+      dp.style.pointerEvents = 'none';
+      dp.style.width = '100%';
+      dp.style.height = '100%';
+    }
+
     if (map._mapPane) {
       map._mapPane.style.width = '100%';
       map._mapPane.style.height = '100%';
@@ -209,9 +219,10 @@ const ITPAMap = (function () {
 
     // 5. Camada de Ortofoto Local (Drone / Voo de Alta Resolução) com reescalonamento no zoom reduzido
     ortofotoLayer = L.tileLayer('./assets/tiles/ortofoto/{z}/{x}/{y}.png', {
+      pane: 'dronePane',
       minZoom: 10,
       maxZoom: 22,
-      minNativeZoom: 10,
+      minNativeZoom: 15,
       maxNativeZoom: 20,
       attribution: 'Ortofoto Drone &copy; Work Drones / ITPA'
     });
@@ -624,7 +635,7 @@ const ITPAMap = (function () {
       // Helper para criar ImageOverlay georreferenciado da AOI completa com limites de zoom (10 a 22)
       const criarAoiOverlay = (caminhoRelativo, paneName = 'leftPane') => {
         const overlay = L.imageOverlay(caminhoRelativo, boundsSateliteExpandido, {
-          opacity: 0.95,
+          opacity: 1.0,
           interactive: false,
           pane: paneName,
           minZoom: 10,
@@ -1258,24 +1269,24 @@ const ITPAMap = (function () {
     esec: {
       nome: 'ESEC Guanabara',
       boundsJson: [
+        'DATA/esec_bounds.json',
         'DATA/bounds.json',
         'assets/satelite/bounds_expandido.json',
         'assets/satelite/bounds.json',
-        'assets/rasters/esec_bounds.json',
-        'DATA/esec_bounds.json'
+        'assets/rasters/esec_bounds.json'
       ],
       fallbackBounds: [
         [-22.737766, -43.022287],
         [-22.691124, -42.949613]
       ],
-      rgbRecente: 'assets/satelite/aoi_rgb_recente_2m.png',
-      ndviRecente: 'assets/satelite/aoi_ndvi_recente_2m.png',
-      fallbackRgbRecente: 'DATA/esec_rgb_2m.png',
-      fallbackNdviRecente: 'DATA/esec_ndvi_2m.png',
-      rgbAnterior: 'assets/satelite/aoi_rgb_anterior_2m.png',
-      ndviAnterior: 'assets/satelite/aoi_ndvi_anterior_2m.png',
-      fallbackRgbAnterior: 'DATA/esec_rgb_anterior.png',
-      fallbackNdviAnterior: 'DATA/esec_ndvi_anterior.png',
+      rgbRecente: 'DATA/esec_rgb_2m.png',
+      ndviRecente: 'DATA/esec_ndvi_2m.png',
+      fallbackRgbRecente: 'assets/satelite/aoi_rgb_recente_2m.png',
+      fallbackNdviRecente: 'assets/satelite/aoi_ndvi_recente_2m.png',
+      rgbAnterior: 'DATA/esec_rgb_anterior.png',
+      ndviAnterior: 'DATA/esec_ndvi_anterior.png',
+      fallbackRgbAnterior: 'assets/satelite/aoi_rgb_anterior_2m.png',
+      fallbackNdviAnterior: 'assets/satelite/aoi_ndvi_anterior_2m.png',
       labelRecente: '24/Out (2m)',
       labelAnterior: '04/Set (2m)'
     }
@@ -1284,7 +1295,7 @@ const ITPAMap = (function () {
   /**
    * Construtor global de ImageOverlay com mascaramento vetorial SVG/CSS de alta precisão
    */
-  function criarOverlayCamada(caminhoImg, caminhoFallback, paneName = 'leftPane', opacity = 0.95, targetBounds = null, clipPoly = null) {
+  function criarOverlayCamada(caminhoImg, caminhoFallback, paneName = 'leftPane', opacity = 1.0, targetBounds = null, clipPoly = null) {
     const bounds = targetBounds || boundsOverlayAtivo || (configProjetoAtivo && L.latLngBounds(configProjetoAtivo.fallbackBounds[0], configProjetoAtivo.fallbackBounds[1]));
     const clip = clipPoly || (configProjetoAtivo && configProjetoAtivo.clipPolygon);
     let currentSrc = caminhoImg;
@@ -1390,7 +1401,7 @@ const ITPAMap = (function () {
     configProjetoAtivo = config;
 
     // 4. Helper seguro para criar ImageOverlay georreferenciado com suporte a fallback de URL e clip vetorial
-    const criarOverlay = (caminhoImg, caminhoFallback, paneName = 'leftPane', opacity = 0.95) => {
+    const criarOverlay = (caminhoImg, caminhoFallback, paneName = 'leftPane', opacity = 1.0) => {
       return criarOverlayCamada(caminhoImg, caminhoFallback, paneName, opacity, boundsOverlay, config.clipPolygon);
     };
 
@@ -2039,7 +2050,7 @@ const ITPAMap = (function () {
       return L.latLngBounds(cfg.fallbackBounds[0], cfg.fallbackBounds[1]);
     }
 
-    // Eventos das Pílulas Rápidas Flutuantes
+    // Eventos das Pílulas Rápidas Flutuantes (comutação mútua estrita entre Drone, Satélite e NDVI)
     if (pillNdvi) {
       pillNdvi.onclick = (e) => {
         e.preventDefault();
@@ -2052,11 +2063,12 @@ const ITPAMap = (function () {
         if (estaAtivo) {
           map.removeLayer(layerGroupNdviRecente);
         } else {
-          // Desativa RGB se estiver ativo para evitar conflito de visualização
-          if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) {
-            map.removeLayer(layerGroupRgbRecente);
-          }
-          // Garante clipPath limpo fora do modo comparador
+          // Desativa Drone e todas as camadas concorrentes para exibição 100% nítida
+          if (ortofotoLayer && map.hasLayer(ortofotoLayer)) map.removeLayer(ortofotoLayer);
+          if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
+          if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
+          if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
+
           const lp = map.getPane('leftPane');
           if (lp) { lp.style.clipPath = ''; lp.style.webkitClipPath = ''; }
           
@@ -2076,15 +2088,24 @@ const ITPAMap = (function () {
       pillDrone.onclick = (e) => {
         e.preventDefault();
         const keyAtiva = (window.PROJETO_ATIVO_ID || 'esec').toLowerCase().trim();
-        const vaiAtivar = (!ortofotoLayer || !map.hasLayer(ortofotoLayer));
-        if (vaiAtivar) {
+        const estaAtivo = ortofotoLayer && map.hasLayer(ortofotoLayer);
+        if (estaAtivo) {
+          map.removeLayer(ortofotoLayer);
+        } else {
+          // Desativa todas as camadas de satélite concorrentes para liberar visão total da ortofoto
           if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
           if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
+          if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
+          if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
+
+          if (ortofotoLayer) {
+            map.addLayer(ortofotoLayer);
+          }
           if (keyAtiva !== 'esec' && window.showToast) {
             window.showToast('Ortofoto Drone (Voo Recente 2026) ativada.', 'info');
           }
         }
-        alternarCamada(ortofotoLayer);
+        sincronizarEstadosUI();
       };
     }
 
@@ -2100,10 +2121,12 @@ const ITPAMap = (function () {
         if (estaAtivo) {
           map.removeLayer(layerGroupRgbRecente);
         } else {
-          // Desativa NDVI se estiver ativo para evitar conflito de visualização
-          if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) {
-            map.removeLayer(layerGroupNdviRecente);
-          }
+          // Desativa Drone, NDVI e Satélite Histórico para evitar sobreposição que causava borrões
+          if (ortofotoLayer && map.hasLayer(ortofotoLayer)) map.removeLayer(ortofotoLayer);
+          if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
+          if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
+          if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
+
           // Garante clipPath limpo fora do modo comparador
           const lp = map.getPane('leftPane');
           if (lp) { lp.style.clipPath = ''; lp.style.webkitClipPath = ''; }
@@ -2200,6 +2223,10 @@ const ITPAMap = (function () {
       toggleDrone.onchange = () => {
         if (toggleDrone.checked) {
           if (ortofotoLayer && !map.hasLayer(ortofotoLayer)) map.addLayer(ortofotoLayer);
+          if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
+          if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
+          if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
+          if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
         } else {
           if (ortofotoLayer && map.hasLayer(ortofotoLayer)) map.removeLayer(ortofotoLayer);
         }
@@ -2211,6 +2238,10 @@ const ITPAMap = (function () {
       toggleNdvi.onchange = () => {
         if (toggleNdvi.checked) {
           if (layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) map.addLayer(layerGroupNdviRecente);
+          if (ortofotoLayer && map.hasLayer(ortofotoLayer)) map.removeLayer(ortofotoLayer);
+          if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
+          if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
+          if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
         } else {
           if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
         }
@@ -2222,6 +2253,10 @@ const ITPAMap = (function () {
       toggleRgb.onchange = () => {
         if (toggleRgb.checked) {
           if (layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) map.addLayer(layerGroupRgbRecente);
+          if (ortofotoLayer && map.hasLayer(ortofotoLayer)) map.removeLayer(ortofotoLayer);
+          if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
+          if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
+          if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
         } else {
           if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
         }
@@ -2233,6 +2268,10 @@ const ITPAMap = (function () {
       toggleNdviAnt.onchange = () => {
         if (toggleNdviAnt.checked) {
           if (layerGroupNdviAnterior && !map.hasLayer(layerGroupNdviAnterior)) map.addLayer(layerGroupNdviAnterior);
+          if (ortofotoLayer && map.hasLayer(ortofotoLayer)) map.removeLayer(ortofotoLayer);
+          if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
+          if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
+          if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
         } else {
           if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
         }
@@ -2244,6 +2283,10 @@ const ITPAMap = (function () {
       toggleRgbAnt.onchange = () => {
         if (toggleRgbAnt.checked) {
           if (layerGroupRgbAnterior && !map.hasLayer(layerGroupRgbAnterior)) map.addLayer(layerGroupRgbAnterior);
+          if (ortofotoLayer && map.hasLayer(ortofotoLayer)) map.removeLayer(ortofotoLayer);
+          if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
+          if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
+          if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
         } else {
           if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
         }

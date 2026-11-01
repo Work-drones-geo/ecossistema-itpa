@@ -3,7 +3,7 @@
  * Fornece caching robusto do App Shell, bibliotecas Leaflet e recursos estáticos.
  */
 
-const CACHE_NAME = 'itpa-ecossistema-v7.5.2';
+const CACHE_NAME = 'itpa-ecossistema-v7.5.3';
 
 const STATIC_ASSETS = [
   './',
