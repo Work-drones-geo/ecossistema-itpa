@@ -57,11 +57,15 @@ console.assert(relatorioContent.includes('Bruno Sodero de Freitas'), 'Bruno Sode
 console.assert(relatorioContent.includes('Responsavel Tecnico / Geoprocessamento'), 'Responsável Técnico / Geoprocessamento presente');
 console.assert(relatorioContent.includes('Piloto Remoto Certificado ANAC'), 'Certificação ANAC presente');
 
-console.log('--- 3. Testando conteúdo e versionamento v=6.2 no index.html ---');
+// 8. Gráfico de Linha Temporal de NDVI (4 Pontos)
+console.assert(relatorioContent.includes('HISTÓRICO TEMPORAL DE VIGOR VEGETATIVO (NDVI SENTINEL-2) - 4 DATAS'), 'Seção 4 do Laudo presente');
+console.assert(relatorioContent.includes('pt0X') && relatorioContent.includes('pt3X'), '4 Pontos no gráfico presentes');
+
+console.log('--- 3. Testando conteúdo e versionamento v=6.8 no index.html ---');
 const indexContent = fs.readFileSync('index.html', 'utf8');
-console.assert(indexContent.includes('js/assets_laudo.js?v=6.2'), 'assets_laudo.js v6.2 incluído no HTML');
-console.assert(indexContent.includes('js/relatorio_talhao.js?v=6.2'), 'relatorio_talhao.js v6.2 incluído no HTML');
-console.assert(indexContent.includes('js/auditoria.js?v=6.2'), 'auditoria.js v6.2 incluído no HTML');
-console.assert(indexContent.includes('styles.css?v=6.2'), 'styles.css v6.2 incluído no HTML');
+console.assert(indexContent.includes('js/assets_laudo.js?v=6.8'), 'assets_laudo.js v6.8 incluído no HTML');
+console.assert(indexContent.includes('js/relatorio_talhao.js?v=6.8'), 'relatorio_talhao.js v6.8 incluído no HTML');
+console.assert(indexContent.includes('js/auditoria.js?v=6.8'), 'auditoria.js v6.8 incluído no HTML');
+console.assert(indexContent.includes('styles.css?v=6.8'), 'styles.css v6.8 incluído no HTML');
 
 console.log('✅ TODOS OS TESTES PASSARAM COM 100% DE SUCESSO!');

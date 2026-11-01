@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 
   <!-- Estilos Customizados do ITPA -->
-  <link rel="stylesheet" href="styles.css?v=6.6">
+  <link rel="stylesheet" href="styles.css?v=6.8">
 </head>
 <body>
 
@@ -149,21 +149,31 @@
           <button type="button" id="btn-pick-point">Marcar Ponto</button>
         </div>
 
-        <!-- Ferramenta de Comparação 'Antes e Depois' (Swipe / Cortina Deslizante) -->
+        <!-- Ferramenta de Comparação 'Antes e Depois' (Swipe / Cortina Deslizante com Seletores de 4 Datas) -->
         <div class="map-swipe-container" id="map-swipe-container" style="display: none;">
           <div class="swipe-top-bar">
             <div class="swipe-tag left">
               <span class="swipe-indicator green"></span>
-              <span class="swipe-title">Recente</span>
-              <span class="swipe-sub">24/Out</span>
+              <span class="swipe-title">Lado A:</span>
+              <select class="swipe-select-date" id="swipe-select-left" title="Selecione a data da passagem (Lado A)">
+                <option value="2026-10-24" selected>24/Out/2026</option>
+                <option value="2026-09-04">04/Set/2026</option>
+                <option value="2026-08-23">23/Ago/2026</option>
+                <option value="2026-07-11">11/Jul/2026</option>
+              </select>
             </div>
             <button type="button" class="btn-close-swipe" id="btn-close-swipe" title="Sair da Comparação">
-              ✕ Sair da Comparação
+              ✕ Fechar
             </button>
             <div class="swipe-tag right">
               <span class="swipe-indicator amber"></span>
-              <span class="swipe-title">Anterior</span>
-              <span class="swipe-sub">04/Set</span>
+              <span class="swipe-title">Lado B:</span>
+              <select class="swipe-select-date" id="swipe-select-right" title="Selecione a data da passagem (Lado B)">
+                <option value="2026-10-24">24/Out/2026</option>
+                <option value="2026-09-04" selected>04/Set/2026</option>
+                <option value="2026-08-23">23/Ago/2026</option>
+                <option value="2026-07-11">11/Jul/2026</option>
+              </select>
             </div>
           </div>
           <div class="swipe-divider-line" id="swipe-divider-line">
@@ -884,17 +894,17 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <!-- Módulos da Aplicação Ecossistema ITPA -->
-  <script src="script.js?v=6.6"></script>
-  <script src="js/config.js?v=6.6"></script>
-  <script src="js/db.js?v=6.6"></script>
-  <script src="js/camera.js?v=6.6"></script>
-  <script src="js/map.js?v=6.6"></script>
-  <script src="js/sync.js?v=6.6"></script>
-  <script src="js/report.js?v=6.6"></script>
-  <script src="js/assets_laudo.js?v=6.6"></script>
-  <script src="js/relatorio_talhao.js?v=6.6"></script>
-  <script src="js/auditoria.js?v=6.6"></script>
-  <script src="app.js?v=6.6"></script>
+  <script src="script.js?v=6.8"></script>
+  <script src="js/config.js?v=6.8"></script>
+  <script src="js/db.js?v=6.8"></script>
+  <script src="js/camera.js?v=6.8"></script>
+  <script src="js/map.js?v=6.8"></script>
+  <script src="js/sync.js?v=6.8"></script>
+  <script src="js/report.js?v=6.8"></script>
+  <script src="js/assets_laudo.js?v=6.8"></script>
+  <script src="js/relatorio_talhao.js?v=6.8"></script>
+  <script src="js/auditoria.js?v=6.8"></script>
+  <script src="app.js?v=6.8"></script>
 
 </body>
 </html>

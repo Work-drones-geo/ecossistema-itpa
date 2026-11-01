@@ -2880,8 +2880,29 @@ iframe[title*="Netlify"] {
 }
 
 .swipe-tag .swipe-title {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
+  white-space: nowrap;
+}
+
+.swipe-select-date {
+  background-color: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 6px;
+  outline: none;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.swipe-select-date:hover,
+.swipe-select-date:focus {
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.25);
 }
 
 .swipe-tag .swipe-sub {
@@ -3000,6 +3021,11 @@ iframe[title*="Netlify"] {
   }
   .swipe-tag .swipe-title {
     font-size: 0.72rem;
+  }
+  .swipe-select-date {
+    font-size: 0.68rem;
+    padding: 2px 4px;
+    max-width: 94px;
   }
   .swipe-tag .swipe-sub {
     display: none;

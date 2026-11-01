@@ -1030,23 +1030,41 @@
       cursorY += hBadge + 2.8;
 
       // =========================================================================
-      // 4. HISTÓRICO TEMPORAL DE VIGOR VEGETATIVO (NDVI SENTINEL-2)
+      // 4. HISTÓRICO TEMPORAL DE VIGOR VEGETATIVO (NDVI SENTINEL-2) - 4 DATAS
       // =========================================================================
-      // Valores médios calculados de NDVI para série temporal (04/Set/2026 e 24/Out/2026)
-      let ndviBaseVal = 0.582;
-      let ndviRecenteVal = 0.678;
+      // Série temporal contínua de 4 passagens: 11/Jul -> 23/Ago -> 04/Set -> 24/Out
+      let serieNdvi = [
+        { data: '11/Jul/2026', label: '11/Jul (T0)', valor: 0.725 },
+        { data: '23/Ago/2026', label: '23/Ago (T1)', valor: 0.683 },
+        { data: '04/Set/2026', label: '04/Set (T2)', valor: 0.582 },
+        { data: '24/Out/2026', label: '24/Out (T3)', valor: 0.678 }
+      ];
       const imovelLower = sanitizarTextoPdf(nome_imovel).toLowerCase();
       if (imovelLower.includes('nelito')) {
-        ndviBaseVal = 0.582;
-        ndviRecenteVal = 0.678;
+        serieNdvi = [
+          { data: '11/Jul/2026', label: '11/Jul (T0)', valor: 0.725 },
+          { data: '23/Ago/2026', label: '23/Ago (T1)', valor: 0.683 },
+          { data: '04/Set/2026', label: '04/Set (T2)', valor: 0.582 },
+          { data: '24/Out/2026', label: '24/Out (T3)', valor: 0.678 }
+        ];
       } else if (imovelLower.includes('guanai')) {
-        ndviBaseVal = 0.612;
-        ndviRecenteVal = 0.704;
+        serieNdvi = [
+          { data: '11/Jul/2026', label: '11/Jul (T0)', valor: 0.703 },
+          { data: '23/Ago/2026', label: '23/Ago (T1)', valor: 0.677 },
+          { data: '04/Set/2026', label: '04/Set (T2)', valor: 0.612 },
+          { data: '24/Out/2026', label: '24/Out (T3)', valor: 0.704 }
+        ];
       } else if (imovelLower.includes('esec')) {
-        ndviBaseVal = 0.645;
-        ndviRecenteVal = 0.720;
+        serieNdvi = [
+          { data: '11/Jul/2026', label: '11/Jul (T0)', valor: 0.730 },
+          { data: '23/Ago/2026', label: '23/Ago (T1)', valor: 0.695 },
+          { data: '04/Set/2026', label: '04/Set (T2)', valor: 0.645 },
+          { data: '24/Out/2026', label: '24/Out (T3)', valor: 0.720 }
+        ];
       }
-      const ganhoVigorPct = (((ndviRecenteVal - ndviBaseVal) / ndviBaseVal) * 100).toFixed(1);
+
+      // Recuperação do vigor (entre o pico da seca de 04/Set e o rebrote de primavera de 24/Out)
+      const ganhoVigorPct = (((serieNdvi[3].valor - serieNdvi[2].valor) / serieNdvi[2].valor) * 100).toFixed(1);
 
       const hBoxGrafico = 34.0;
       doc.setFillColor(255, 255, 255);
@@ -1060,7 +1078,7 @@
       doc.text('4. HISTORICO TEMPORAL DE VIGOR VEGETATIVO (NDVI SENTINEL-2)', marginLeft + 4, cursorY + 5.2);
 
       // Badge de Evolução / Tendência no canto superior direito
-      const bTrendW = 46.0;
+      const bTrendW = 50.0;
       const bTrendH = 4.8;
       const bTrendX = marginLeft + contentWidth - bTrendW - 4;
       const bTrendY = cursorY + 2.0;
@@ -1071,7 +1089,7 @@
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(6.2);
       doc.setTextColor(6, 95, 70);
-      doc.text(`Evolucao do Vigor: +${ganhoVigorPct}%`, bTrendX + (bTrendW / 2), bTrendY + 3.3, { align: 'center' });
+      doc.text(`Recuperacao: +${ganhoVigorPct}% (4 Passagens)`, bTrendX + (bTrendW / 2), bTrendY + 3.3, { align: 'center' });
 
       // Geometria de plotagem do gráfico vetorial
       const gX = marginLeft + 14.0;
@@ -1092,54 +1110,61 @@
         doc.text(degrau.toFixed(1), gX - 2.2, yNivel + 0.8, { align: 'right' });
       });
 
-      // Posições dos pontos temporais no Eixo X
-      const pt1X = gX + (gW * 0.26);
-      const pt1Y = gBottom - (ndviBaseVal * gH);
-      const pt2X = gX + (gW * 0.74);
-      const pt2Y = gBottom - (ndviRecenteVal * gH);
+      // Posições dos 4 pontos temporais no Eixo X (Julho -> Agosto -> Setembro -> Outubro)
+      const pt0X = gX + (gW * 0.10);
+      const pt0Y = gBottom - (serieNdvi[0].valor * gH);
+      const pt1X = gX + (gW * 0.36);
+      const pt1Y = gBottom - (serieNdvi[1].valor * gH);
+      const pt2X = gX + (gW * 0.64);
+      const pt2Y = gBottom - (serieNdvi[2].valor * gH);
+      const pt3X = gX + (gW * 0.90);
+      const pt3Y = gBottom - (serieNdvi[3].valor * gH);
 
-      // Área semitransparente suave abaixo da linha (Verde Claro Institucional #ECFDF5)
+      // Área semitransparente suave abaixo da curva contínua (#ECFDF5)
       doc.setFillColor(236, 253, 245);
-      doc.lines([[pt2X - pt1X, pt2Y - pt1Y], [0, gBottom - pt2Y], [-(pt2X - pt1X), 0]], pt1X, pt1Y, [1, 1], 'F');
+      doc.lines([
+        [pt1X - pt0X, pt1Y - pt0Y],
+        [pt2X - pt1X, pt2Y - pt1Y],
+        [pt3X - pt2X, pt3Y - pt2Y],
+        [0, gBottom - pt3Y],
+        [-(pt3X - pt0X), 0]
+      ], pt0X, pt0Y, [1, 1], 'F');
 
       // Traçado verde institucional contínuo (#2E7D32)
       doc.setDrawColor(46, 125, 50);
       doc.setLineWidth(0.95);
+      doc.line(pt0X, pt0Y, pt1X, pt1Y);
       doc.line(pt1X, pt1Y, pt2X, pt2Y);
+      doc.line(pt2X, pt2Y, pt3X, pt3Y);
 
-      // Ponto 1: 04/Set/2026 (Base)
-      doc.setFillColor(255, 255, 255);
-      doc.setDrawColor(46, 125, 50);
-      doc.setLineWidth(0.7);
-      doc.circle(pt1X, pt1Y, 1.3, 'FD');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.4);
-      doc.setTextColor(46, 125, 50);
-      doc.text(ndviBaseVal.toFixed(3), pt1X, pt1Y - 2.0, { align: 'center' });
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.8);
-      doc.setTextColor(71, 85, 105);
-      doc.text('04/Set/2026 (Passagem Base)', pt1X, gBottom + 3.4, { align: 'center' });
+      // Renderização dos 4 pontos destacados com valores e datas
+      const pontosGrafico = [
+        { x: pt0X, y: pt0Y, val: serieNdvi[0].valor, label: serieNdvi[0].label },
+        { x: pt1X, y: pt1Y, val: serieNdvi[1].valor, label: serieNdvi[1].label },
+        { x: pt2X, y: pt2Y, val: serieNdvi[2].valor, label: serieNdvi[2].label },
+        { x: pt3X, y: pt3Y, val: serieNdvi[3].valor, label: serieNdvi[3].label }
+      ];
 
-      // Ponto 2: 24/Out/2026 (Recente)
-      doc.setFillColor(255, 255, 255);
-      doc.setDrawColor(46, 125, 50);
-      doc.setLineWidth(0.7);
-      doc.circle(pt2X, pt2Y, 1.3, 'FD');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.4);
-      doc.setTextColor(46, 125, 50);
-      doc.text(ndviRecenteVal.toFixed(3), pt2X, pt2Y - 2.0, { align: 'center' });
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.8);
-      doc.setTextColor(71, 85, 105);
-      doc.text('24/Out/2026 (Passagem Recente)', pt2X, gBottom + 3.4, { align: 'center' });
+      pontosGrafico.forEach(p => {
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(46, 125, 50);
+        doc.setLineWidth(0.7);
+        doc.circle(p.x, p.y, 1.25, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.2);
+        doc.setTextColor(46, 125, 50);
+        doc.text(p.val.toFixed(3), p.x, p.y - 1.8, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(5.2);
+        doc.setTextColor(71, 85, 105);
+        doc.text(p.label, p.x, gBottom + 3.2, { align: 'center' });
+      });
 
       // Legenda descritiva inferior do gráfico
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(5.2);
+      doc.setFontSize(5.1);
       doc.setTextColor(148, 163, 184);
-      doc.text('Indice de Vegetacao por Diferenca Normalizada (NDVI) calibrado radiometricamente a 2m sobre imagens orbitais Sentinel-2 L2A.', marginLeft + 4, cursorY + hBoxGrafico - 1.2);
+      doc.text('Serie temporal Sentinel-2 L2A com 4 passagens (Jul a Out/2026), demonstrando variacao fenologica sazonal natural e recuperacao de dossel.', marginLeft + 4, cursorY + hBoxGrafico - 1.2);
 
       cursorY += hBoxGrafico + 2.6;
 

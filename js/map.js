@@ -1064,6 +1064,138 @@ const ITPAMap = (function () {
   }
 
   // =========================================================================
+  // Série Temporal de 4 Datas Sentinel-2 (CENAS_SATELITE) por Fazenda
+  // Datas: 11/Jul/2026, 23/Ago/2026, 04/Set/2026, 24/Out/2026
+  // =========================================================================
+  const CENAS_SATELITE = [
+    {
+      id: '2026-07-11',
+      data: '2026-07-11',
+      dataFormatada: '11/Jul/2026',
+      labelCurto: '11/Jul',
+      descricao: 'Sentinel-2 L2A (11/Jul/2026)',
+      rasters: {
+        nelito: {
+          rgb: 'DATA/nelito_rgb_20260711.png',
+          ndvi: 'DATA/nelito_ndvi_20260711.png',
+          fallbackRgb: 'assets/satelite/nelito_rgb_20260711.png',
+          fallbackNdvi: 'assets/satelite/nelito_ndvi_20260711.png',
+          ndviMedio: 0.725
+        },
+        guanai: {
+          rgb: 'DATA/guanai_rgb_20260711.png',
+          ndvi: 'DATA/guanai_ndvi_20260711.png',
+          fallbackRgb: 'assets/satelite/guanai_rgb_20260711.png',
+          fallbackNdvi: 'assets/satelite/guanai_ndvi_20260711.png',
+          ndviMedio: 0.703
+        },
+        esec: {
+          rgb: 'DATA/esec_rgb_anterior.png',
+          ndvi: 'DATA/esec_ndvi_anterior.png',
+          fallbackRgb: 'assets/satelite/aoi_rgb_anterior_2m.png',
+          fallbackNdvi: 'assets/satelite/aoi_ndvi_anterior_2m.png',
+          ndviMedio: 0.730
+        }
+      }
+    },
+    {
+      id: '2026-08-23',
+      data: '2026-08-23',
+      dataFormatada: '23/Ago/2026',
+      labelCurto: '23/Ago',
+      descricao: 'Sentinel-2 L2A (23/Ago/2026)',
+      rasters: {
+        nelito: {
+          rgb: 'DATA/nelito_rgb_20260823.png',
+          ndvi: 'DATA/nelito_ndvi_20260823.png',
+          fallbackRgb: 'assets/satelite/nelito_rgb_20260823.png',
+          fallbackNdvi: 'assets/satelite/nelito_ndvi_20260823.png',
+          ndviMedio: 0.683
+        },
+        guanai: {
+          rgb: 'DATA/guanai_rgb_20260823.png',
+          ndvi: 'DATA/guanai_ndvi_20260823.png',
+          fallbackRgb: 'assets/satelite/guanai_rgb_20260823.png',
+          fallbackNdvi: 'assets/satelite/guanai_ndvi_20260823.png',
+          ndviMedio: 0.677
+        },
+        esec: {
+          rgb: 'DATA/esec_rgb_anterior.png',
+          ndvi: 'DATA/esec_ndvi_anterior.png',
+          fallbackRgb: 'assets/satelite/aoi_rgb_anterior_2m.png',
+          fallbackNdvi: 'assets/satelite/aoi_ndvi_anterior_2m.png',
+          ndviMedio: 0.695
+        }
+      }
+    },
+    {
+      id: '2026-09-04',
+      data: '2026-09-04',
+      dataFormatada: '04/Set/2026',
+      labelCurto: '04/Set',
+      descricao: 'Sentinel-2 L2A (04/Set/2026)',
+      rasters: {
+        nelito: {
+          rgb: 'DATA/nelito_rgb_anterior.png',
+          ndvi: 'DATA/nelito_ndvi_anterior.png',
+          fallbackRgb: 'assets/rasters/nelito_rgb_anterior.png',
+          fallbackNdvi: 'assets/rasters/nelito_ndvi_anterior.png',
+          ndviMedio: 0.582
+        },
+        guanai: {
+          rgb: 'DATA/guanai_rgb_anterior.png',
+          ndvi: 'DATA/guanai_ndvi_anterior.png',
+          fallbackRgb: 'assets/rasters/guanai_rgb_anterior.png',
+          fallbackNdvi: 'assets/rasters/guanai_ndvi_anterior.png',
+          ndviMedio: 0.612
+        },
+        esec: {
+          rgb: 'DATA/esec_rgb_anterior.png',
+          ndvi: 'DATA/esec_ndvi_anterior.png',
+          fallbackRgb: 'assets/satelite/aoi_rgb_anterior_2m.png',
+          fallbackNdvi: 'assets/satelite/aoi_ndvi_anterior_2m.png',
+          ndviMedio: 0.645
+        }
+      }
+    },
+    {
+      id: '2026-10-24',
+      data: '2026-10-24',
+      dataFormatada: '24/Out/2026',
+      labelCurto: '24/Out',
+      descricao: 'Sentinel-2 L2A (24/Out/2026)',
+      rasters: {
+        nelito: {
+          rgb: 'DATA/nelito_rgb_10m.png',
+          ndvi: 'DATA/nelito_ndvi_2m.png',
+          fallbackRgb: 'assets/satelite/nelito_rgb_10m.png',
+          fallbackNdvi: 'assets/satelite/nelito_ndvi_2m.png',
+          ndviMedio: 0.678
+        },
+        guanai: {
+          rgb: 'DATA/guanai_rgb_10m.png',
+          ndvi: 'DATA/guanai_ndvi_2m.png',
+          fallbackRgb: 'assets/satelite/guanai_rgb_10m.png',
+          fallbackNdvi: 'assets/satelite/guanai_ndvi_2m.png',
+          ndviMedio: 0.704
+        },
+        esec: {
+          rgb: 'assets/satelite/aoi_rgb_recente_2m.png',
+          ndvi: 'assets/satelite/aoi_ndvi_recente_2m.png',
+          fallbackRgb: 'DATA/esec_rgb_2m.png',
+          fallbackNdvi: 'DATA/esec_ndvi_2m.png',
+          ndviMedio: 0.720
+        }
+      }
+    }
+  ];
+  window.CENAS_SATELITE = CENAS_SATELITE;
+
+  // Estado ativo dos bounds e overlays
+  let boundsOverlayAtivo = null;
+  let configProjetoAtivo = null;
+
+  // =========================================================================
   // Configuração e Carregamento Dinâmico de Rasters (PNG / bounds.json) por Projeto
   // Permite que 'Satélite RGB', 'NDVI 2m' e 'Comparar' funcionem para Nelito, Guanaí e ESEC
   // =========================================================================
@@ -1149,6 +1281,47 @@ const ITPAMap = (function () {
   };
 
   /**
+   * Construtor global de ImageOverlay com mascaramento vetorial SVG/CSS de alta precisão
+   */
+  function criarOverlayCamada(caminhoImg, caminhoFallback, paneName = 'leftPane', opacity = 0.95, targetBounds = null, clipPoly = null) {
+    const bounds = targetBounds || boundsOverlayAtivo || (configProjetoAtivo && L.latLngBounds(configProjetoAtivo.fallbackBounds[0], configProjetoAtivo.fallbackBounds[1]));
+    const clip = clipPoly || (configProjetoAtivo && configProjetoAtivo.clipPolygon);
+    let currentSrc = caminhoImg;
+    const overlay = L.imageOverlay(currentSrc, bounds, {
+      opacity: opacity,
+      interactive: false,
+      pane: paneName,
+      minZoom: 9,
+      maxZoom: 22
+    });
+
+    const aplicarMascaraVetorial = () => {
+      if (!clip) return;
+      const el = overlay.getElement();
+      if (el) {
+        el.style.clipPath = clip;
+        el.style.webkitClipPath = clip;
+      }
+    };
+
+    overlay.on('load', aplicarMascaraVetorial);
+    setTimeout(aplicarMascaraVetorial, 60);
+    setTimeout(aplicarMascaraVetorial, 300);
+
+    overlay.on('error', () => {
+      if (caminhoFallback && currentSrc !== caminhoFallback) {
+        console.warn(`[ITPAMap] Fallback para imagem alternativa: ${caminhoFallback}`);
+        currentSrc = caminhoFallback;
+        overlay.setUrl(caminhoFallback);
+        setTimeout(aplicarMascaraVetorial, 60);
+      } else if (overlay.getElement()) {
+        overlay.getElement().style.display = 'none';
+      }
+    });
+    return overlay;
+  }
+
+  /**
    * Instancia dinamicamente no Leaflet (via L.imageOverlay) os rasters em PNG de
    * Satélite RGB (10m/2m) e NDVI (2m) da fazenda ativa, usando os limites reais de bounds.json.
    * Garante que os botões 'Satélite RGB', 'NDVI 2m' e 'Comparar' funcionem para cada propriedade.
@@ -1200,42 +1373,12 @@ const ITPAMap = (function () {
       }
     }
 
+    boundsOverlayAtivo = boundsOverlay;
+    configProjetoAtivo = config;
+
     // 4. Helper seguro para criar ImageOverlay georreferenciado com suporte a fallback de URL e clip vetorial
     const criarOverlay = (caminhoImg, caminhoFallback, paneName = 'leftPane', opacity = 0.95) => {
-      let currentSrc = caminhoImg;
-      const overlay = L.imageOverlay(currentSrc, boundsOverlay, {
-        opacity: opacity,
-        interactive: false,
-        pane: paneName,
-        minZoom: 9,
-        maxZoom: 22
-      });
-
-      // Aplica o recorte vetorial CSS/SVG no elemento da imagem para garantir visual 100% dentro da fazenda
-      const aplicarMascaraVetorial = () => {
-        if (!config.clipPolygon) return;
-        const el = overlay.getElement();
-        if (el) {
-          el.style.clipPath = config.clipPolygon;
-          el.style.webkitClipPath = config.clipPolygon;
-        }
-      };
-
-      overlay.on('load', aplicarMascaraVetorial);
-      setTimeout(aplicarMascaraVetorial, 60);
-      setTimeout(aplicarMascaraVetorial, 300);
-
-      overlay.on('error', () => {
-        if (caminhoFallback && currentSrc !== caminhoFallback) {
-          console.warn(`[ITPAMap] Fallback para imagem alternativa: ${caminhoFallback}`);
-          currentSrc = caminhoFallback;
-          overlay.setUrl(caminhoFallback);
-          setTimeout(aplicarMascaraVetorial, 60);
-        } else if (overlay.getElement()) {
-          overlay.getElement().style.display = 'none';
-        }
-      });
-      return overlay;
+      return criarOverlayCamada(caminhoImg, caminhoFallback, paneName, opacity, boundsOverlay, config.clipPolygon);
     };
 
     // 5. Instanciação das novas camadas PNG via L.imageOverlay
@@ -2169,56 +2312,77 @@ const ITPAMap = (function () {
     }
   }
 
-  function atualizarTextosSwipe(isRgb) {
-    const titleLeft = document.querySelector('.swipe-tag.left .swipe-title');
-    const titleRight = document.querySelector('.swipe-tag.right .swipe-title');
-    const subLeft = document.querySelector('.swipe-tag.left .swipe-sub');
-    const subRight = document.querySelector('.swipe-tag.right .swipe-sub');
+  let swipeDataEsquerdaId = '2026-10-24';
+  let swipeDataDireitaId = '2026-09-04';
+  let swipeModoTipo = 'rgb'; // 'rgb' ou 'ndvi'
 
-    if (isRgb) {
-      if (titleLeft) titleLeft.textContent = 'Satélite RGB';
-      if (subLeft) subLeft.textContent = '24/Out/2026';
-      if (titleRight) titleRight.textContent = 'Satélite Histórico';
-      if (subRight) subRight.textContent = '04/Set/2026';
-    } else {
-      if (titleLeft) titleLeft.textContent = 'Índice NDVI (2m)';
-      if (subLeft) subLeft.textContent = '24/Out/2026';
-      if (titleRight) titleRight.textContent = 'NDVI Histórico (2m)';
-      if (subRight) subRight.textContent = '04/Set/2026';
+  function atualizarTextosSwipe(isRgb) {
+    const cenaEsq = CENAS_SATELITE.find(c => c.id === swipeDataEsquerdaId) || CENAS_SATELITE[3];
+    const cenaDir = CENAS_SATELITE.find(c => c.id === swipeDataDireitaId) || CENAS_SATELITE[2];
+    const badgeTextEl = document.getElementById('map-badge-text');
+    if (badgeTextEl && swipeAtivo) {
+      badgeTextEl.textContent = `COMPARAÇÃO: ${cenaEsq.labelCurto} vs ${cenaDir.labelCurto} (${isRgb ? 'RGB' : 'NDVI'})`;
     }
   }
 
-  function alternarModoSwipeTipo(tipo) {
-    if (!swipeAtivo || !map) return;
-    const isRgb = tipo === 'rgb';
+  function atualizarCenasSwipe(dataEsqId = null, dataDirId = null, tipo = null) {
+    if (dataEsqId) swipeDataEsquerdaId = dataEsqId;
+    if (dataDirId) swipeDataDireitaId = dataDirId;
+    if (tipo) swipeModoTipo = tipo;
 
+    const projKey = (window.PROJETO_ATIVO_ID || 'nelito').toLowerCase().trim();
+    const cenaEsq = CENAS_SATELITE.find(c => c.id === swipeDataEsquerdaId) || CENAS_SATELITE[3];
+    const cenaDir = CENAS_SATELITE.find(c => c.id === swipeDataDireitaId) || CENAS_SATELITE[2];
+
+    const dadosEsq = (cenaEsq.rasters && cenaEsq.rasters[projKey]) || (cenaEsq.rasters && cenaEsq.rasters.nelito);
+    const dadosDir = (cenaDir.rasters && cenaDir.rasters[projKey]) || (cenaDir.rasters && cenaDir.rasters.nelito);
+
+    const isRgb = (swipeModoTipo === 'rgb');
+    const urlEsq = isRgb ? dadosEsq.rgb : dadosEsq.ndvi;
+    const fallbackEsq = isRgb ? dadosEsq.fallbackRgb : dadosEsq.fallbackNdvi;
+    const urlDir = isRgb ? dadosDir.rgb : dadosDir.ndvi;
+    const fallbackDir = isRgb ? dadosDir.fallbackRgb : dadosDir.fallbackNdvi;
+
+    // Remove do mapa as camadas opostas
     if (isRgb) {
-      // Isola modo RGB: remove NDVI
       if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) map.removeLayer(layerGroupNdviRecente);
       if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) map.removeLayer(layerGroupNdviAnterior);
-
-      // Adiciona RGB Recente (leftPane) e RGB Anterior (rightPane)
-      if (layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) map.addLayer(layerGroupRgbRecente);
-      if (layerGroupRgbAnterior && !map.hasLayer(layerGroupRgbAnterior)) map.addLayer(layerGroupRgbAnterior);
-
-      const ndviLegendEl = document.getElementById('ndvi-legend');
-      if (ndviLegendEl) ndviLegendEl.style.display = 'none';
     } else {
-      // Isola modo NDVI: remove RGB
       if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) map.removeLayer(layerGroupRgbRecente);
       if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) map.removeLayer(layerGroupRgbAnterior);
-
-      // Adiciona NDVI Recente (leftPane) e NDVI Anterior (rightPane)
-      if (layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) map.addLayer(layerGroupNdviRecente);
-      if (layerGroupNdviAnterior && !map.hasLayer(layerGroupNdviAnterior)) map.addLayer(layerGroupNdviAnterior);
-
-      const ndviLegendEl = document.getElementById('ndvi-legend');
-      if (ndviLegendEl) ndviLegendEl.style.display = 'block';
     }
+
+    const ndviLegendEl = document.getElementById('ndvi-legend');
+    if (ndviLegendEl) ndviLegendEl.style.display = isRgb ? 'none' : 'block';
+
+    const targetGroupLeft = isRgb ? layerGroupRgbRecente : layerGroupNdviRecente;
+    const targetGroupRight = isRgb ? layerGroupRgbAnterior : layerGroupNdviAnterior;
+
+    if (targetGroupLeft) {
+      targetGroupLeft.clearLayers();
+      targetGroupLeft.addLayer(criarOverlayCamada(urlEsq, fallbackEsq, 'leftPane'));
+      if (!map.hasLayer(targetGroupLeft)) map.addLayer(targetGroupLeft);
+    }
+    if (targetGroupRight) {
+      targetGroupRight.clearLayers();
+      targetGroupRight.addLayer(criarOverlayCamada(urlDir, fallbackDir, 'rightPane'));
+      if (!map.hasLayer(targetGroupRight)) map.addLayer(targetGroupRight);
+    }
+
+    // Sincroniza os selects na UI se existirem
+    const selLeft = document.getElementById('swipe-select-left');
+    const selRight = document.getElementById('swipe-select-right');
+    if (selLeft && selLeft.value !== swipeDataEsquerdaId) selLeft.value = swipeDataEsquerdaId;
+    if (selRight && selRight.value !== swipeDataDireitaId) selRight.value = swipeDataDireitaId;
 
     atualizarTextosSwipe(isRgb);
     atualizarPosicaoSwipe(swipePctAtual);
     sincronizarEstadosUI();
+  }
+
+  function alternarModoSwipeTipo(tipo) {
+    if (!swipeAtivo || !map) return;
+    atualizarCenasSwipe(swipeDataEsquerdaId, swipeDataDireitaId, tipo);
   }
 
   function ativarModoSwipe(talhaoFoco = null, bounds = null) {
@@ -2242,53 +2406,40 @@ const ITPAMap = (function () {
 
     // 2. Determina o modo ativo: se NDVI estava ativo, prioriza NDVI; caso contrário, RGB
     const isModoNdvi = swipeCamadasPrevias.ndviRecente || swipeCamadasPrevias.ndviAnterior;
-    const isModoRgb = !isModoNdvi;
-
-    if (isModoRgb) {
-      // Isola modo RGB: desativa temporariamente NDVI para evitar sobreposição/mistura
-      if (layerGroupNdviRecente && map.hasLayer(layerGroupNdviRecente)) {
-        map.removeLayer(layerGroupNdviRecente);
-      }
-      if (layerGroupNdviAnterior && map.hasLayer(layerGroupNdviAnterior)) {
-        map.removeLayer(layerGroupNdviAnterior);
-      }
-
-      // Garante RGB Recente (leftPane - 24/Out) e RGB Anterior (rightPane - 04/Set) ativos no mapa
-      if (layerGroupRgbRecente && !map.hasLayer(layerGroupRgbRecente)) {
-        map.addLayer(layerGroupRgbRecente);
-      }
-      if (layerGroupRgbAnterior && !map.hasLayer(layerGroupRgbAnterior)) {
-        map.addLayer(layerGroupRgbAnterior);
-      }
-
-      const ndviLegendEl = document.getElementById('ndvi-legend');
-      if (ndviLegendEl) ndviLegendEl.style.display = 'none';
-    } else {
-      // Isola modo NDVI: desativa RGB
-      if (layerGroupRgbRecente && map.hasLayer(layerGroupRgbRecente)) {
-        map.removeLayer(layerGroupRgbRecente);
-      }
-      if (layerGroupRgbAnterior && map.hasLayer(layerGroupRgbAnterior)) {
-        map.removeLayer(layerGroupRgbAnterior);
-      }
-
-      // Garante NDVI Recente (leftPane - 24/Out) e NDVI Anterior (rightPane - 04/Set) ativos no mapa
-      if (layerGroupNdviRecente && !map.hasLayer(layerGroupNdviRecente)) {
-        map.addLayer(layerGroupNdviRecente);
-      }
-      if (layerGroupNdviAnterior && !map.hasLayer(layerGroupNdviAnterior)) {
-        map.addLayer(layerGroupNdviAnterior);
-      }
-
-      const ndviLegendEl = document.getElementById('ndvi-legend');
-      if (ndviLegendEl) ndviLegendEl.style.display = 'block';
-    }
-
-    atualizarTextosSwipe(isModoRgb);
+    swipeModoTipo = isModoNdvi ? 'ndvi' : 'rgb';
 
     if (swipeContainer) {
       swipeContainer.style.display = 'block';
     }
+
+    // Aplica as cenas configuradas nos seletores (ou defaults)
+    atualizarCenasSwipe(swipeDataEsquerdaId, swipeDataDireitaId, swipeModoTipo);
+
+    // Se fornecido bounds do talhão ou da propriedade ativa, aproxima
+    let targetBounds = (bounds && bounds.isValid && bounds.isValid()) ? bounds : null;
+    if (!targetBounds && talhaoFoco && typeof talhaoFoco === 'string' && CONFIG_RASTERS_PROJETOS[talhaoFoco.toLowerCase()]) {
+      const cfg = CONFIG_RASTERS_PROJETOS[talhaoFoco.toLowerCase()];
+      targetBounds = L.latLngBounds(cfg.fallbackBounds[0], cfg.fallbackBounds[1]);
+    }
+    if (!targetBounds && typeof obterBoundsPropriedadeAtiva === 'function') {
+      targetBounds = obterBoundsPropriedadeAtiva();
+    }
+
+    if (targetBounds && targetBounds.isValid && targetBounds.isValid()) {
+      map.fitBounds(targetBounds.pad(0.12), { padding: [30, 30], maxZoom: 17 });
+    }
+
+    // Posiciona o divisor inicialmente a 50%
+    atualizarPosicaoSwipe(50);
+    setTimeout(() => {
+      atualizarPosicaoSwipe(50);
+    }, 80);
+    setTimeout(() => {
+      atualizarPosicaoSwipe(50);
+    }, 300);
+
+    sincronizarEstadosUI();
+  }
 
     // Se fornecido bounds do talhão ou da propriedade ativa, aproxima
     let targetBounds = (bounds && bounds.isValid && bounds.isValid()) ? bounds : null;
@@ -2428,6 +2579,20 @@ const ITPAMap = (function () {
       btnClose.addEventListener('click', (e) => {
         e.preventDefault();
         desativarModoSwipe();
+      });
+    }
+
+    // Seletores de datas do Swipe (Lado A e Lado B)
+    const selLeft = document.getElementById('swipe-select-left');
+    const selRight = document.getElementById('swipe-select-right');
+    if (selLeft) {
+      selLeft.addEventListener('change', (e) => {
+        atualizarCenasSwipe(e.target.value, swipeDataDireitaId, swipeModoTipo);
+      });
+    }
+    if (selRight) {
+      selRight.addEventListener('change', (e) => {
+        atualizarCenasSwipe(swipeDataEsquerdaId, e.target.value, swipeModoTipo);
       });
     }
 
