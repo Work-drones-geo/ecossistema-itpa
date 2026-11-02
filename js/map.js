@@ -184,21 +184,43 @@ const ITPAMap = (function () {
 
     layerGroupProdes = L.geoJSON(null, {
       style: {
-        color: '#dc2626', // Contorno vermelho sem preenchimento opaco
-        weight: 2.5,
-        fillOpacity: 0.0,
-        dashArray: '5, 5'
+        color: '#dc2626',       // Vermelho Alerta PRODES
+        weight: 3.0,            // Contorno bem destacado
+        opacity: 1.0,
+        fillColor: '#ef4444',   // Preenchimento vermelho visível
+        fillOpacity: 0.35,      // Opacidade ideal para visualizar o solo sob a imagem
+        dashArray: '6, 4'
       },
       onEachFeature: (feature, layer) => {
         const props = feature.properties || {};
-        const ano = props.year || props.ano || props.date || '> 31/07/2019';
-        const area = props.area_ha || props.area || '--';
+        const ano = props.year || props.ano || (props.image_date ? props.image_date.split('-')[0] : '2024');
+        const dataImagem = props.image_date || '--';
+        const classe = props.main_class || props.class_name || 'DESMATAMENTO';
+        const satelite = props.satellite ? `${props.satellite} (${props.sensor || ''})` : 'Sentinel-2';
+
+        let areaTexto = '--';
+        if (props.area_ha) {
+          areaTexto = `${Number(props.area_ha).toFixed(2)} ha`;
+        } else if (props.area_km) {
+          areaTexto = `${(Number(props.area_km) * 100).toFixed(2)} ha (${Number(props.area_km).toFixed(4)} km²)`;
+        } else if (props.area) {
+          areaTexto = `${props.area} ha`;
+        }
+
         layer.bindPopup(`
-          <div class="itpa-popup-card">
-            <h4 style="margin:0 0 4px 0; color:#dc2626;">🚨 Alerta PRODES (> 31/07/2019)</h4>
-            <p style="margin:0; font-size:12px;"><strong>Ano / Data:</strong> ${ano}</p>
-            <p style="margin:0; font-size:12px;"><strong>Área:</strong> ${area} ha</p>
-            <p style="margin:0; font-size:11px; color:#dc2626;"><strong>Impeditivo CMN 5.303/2026</strong></p>
+          <div class="itpa-popup-card" style="min-width:230px; font-family:'Plus Jakarta Sans',sans-serif;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="background:#dc2626; color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px;">PRODES / INPE</span>
+              <span style="font-size:11px; color:#6b7280; font-weight:600;">Pós-31/07/2019</span>
+            </div>
+            <h4 style="margin:0 0 6px 0; color:#dc2626; font-size:14px; font-weight:800;">🚨 ${classe}</h4>
+            <p style="margin:2px 0; font-size:12px;"><strong>Ano Base:</strong> ${ano}</p>
+            <p style="margin:2px 0; font-size:12px;"><strong>Data Imagem:</strong> ${dataImagem}</p>
+            <p style="margin:2px 0; font-size:12px;"><strong>Área do Alerta:</strong> ${areaTexto}</p>
+            <p style="margin:2px 0; font-size:12px;"><strong>Sensor:</strong> ${satelite}</p>
+            <div style="margin-top:8px; padding-top:6px; border-top:1px dashed #e5e7eb; font-size:11px; color:#b91c1c; font-weight:700;">
+              ⚠️ Impeditivo Territorial Res. CMN nº 5.303/2026
+            </div>
           </div>
         `);
       }
@@ -735,6 +757,81 @@ const ITPAMap = (function () {
       console.log(`[ITPAMap] APA Guapi Limite IBAMA carregado com sucesso de: ${urlSucesso}`);
       return true;
     }
+    return false;
+  }
+
+  /**
+   * Carrega os alertas PRODES (> 31/07/2019) da propriedade ativa.
+   * Somente a Fazenda Guanaí possui alertas ativos (DATA/prodes_alertas.geojson).
+   * @param {boolean} centralizar Se deve aplicar fitBounds nos alertas
+   * @returns {Promise<boolean>}
+   */
+  async function carregarCamadaProdes(centralizar = true) {
+    if (!layerGroupProdes || !map) return false;
+    const key = (window.PROJETO_ATIVO_ID || 'guanai').toLowerCase().trim();
+
+    // Somente a Fazenda Guanaí possui alertas PRODES ativos
+    if (key !== 'guanai') {
+      console.log(`[ITPAMap] Propriedade '${key}' não possui alertas PRODES ativos (100% Conforme CMN).`);
+      if (layerGroupProdes && map.hasLayer(layerGroupProdes)) {
+        map.removeLayer(layerGroupProdes);
+      }
+      layerGroupProdes.clearLayers();
+      const toggleProdes = document.getElementById('sheet-toggle-prodes');
+      if (toggleProdes) toggleProdes.checked = false;
+      return false;
+    }
+
+    const caminhos = [
+      './DATA/prodes_alertas.geojson',
+      'DATA/prodes_alertas.geojson',
+      './data/prodes_alertas.geojson'
+    ];
+
+    let geojsonData = null;
+    let urlSucesso = '';
+
+    for (const url of caminhos) {
+      try {
+        const resp = await fetch(url);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && ((Array.isArray(data.features) && data.features.length > 0) || data.type === 'Feature')) {
+            geojsonData = data;
+            urlSucesso = url;
+            break;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (geojsonData) {
+      layerGroupProdes.clearLayers();
+      layerGroupProdes.addData(geojsonData);
+      layerGroupProdes.setStyle({
+        color: '#dc2626',       // Vermelho Alerta PRODES
+        weight: 3.0,            // Contorno forte e nítido
+        opacity: 1.0,
+        fillColor: '#ef4444',   // Preenchimento vermelho de alerta
+        fillOpacity: 0.35,      // Opacidade perfeita para sobreposição
+        dashArray: '6, 4'
+      });
+
+      if (!map.hasLayer(layerGroupProdes)) {
+        map.addLayer(layerGroupProdes);
+      }
+      if (layerGroupProdes.bringToFront) {
+        layerGroupProdes.bringToFront();
+      }
+
+      if (centralizar && layerGroupProdes.getBounds && layerGroupProdes.getBounds().isValid()) {
+        map.fitBounds(layerGroupProdes.getBounds().pad(0.12), { maxZoom: 16 });
+      }
+
+      console.log(`[ITPAMap] Alertas PRODES carregados com sucesso de: ${urlSucesso}`);
+      return true;
+    }
+
     return false;
   }
 
@@ -1315,7 +1412,17 @@ const ITPAMap = (function () {
     if (toggleCar) toggleCar.checked = !!carAtivo;
 
     const prodesAtivo = layerGroupProdes && map.hasLayer(layerGroupProdes);
-    if (toggleProdes) toggleProdes.checked = !!prodesAtivo;
+    const subProdes = document.getElementById('prodes-choice-sub');
+    if (keyAtiva === 'guanai') {
+      if (toggleProdes) toggleProdes.checked = !!prodesAtivo;
+      if (subProdes) subProdes.textContent = 'Desmatamento 2024 pós-marco temporal CMN (Fazenda Guanaí)';
+    } else {
+      if (toggleProdes) toggleProdes.checked = false;
+      if (subProdes) subProdes.textContent = 'Sem alertas ativos nesta propriedade (100% Conforme CMN)';
+      if (prodesAtivo && map && layerGroupProdes) {
+        map.removeLayer(layerGroupProdes);
+      }
+    }
 
     const ibamaAtivo = layerGroupIbama && map.hasLayer(layerGroupIbama);
     if (toggleIbama) toggleIbama.checked = !!ibamaAtivo;
@@ -2179,6 +2286,19 @@ const ITPAMap = (function () {
       }
     }
 
+    // Gerenciamento contextual de Alertas PRODES (exclusivo Fazenda Guanaí)
+    if (key !== 'guanai') {
+      if (layerGroupProdes && map.hasLayer(layerGroupProdes)) {
+        map.removeLayer(layerGroupProdes);
+      }
+      if (layerGroupProdes) layerGroupProdes.clearLayers();
+    } else {
+      const toggleProdes = document.getElementById('sheet-toggle-prodes');
+      if (toggleProdes && toggleProdes.checked) {
+        carregarCamadaProdes(false);
+      }
+    }
+
     sincronizarEstadosUI();
 
     if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
@@ -2746,14 +2866,53 @@ const ITPAMap = (function () {
     }
 
     if (toggleProdes) {
-      toggleProdes.onchange = () => {
+      toggleProdes.onchange = async () => {
+        const key = (window.PROJETO_ATIVO_ID || 'guanai').toLowerCase().trim();
+
         if (toggleProdes.checked) {
-          if (layerGroupProdes && !map.hasLayer(layerGroupProdes)) map.addLayer(layerGroupProdes);
+          if (key !== 'guanai') {
+            toggleProdes.checked = false;
+            if (window.showToast) {
+              const nomeProp = key === 'nelito' ? 'Fazenda Nelito' : 'ESEC Guanabara';
+              window.showToast(`${nomeProp}: Nenhum alerta PRODES ativo (100% Conforme CMN)`, 'info');
+            }
+            sincronizarEstadosUI();
+            return;
+          }
+
+          // Quando ligar na Fazenda Guanaí: carrega e abre imediatamente os alertas
+          const sucesso = await carregarCamadaProdes(true);
+          if (sucesso) {
+            if (window.showToast) {
+              window.showToast('Alertas PRODES ativados: Polígonos de desmatamento 2024 exibidos (vermelho)', 'warning');
+            }
+          } else {
+            if (window.showToast) {
+              window.showToast('Nenhum alerta PRODES carregado para esta área.', 'default');
+            }
+          }
         } else {
-          if (layerGroupProdes && map.hasLayer(layerGroupProdes)) map.removeLayer(layerGroupProdes);
+          // Quando desligar: remove imediatamente do mapa
+          if (layerGroupProdes && map.hasLayer(layerGroupProdes)) {
+            map.removeLayer(layerGroupProdes);
+          }
+          if (window.showToast) {
+            window.showToast('Alertas PRODES desativados', 'default');
+          }
         }
         sincronizarEstadosUI();
       };
+
+      const rowProdes = toggleProdes.closest('.sheet-switch-row');
+      if (rowProdes) {
+        rowProdes.style.cursor = 'pointer';
+        rowProdes.addEventListener('click', (e) => {
+          if (e.target !== toggleProdes && !e.target.closest('.ios-toggle')) {
+            toggleProdes.checked = !toggleProdes.checked;
+            toggleProdes.dispatchEvent(new Event('change'));
+          }
+        });
+      }
     }
 
     if (toggleIbama) {
@@ -3275,6 +3434,15 @@ const ITPAMap = (function () {
     carregarCamadaCar,
     alternarCamadaCar: (ligar) => {
       const toggle = document.getElementById('sheet-toggle-car');
+      if (toggle) {
+        if (typeof ligar === 'boolean') toggle.checked = ligar;
+        else toggle.checked = !toggle.checked;
+        toggle.dispatchEvent(new Event('change'));
+      }
+    },
+    carregarCamadaProdes,
+    alternarCamadaProdes: (ligar) => {
+      const toggle = document.getElementById('sheet-toggle-prodes');
       if (toggle) {
         if (typeof ligar === 'boolean') toggle.checked = ligar;
         else toggle.checked = !toggle.checked;
