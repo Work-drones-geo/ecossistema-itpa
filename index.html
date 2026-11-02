@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 
   <!-- Estilos Customizados do ITPA -->
-  <link rel="stylesheet" href="styles.css?v=7.5.8">
+  <link rel="stylesheet" href="styles.css?v=7.5.9">
 </head>
 <body>
 
@@ -869,12 +869,12 @@
             </div>
 
             <!-- Alertas PRODES (> 31/07/2019) -->
-            <div class="sheet-switch-row">
+            <div class="sheet-switch-row" id="row-prodes">
               <div class="sheet-switch-left">
-                <span class="sheet-tech-tag">PRODES</span>
+                <span class="sheet-tech-tag" style="background:#dc2626; color:#fff;">PRODES</span>
                 <div class="sheet-choice-text">
                   <span class="sheet-choice-label">Alertas PRODES (&gt; 31/07/2019)</span>
-                  <span class="sheet-choice-sub">Desmatamento pós-marco temporal CMN</span>
+                  <span class="sheet-choice-sub" id="prodes-choice-sub">Desmatamento pós-marco temporal CMN</span>
                 </div>
               </div>
               <label class="ios-toggle" for="sheet-toggle-prodes">
@@ -924,17 +924,17 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <!-- Módulos da Aplicação Ecossistema ITPA -->
-  <script src="script.js?v=7.5.8"></script>
-  <script src="js/config.js?v=7.5.8"></script>
-  <script src="js/db.js?v=7.5.8"></script>
-  <script src="js/camera.js?v=7.5.8"></script>
-  <script src="js/map.js?v=7.5.8"></script>
-  <script src="js/sync.js?v=7.5.8"></script>
-  <script src="js/report.js?v=7.5.8"></script>
-  <script src="js/assets_laudo.js?v=7.5.8"></script>
-  <script src="js/relatorio_talhao.js?v=7.5.8"></script>
-  <script src="js/auditoria.js?v=7.5.8"></script>
-  <script src="app.js?v=7.5.8"></script>
+  <script src="script.js?v=7.5.9"></script>
+  <script src="js/config.js?v=7.5.9"></script>
+  <script src="js/db.js?v=7.5.9"></script>
+  <script src="js/camera.js?v=7.5.9"></script>
+  <script src="js/map.js?v=7.5.9"></script>
+  <script src="js/sync.js?v=7.5.9"></script>
+  <script src="js/report.js?v=7.5.9"></script>
+  <script src="js/assets_laudo.js?v=7.5.9"></script>
+  <script src="js/relatorio_talhao.js?v=7.5.9"></script>
+  <script src="js/auditoria.js?v=7.5.9"></script>
+  <script src="app.js?v=7.5.9"></script>
 
 </body>
 </html>
