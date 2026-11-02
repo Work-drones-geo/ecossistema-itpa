@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 
   <!-- Estilos Customizados do ITPA -->
-  <link rel="stylesheet" href="styles.css?v=7.5.3">
+  <link rel="stylesheet" href="styles.css?v=7.5.8">
 </head>
 <body>
 
@@ -809,7 +809,7 @@
           </div>
           <div class="sheet-switches-list">
             <!-- Limites Territoriais Oficiais / Perímetro Imóvel vs CAR -->
-            <div class="sheet-switch-row">
+            <div class="sheet-switch-row" id="row-talhoes">
               <div class="sheet-switch-left">
                 <span class="sheet-tech-tag">LIMITES</span>
                 <div class="sheet-choice-text">
@@ -824,7 +824,37 @@
             </div>
 
             <!-- Base CAR (Polígono Oficial) -->
-            <div class="sheet-switch-row">
+            <div class="sheet-switch-row" id="row-esec-limite" style="display: none;">
+              <div class="sheet-switch-left">
+                <span class="sheet-tech-tag" style="background:#0891b2; color:#fff;">ESEC</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">ESEC Limite IBAMA</span>
+                  <span class="sheet-choice-sub">Perímetro ESEC Guanabara (esec_limite.geojson)</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-esec-limite">
+                <input type="checkbox" id="sheet-toggle-esec-limite">
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+
+            <!-- APA Guapi Limite IBAMA -->
+            <div class="sheet-switch-row" id="row-apa-limite" style="display: none;">
+              <div class="sheet-switch-left">
+                <span class="sheet-tech-tag" style="background:#7c3aed; color:#fff;">APA</span>
+                <div class="sheet-choice-text">
+                  <span class="sheet-choice-label">APA Guapi Limite IBAMA</span>
+                  <span class="sheet-choice-sub">Perímetro APA Guapimirim (apa_guapi_limite.geojson)</span>
+                </div>
+              </div>
+              <label class="ios-toggle" for="sheet-toggle-apa-limite">
+                <input type="checkbox" id="sheet-toggle-apa-limite">
+                <span class="ios-toggle-track"></span>
+              </label>
+            </div>
+
+            <!-- Base CAR (Polígono Oficial) -->
+            <div class="sheet-switch-row" id="row-car">
               <div class="sheet-switch-left">
                 <span class="sheet-tech-tag">CAR</span>
                 <div class="sheet-choice-text">
@@ -894,17 +924,17 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <!-- Módulos da Aplicação Ecossistema ITPA -->
-  <script src="script.js?v=7.5.3"></script>
-  <script src="js/config.js?v=7.5.3"></script>
-  <script src="js/db.js?v=7.5.3"></script>
-  <script src="js/camera.js?v=7.5.3"></script>
-  <script src="js/map.js?v=7.5.3"></script>
-  <script src="js/sync.js?v=7.5.3"></script>
-  <script src="js/report.js?v=7.5.3"></script>
-  <script src="js/assets_laudo.js?v=7.5.3"></script>
-  <script src="js/relatorio_talhao.js?v=7.5.3"></script>
-  <script src="js/auditoria.js?v=7.5.3"></script>
-  <script src="app.js?v=7.5.3"></script>
+  <script src="script.js?v=7.5.8"></script>
+  <script src="js/config.js?v=7.5.8"></script>
+  <script src="js/db.js?v=7.5.8"></script>
+  <script src="js/camera.js?v=7.5.8"></script>
+  <script src="js/map.js?v=7.5.8"></script>
+  <script src="js/sync.js?v=7.5.8"></script>
+  <script src="js/report.js?v=7.5.8"></script>
+  <script src="js/assets_laudo.js?v=7.5.8"></script>
+  <script src="js/relatorio_talhao.js?v=7.5.8"></script>
+  <script src="js/auditoria.js?v=7.5.8"></script>
+  <script src="app.js?v=7.5.8"></script>
 
 </body>
 </html>
