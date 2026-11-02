@@ -631,7 +631,7 @@
       // Vincula automaticamente a emissão da Ficha Técnica na lista de documentos vinculada ao Google Drive
       try {
         if (window.ITPASync && typeof window.ITPASync.registrarDocumentoTalhao === 'function') {
-          const driveUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
+          const driveUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauIdtmaoLwyUe1ndQN?usp=sharing';
           await window.ITPASync.registrarDocumentoTalhao(
             nomeTalhaoBruto,
             `Ficha Tecnica Executiva (${dataArquivoStr})`,

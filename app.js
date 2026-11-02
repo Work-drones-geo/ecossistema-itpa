@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      const driveMasterUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
+      const driveMasterUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauIdtmaoLwyUe1ndQN?usp=sharing';
 
       docs.forEach((doc) => {
         const li = document.createElement('li');
@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnDrive) {
       btnDrive.onclick = (e) => {
         e.preventDefault();
-        const driveUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
+        const driveUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauIdtmaoLwyUe1ndQN?usp=sharing';
         showToast('📁 Abrindo pasta oficial do Google Drive ITPA...', 'info');
         window.open(driveUrl, '_blank', 'noopener,noreferrer');
       };
@@ -873,7 +873,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const titulo = docDescricao ? docDescricao.value.trim() : '';
       // Utiliza automaticamente a URL oficial da Pasta Mestre do Google Drive
-      const link = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
+      const link = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauIdtmaoLwyUe1ndQN?usp=sharing';
 
       if (!talhaoId) {
         alert('Identificador do imóvel/área não encontrado. Selecione o imóvel novamente no mapa.');
@@ -932,7 +932,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnAbrirPastaDrive) {
     btnAbrirPastaDrive.onclick = (e) => {
       e.preventDefault();
-      const driveUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
+      const driveUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauIdtmaoLwyUe1ndQN?usp=sharing';
       showToast('📁 Abrindo pasta oficial do Google Drive ITPA...', 'info');
       window.open(driveUrl, '_blank', 'noopener,noreferrer');
     };
@@ -942,7 +942,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnSettingsOpenDrive) {
     btnSettingsOpenDrive.onclick = (e) => {
       e.preventDefault();
-      const driveUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN';
+      const driveUrl = window.ITPA_DRIVE_FOLDER_URL || window.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauIdtmaoLwyUe1ndQN?usp=sharing';
       showToast('📁 Abrindo pasta oficial do Google Drive ITPA...', 'info');
       window.open(driveUrl, '_blank', 'noopener,noreferrer');
     };

@@ -9,8 +9,8 @@
   'use strict';
 
   // URL e ID oficial da Pasta Mestre do Google Drive compartilhada para o projeto ITPA
-  const ITPA_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauldItmaolwYu1ndQN";
-  const ITPA_DRIVE_FOLDER_ID = "1O9EOZV9XnoNxbeauldItmaolwYu1ndQN";
+  const ITPA_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1O9EOZV9XnoNxbeauIdtmaoLwyUe1ndQN?usp=sharing";
+  const ITPA_DRIVE_FOLDER_ID = "1O9EOZV9XnoNxbeauIdtmaoLwyUe1ndQN";
 
   const ITPA_CONFIG = {
     // Identificação do Sistema
