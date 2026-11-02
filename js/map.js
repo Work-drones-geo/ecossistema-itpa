@@ -12,6 +12,12 @@ const ITPAMap = (function () {
   let projetoPendente = null;
   let userLocationMarker = null;
   let userAccuracyCircle = null;
+  let userTrailPolyline = null;
+  let userTrailPoints = [];
+  let gpsWatchId = null;
+  let gpsRastreamentoAtivo = false;
+  let gpsAutoPanAtivo = true;
+  let ultimaPosicaoGps = null;
   let tempPickMarker = null;
   let onPointSelectedCallback = null;
 
@@ -91,6 +97,14 @@ const ITPAMap = (function () {
 
     // Reposiciona o controle de zoom no topo esquerdo para liberar a lateral direita aos atalhos rápidos
     L.control.zoom({ position: 'topleft' }).addTo(map);
+
+    // Se o usuário arrastar o mapa manualmente, despausa o travamento da câmera mantendo o rastreamento ativo
+    map.on('dragstart', () => {
+      if (gpsRastreamentoAtivo && gpsAutoPanAtivo) {
+        gpsAutoPanAtivo = false;
+        atualizarEstadoVisualBotaoGps();
+      }
+    });
 
     // Gerencia classe de elevação do contexto de popup para evitar colisão com a coluna técnica lateral
     map.on('popupopen', () => {
@@ -2438,69 +2452,263 @@ const ITPAMap = (function () {
   }
 
   /**
-   * Centraliza e acompanha a posição GPS do usuário em alta precisão.
-   * @returns {Promise<{latitude: number, longitude: number, accuracy: number}>}
+   * Constrói o HTML interno do marcador dinâmico em tempo real com indicador de rumo
+   * @param {number|null} heading Rumo em graus (0 a 360)
+   * @returns {string}
    */
-  function obterLocalizacaoAtual(centralizar = true) {
-    return new Promise((resolve, reject) => {
-      if (!('geolocation' in navigator)) {
-        return reject(new Error('Geolocalização não suportada no aparelho.'));
+  function criarHtmlMarcadorGps(heading = null) {
+    const temHeading = typeof heading === 'number' && !isNaN(heading);
+    const rot = temHeading ? `transform: rotate(${heading}deg); display: block;` : 'display: none;';
+    return `
+      <div class="user-gps-pulse-live">
+        <div class="pulse-ring"></div>
+        <div class="heading-arrow" style="${rot}"></div>
+        <div class="dot"></div>
+      </div>
+    `;
+  }
+
+  /**
+   * Atualiza a posição visual do técnico no mapa Leaflet em tempo real.
+   * Desenha o ponto pulsante, o círculo de acurácia em metros e a trilha de deslocamento.
+   * Funciona 100% offline via hardware GNSS (satélites) sem depender de conexão celular.
+   * @param {GeolocationPosition} pos Objeto de posição do W3C Geolocation
+   * @param {boolean} forcarCentralizar Se deve aplicar pan imediato
+   */
+  function atualizarPosicaoGpsNaTela(pos, forcarCentralizar = false) {
+    if (!pos || !pos.coords) return;
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const accuracy = pos.coords.accuracy || 10;
+    const altitude = pos.coords.altitude || null;
+    const heading = pos.coords.heading;
+    const speed = pos.coords.speed;
+
+    ultimaPosicaoGps = {
+      latitude: lat,
+      longitude: lng,
+      precisaoGps: accuracy,
+      altitude: altitude,
+      heading: heading,
+      speed: speed,
+      timestamp: pos.timestamp || Date.now()
+    };
+    window.ULTIMA_POSICAO_GPS = ultimaPosicaoGps;
+
+    if (!map) return;
+
+    // 1. Cria ou atualiza marcador principal com o ponto pulsante
+    if (!userLocationMarker) {
+      userLocationMarker = L.marker([lat, lng], {
+        icon: L.divIcon({
+          html: criarHtmlMarcadorGps(heading),
+          className: 'user-gps-wrapper-live',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        }),
+        zIndexOffset: 1500
+      }).addTo(map);
+
+      userAccuracyCircle = L.circle([lat, lng], {
+        radius: accuracy,
+        color: '#2563eb',
+        weight: 1.5,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.12
+      }).addTo(map);
+
+      userTrailPoints = [[lat, lng]];
+      userTrailPolyline = L.polyline(userTrailPoints, {
+        color: '#2563eb',
+        weight: 3.5,
+        opacity: 0.75,
+        dashArray: '4, 6',
+        lineCap: 'round'
+      }).addTo(map);
+    } else {
+      userLocationMarker.setLatLng([lat, lng]);
+      userLocationMarker.setIcon(L.divIcon({
+        html: criarHtmlMarcadorGps(heading),
+        className: 'user-gps-wrapper-live',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      }));
+
+      if (userAccuracyCircle) {
+        userAccuracyCircle.setLatLng([lat, lng]);
+        userAccuracyCircle.setRadius(accuracy);
       }
 
-      navigator.geolocation.getCurrentPosition(
+      // Adiciona ponto na trilha de deslocamento se o técnico se moveu >= 1.5 metros
+      if (userTrailPoints && userTrailPoints.length > 0) {
+        const last = userTrailPoints[userTrailPoints.length - 1];
+        const distMetros = map.distance(last, [lat, lng]);
+        if (distMetros >= 1.5) {
+          userTrailPoints.push([lat, lng]);
+          if (userTrailPoints.length > 800) userTrailPoints.shift();
+          if (userTrailPolyline) userTrailPolyline.setLatLngs(userTrailPoints);
+        }
+      } else {
+        userTrailPoints = [[lat, lng]];
+        if (userTrailPolyline) userTrailPolyline.setLatLngs(userTrailPoints);
+      }
+    }
+
+    // 2. Centralização suave / Acompanhamento contínuo da câmera (Auto-Pan)
+    if (forcarCentralizar || gpsAutoPanAtivo) {
+      if (map.getZoom() < 16) {
+        map.setView([lat, lng], 17, { animate: true });
+      } else {
+        map.panTo([lat, lng], { animate: true, duration: 0.5 });
+      }
+    }
+
+    // 3. Atualiza estado visual do botão flutuante de GPS
+    atualizarEstadoVisualBotaoGps();
+  }
+
+  /**
+   * Atualiza a indicação visual do botão de GPS conforme o estado do rastreamento
+   */
+  function atualizarEstadoVisualBotaoGps() {
+    const btn = document.getElementById('btn-gps-locate');
+    if (!btn) return;
+
+    if (gpsRastreamentoAtivo) {
+      btn.classList.add('tracking-active');
+      if (gpsAutoPanAtivo) {
+        btn.classList.remove('tracking-paused');
+        btn.setAttribute('title', 'GPS em Tempo Real Ativo (Câmera Segue Deslocamento). Clique para pausar ou recentralizar.');
+      } else {
+        btn.classList.add('tracking-paused');
+        btn.setAttribute('title', 'GPS Ativo em Segundo Plano. Clique para recentralizar a câmera na sua posição.');
+      }
+    } else {
+      btn.classList.remove('tracking-active', 'tracking-paused');
+      btn.setAttribute('title', 'Ativar Rastreamento GPS em Tempo Real');
+    }
+  }
+
+  /**
+   * Inicia o monitoramento contínuo em tempo real da posição via satélite (watchPosition).
+   * Funciona offline diretamente pelo sensor GNSS integrado.
+   * @param {boolean} forcarCentralizar Se deve centralizar o mapa no primeiro ponto
+   * @returns {Promise<Object>}
+   */
+  function iniciarRastreamentoGps(forcarCentralizar = true) {
+    if (!('geolocation' in navigator)) {
+      if (window.showToast) window.showToast('Geolocalização não suportada neste aparelho.', 'warning');
+      return Promise.reject(new Error('Geolocation não suportado'));
+    }
+
+    gpsRastreamentoAtivo = true;
+    gpsAutoPanAtivo = true;
+    atualizarEstadoVisualBotaoGps();
+
+    return new Promise((resolve, reject) => {
+      let primeiraLeitura = true;
+
+      // Limpa qualquer watch anterior
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+      }
+
+      gpsWatchId = navigator.geolocation.watchPosition(
         (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const accuracy = pos.coords.accuracy;
-
-          if (map) {
-            // Atualiza ou cria marcador do técnico
-            if (!userLocationMarker) {
-              userLocationMarker = L.marker([lat, lng], {
-                icon: L.divIcon({
-                  html: '<div class="user-gps-pulse"><div class="dot"></div></div>',
-                  className: 'user-gps-wrapper',
-                  iconSize: [24, 24],
-                  iconAnchor: [12, 12]
-                })
-              }).addTo(map);
-
-              userAccuracyCircle = L.circle([lat, lng], {
-                radius: accuracy,
-                color: '#2B88D9',
-                weight: 1,
-                fillColor: '#2B88D9',
-                fillOpacity: 0.15
-              }).addTo(map);
-            } else {
-              userLocationMarker.setLatLng([lat, lng]);
-              userAccuracyCircle.setLatLng([lat, lng]);
-              userAccuracyCircle.setRadius(accuracy);
+          atualizarPosicaoGpsNaTela(pos, primeiraLeitura && forcarCentralizar);
+          if (primeiraLeitura) {
+            primeiraLeitura = false;
+            const prec = Math.round(pos.coords.accuracy || 0);
+            if (window.showToast) {
+              window.showToast(`🛰️ GPS Tempo Real Conectado! Precisão: ±${prec}m (Acompanhando deslocamento)`, 'success');
             }
-
-            if (centralizar) {
-              map.setView([lat, lng], 16, { animate: true });
-            }
+            resolve(ultimaPosicaoGps);
           }
-
-          resolve({
-            latitude: lat,
-            longitude: lng,
-            precisaoGps: accuracy,
-            altitude: pos.coords.altitude
-          });
         },
         (err) => {
-          console.warn('Erro ao obter GPS:', err);
-          reject(err);
+          console.warn('[ITPAMap] Erro no watchPosition:', err);
+          if (primeiraLeitura) {
+            primeiraLeitura = false;
+            // Fallback imediato com getCurrentPosition
+            navigator.geolocation.getCurrentPosition(
+              (posFallback) => {
+                atualizarPosicaoGpsNaTela(posFallback, forcarCentralizar);
+                resolve(ultimaPosicaoGps);
+              },
+              (errFallback) => {
+                gpsRastreamentoAtivo = false;
+                atualizarEstadoVisualBotaoGps();
+                if (window.showToast) {
+                  window.showToast('Sinal GPS indisponível ou permissão negada no aparelho.', 'warning');
+                }
+                reject(errFallback);
+              },
+              { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+            );
+          }
         },
         {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
+          enableHighAccuracy: true, // Força chip GNSS/GPS mesmo sem conexão de dados
+          timeout: 20000,          // 20s de tolerância para fix de satélite
+          maximumAge: 0            // Zero cache, leituras frescas imediatas
         }
       );
     });
+  }
+
+  /**
+   * Pausa o rastreamento contínuo em tempo real do GPS
+   */
+  function pararRastreamentoGps() {
+    if (gpsWatchId !== null) {
+      navigator.geolocation.clearWatch(gpsWatchId);
+      gpsWatchId = null;
+    }
+    gpsRastreamentoAtivo = false;
+    gpsAutoPanAtivo = false;
+    atualizarEstadoVisualBotaoGps();
+    if (window.showToast) {
+      window.showToast('Rastreamento GPS pausado.', 'default');
+    }
+  }
+
+  /**
+   * Alterna o modo de rastreamento contínuo em tempo real:
+   * - Se inativo: Inicia e centraliza.
+   * - Se ativo mas câmera destravada (usuário arrastou o mapa): Recentraliza no usuário e retoma auto-pan.
+   * - Se ativo e já centralizado: Pausa o GPS para economizar bateria.
+   */
+  function alternarRastreamentoGps() {
+    if (!gpsRastreamentoAtivo) {
+      if (window.showToast) window.showToast('📡 Conectando ao GPS em tempo real...', 'info');
+      iniciarRastreamentoGps(true);
+    } else {
+      if (!gpsAutoPanAtivo && ultimaPosicaoGps) {
+        gpsAutoPanAtivo = true;
+        map.setView([ultimaPosicaoGps.latitude, ultimaPosicaoGps.longitude], Math.max(map.getZoom(), 17), { animate: true });
+        atualizarEstadoVisualBotaoGps();
+        if (window.showToast) window.showToast('📍 Câmera centralizada no seu deslocamento em tempo real', 'info');
+      } else {
+        pararRastreamentoGps();
+      }
+    }
+  }
+
+  /**
+   * Centraliza e acompanha a posição GPS do usuário em alta precisão.
+   * Se o rastreamento em tempo real já estiver ativo, retorna instantaneamente a última coordenada fresca.
+   * @param {boolean} centralizar Se deve centralizar a câmera
+   * @returns {Promise<{latitude: number, longitude: number, precisaoGps: number, altitude: number|null}>}
+   */
+  function obterLocalizacaoAtual(centralizar = true) {
+    if (ultimaPosicaoGps && (Date.now() - ultimaPosicaoGps.timestamp < 6000)) {
+      if (centralizar && map) {
+        map.setView([ultimaPosicaoGps.latitude, ultimaPosicaoGps.longitude], Math.max(map.getZoom(), 16), { animate: true });
+      }
+      return Promise.resolve(ultimaPosicaoGps);
+    }
+    return iniciarRastreamentoGps(centralizar);
   }
 
   /**
@@ -3451,6 +3659,11 @@ const ITPAMap = (function () {
     },
     getLayerGroupProdes: () => layerGroupProdes,
     getLayerGroupIbama: () => layerGroupIbama,
+    iniciarRastreamentoGps,
+    pararRastreamentoGps,
+    alternarRastreamentoGps,
+    obterUltimaPosicaoGps: () => ultimaPosicaoGps,
+    isRastreamentoAtivo: () => gpsRastreamentoAtivo,
     carregarCarNoMapa,
     carregarOcorrencias,
     obterLocalizacaoAtual,

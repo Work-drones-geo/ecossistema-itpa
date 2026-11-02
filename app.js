@@ -544,10 +544,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function obterGpsParaFormulario() {
     const coordsText = document.getElementById('display-coords');
     const accuracyTag = document.getElementById('display-accuracy');
-    coordsText.innerText = 'Capturando GPS de alta precisão...';
+
+    // Se já houver leitura fresca em tempo real (< 8s), preenche imediatamente sem delay
+    if (window.ULTIMA_POSICAO_GPS && (Date.now() - window.ULTIMA_POSICAO_GPS.timestamp < 8000)) {
+      const pos = window.ULTIMA_POSICAO_GPS;
+      coordsText.innerText = `${pos.latitude.toFixed(6)}, ${pos.longitude.toFixed(6)}`;
+      accuracyTag.innerText = `Precisão em Tempo Real: ±${Math.round(pos.precisaoGps)} metros`;
+
+      document.getElementById('ocorrencia-lat').value = pos.latitude;
+      document.getElementById('ocorrencia-lng').value = pos.longitude;
+      document.getElementById('ocorrencia-accuracy').value = pos.precisaoGps;
+      document.getElementById('ocorrencia-altitude').value = pos.altitude || '';
+      return;
+    }
+
+    coordsText.innerText = 'Capturando GPS de alta precisão via satélite...';
 
     try {
-      const pos = await window.ITPAMap.obterLocalizacaoAtual();
+      const pos = await window.ITPAMap.obterLocalizacaoAtual(false);
       coordsText.innerText = `${pos.latitude.toFixed(6)}, ${pos.longitude.toFixed(6)}`;
       accuracyTag.innerText = `Precisão: ±${Math.round(pos.precisaoGps)} metros`;
 
@@ -626,13 +640,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ==========================================================================
   // 5. Controles Flutuantes do Mapa (GPS e Seleção de Ponto)
   // ==========================================================================
-  btnGpsLocate.addEventListener('click', async () => {
-    showToast('Buscando sinal GPS...', 'info');
-    try {
-      const pos = await window.ITPAMap.obterLocalizacaoAtual();
-      showToast(`Localizado! Precisão: ±${Math.round(pos.precisaoGps)}m`, 'success');
-    } catch (err) {
-      showToast('Permissão de GPS negada ou sinal indisponível.', 'warning');
+  btnGpsLocate.addEventListener('click', () => {
+    if (window.ITPAMap && typeof window.ITPAMap.alternarRastreamentoGps === 'function') {
+      window.ITPAMap.alternarRastreamentoGps();
+    } else if (window.ITPAMap && typeof window.ITPAMap.obterLocalizacaoAtual === 'function') {
+      window.ITPAMap.obterLocalizacaoAtual();
     }
   });
 
