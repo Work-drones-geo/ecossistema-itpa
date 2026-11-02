@@ -408,13 +408,13 @@ const ITPAMap = (function () {
       }
     };
 
-    /**
-   * Carrega o arquivo GeoJSON do CAR correspondente à propriedade selecionada.
-   * Quando Guanaí estiver selecionada, carrega 'DATA/car_guanai.geojson'.
-   * @param {boolean} centralizar Se deve aplicar fitBounds
-   * @returns {Promise<boolean>}
-   */
-    // =========================================================================
+    await Promise.all([
+      carregarCamadaGeoJson(['./DATA/prodes_alertas.geojson', './data/prodes_alertas.geojson'], layerGroupProdes, 'PRODES Alertas'),
+      carregarCamadaGeoJson(['./DATA/ibama_embargos.geojson', './data/ibama_embargos.geojson'], layerGroupIbama, 'Embargos IBAMA')
+    ]);
+  }
+
+  // =========================================================================
   // Polígonos de CAR Embutidos (Zero-Fail / Suporte Offline Instantâneo)
   // Garante abertura imediata da linha amarela mesmo sem rede ou fetch
   // =========================================================================
@@ -456,6 +456,12 @@ const ITPAMap = (function () {
     }
   };
 
+  /**
+   * Carrega o arquivo GeoJSON do CAR correspondente à propriedade selecionada.
+   * Quando Guanaí estiver selecionada, carrega 'DATA/car_guanai.geojson'.
+   * @param {boolean} centralizar Se deve adicionar ao mapa e aplicar fitBounds
+   * @returns {Promise<boolean>}
+   */
   async function carregarCamadaCar(centralizar = true) {
     if (!layerGroupCar || !map) return false;
     const key = (window.PROJETO_ATIVO_ID || 'guanai').toLowerCase().trim();
@@ -512,18 +518,23 @@ const ITPAMap = (function () {
         fillOpacity: 0.20
       });
 
-      // Garante que o layerGroupCar esteja no mapa
-      if (!map.hasLayer(layerGroupCar)) {
-        map.addLayer(layerGroupCar);
-      }
-      if (layerGroupCar.bringToFront) {
-        layerGroupCar.bringToFront();
-      }
+      console.log(`[ITPAMap] CAR da propriedade '${key}' preparado com sucesso de: ${urlSucesso}`);
 
-      console.log(`[ITPAMap] CAR da propriedade '${key}' ativado com sucesso de: ${urlSucesso}`);
-
-      if (centralizar && layerGroupCar.getBounds && layerGroupCar.getBounds().isValid()) {
-        map.fitBounds(layerGroupCar.getBounds().pad(0.08), { maxZoom: 16 });
+      // Se centralizar for true (clique explícito para ligar o CAR)
+      if (centralizar) {
+        if (!map.hasLayer(layerGroupCar)) {
+          map.addLayer(layerGroupCar);
+        }
+        if (layerGroupCar.bringToFront) {
+          layerGroupCar.bringToFront();
+        }
+        if (layerGroupCar.getBounds && layerGroupCar.getBounds().isValid()) {
+          map.fitBounds(layerGroupCar.getBounds().pad(0.08), { maxZoom: 16 });
+        }
+      } else if (map.hasLayer(layerGroupCar)) {
+        if (layerGroupCar.bringToFront) {
+          layerGroupCar.bringToFront();
+        }
       }
 
       // Sincroniza com o módulo de Auditoria Territorial se disponível
@@ -538,14 +549,6 @@ const ITPAMap = (function () {
       console.warn(`[ITPAMap] Nenhum arquivo CAR com feições encontrado para '${key}'.`);
       return false;
     }
-  }
-
-  await Promise.all([
-      carregarCamadaCar(false),
-      carregarCamadaGeoJson(['./DATA/car_oficial.geojson', './data/car_oficial.geojson'], layerGroupCar, 'Base CAR'),
-      carregarCamadaGeoJson(['./DATA/prodes_alertas.geojson', './data/prodes_alertas.geojson'], layerGroupProdes, 'PRODES Alertas'),
-      carregarCamadaGeoJson(['./DATA/ibama_embargos.geojson', './data/ibama_embargos.geojson'], layerGroupIbama, 'Embargos IBAMA')
-    ]);
   }
 
   /**
