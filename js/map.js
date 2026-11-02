@@ -25,6 +25,8 @@ const ITPAMap = (function () {
   let layerGroupCar = null;
   let layerGroupProdes = null;
   let layerGroupIbama = null;
+  let layerGroupEsecLimite = null;
+  let layerGroupApaLimite = null;
 
   // Camadas Base Globais
   let osmLayer = null;
@@ -221,6 +223,51 @@ const ITPAMap = (function () {
       }
     });
 
+    layerGroupEsecLimite = L.geoJSON(null, {
+      style: {
+        color: '#0891b2',       // Ciano / Azul Petróleo Oficial ESEC IBAMA
+        weight: 3.5,
+        opacity: 1.0,
+        fillColor: '#06b6d4',
+        fillOpacity: 0.12
+      },
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties || {};
+        const nome = props.Name || props.nome || 'Estação Ecológica da Guanabara';
+        layer.bindPopup(`
+          <div class="itpa-popup-card">
+            <h4 style="margin:0 0 4px 0; color:#0891b2;">🏛️ ESEC Limite IBAMA</h4>
+            <p style="margin:0; font-size:12px;"><strong>Unidade:</strong> ${nome}</p>
+            <p style="margin:0; font-size:12px;"><strong>Gestão:</strong> IBAMA / ICMBio Federal</p>
+            <p style="margin:4px 0 0 0; font-size:11px; color:#0891b2;"><strong>Arquivo: esec_limite.geojson</strong></p>
+          </div>
+        `);
+      }
+    });
+
+    layerGroupApaLimite = L.geoJSON(null, {
+      style: {
+        color: '#7c3aed',       // Roxo / Violeta destacado APA Guapimirim
+        weight: 3.5,
+        opacity: 1.0,
+        fillColor: '#8b5cf6',
+        fillOpacity: 0.10,
+        dashArray: '8, 5'
+      },
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties || {};
+        const nome = props.Name || props.nome || 'APA de Guapimirim';
+        layer.bindPopup(`
+          <div class="itpa-popup-card">
+            <h4 style="margin:0 0 4px 0; color:#7c3aed;">🌿 APA Guapi Limite IBAMA</h4>
+            <p style="margin:0; font-size:12px;"><strong>Unidade:</strong> ${nome}</p>
+            <p style="margin:0; font-size:12px;"><strong>Gestão:</strong> IBAMA / ICMBio Federal</p>
+            <p style="margin:4px 0 0 0; font-size:11px; color:#7c3aed;"><strong>Arquivo: apa_guapi_limite.geojson</strong></p>
+          </div>
+        `);
+      }
+    });
+
     // 5. Camada de Ortofoto Local (Drone / Voo de Alta Resolução) com reescalonamento no zoom reduzido
     ortofotoLayer = L.tileLayer('./assets/tiles/ortofoto/{z}/{x}/{y}.png', {
       pane: 'dronePane',
@@ -249,7 +296,9 @@ const ITPAMap = (function () {
       '🛰️ Satélite RGB - Passagem Anterior (2m)': layerGroupRgbAnterior,
       '🏛️ Base CAR (Polígono Oficial)': layerGroupCar,
       '🚨 Alertas PRODES (> 31/07/2019)': layerGroupProdes,
-      '🚫 Embargos Ambientais (IBAMA)': layerGroupIbama
+      '🚫 Embargos Ambientais (IBAMA)': layerGroupIbama,
+      '🏛️ ESEC Limite IBAMA': layerGroupEsecLimite,
+      '🌿 APA Guapi Limite IBAMA': layerGroupApaLimite
     };
 
     // Controle nativo de camadas integrado ao mapa
@@ -464,22 +513,30 @@ const ITPAMap = (function () {
    */
   async function carregarCamadaCar(centralizar = true) {
     if (!layerGroupCar || !map) return false;
-    const key = (window.PROJETO_ATIVO_ID || 'guanai').toLowerCase().trim();
+    const key = (window.PROJETO_ATIVO_ID || 'nelito').toLowerCase().trim();
 
-    // Prioriza car_guanai.geojson para Guanaí ou fallback robusto
-    const caminhos = (key === 'guanai')
-      ? [
-          './DATA/car_guanai.geojson',
-          'DATA/car_guanai.geojson',
-          './data/car_guanai.geojson',
-          './DATA/car_oficial.geojson'
-        ]
-      : [
-          `./DATA/car_${key}.geojson`,
-          `DATA/car_${key}.geojson`,
-          './DATA/car_guanai.geojson',
-          './DATA/car_oficial.geojson'
-        ];
+    // Prioriza o arquivo de CAR específico de cada fazenda
+    let caminhos = [];
+    if (key === 'nelito') {
+      caminhos = [
+        './DATA/car_nelito.geojson',
+        'DATA/car_nelito.geojson',
+        './data/car_nelito.geojson'
+      ];
+    } else if (key === 'guanai') {
+      caminhos = [
+        './DATA/car_guanai.geojson',
+        'DATA/car_guanai.geojson',
+        './data/car_guanai.geojson'
+      ];
+    } else {
+      caminhos = [
+        `./DATA/car_${key}.geojson`,
+        `DATA/car_${key}.geojson`,
+        './DATA/car_nelito.geojson',
+        './DATA/car_guanai.geojson'
+      ];
+    }
 
     let geojsonData = null;
     let urlSucesso = '';
@@ -498,13 +555,10 @@ const ITPAMap = (function () {
       } catch (e) {}
     }
 
-    // Se o fetch falhar ou demorar (ex: offline ou cache antigo), utiliza o polígono embutido da Guanaí
-    if (!geojsonData && (key === 'guanai' || !POLIGONOS_CAR_EMBUTIDOS[key])) {
-      geojsonData = POLIGONOS_CAR_EMBUTIDOS.guanai;
-      urlSucesso = 'Memória Local (Zero-Fail)';
-    } else if (!geojsonData && POLIGONOS_CAR_EMBUTIDOS[key]) {
+    // Fallback instantâneo embutido na memória local
+    if (!geojsonData && POLIGONOS_CAR_EMBUTIDOS[key]) {
       geojsonData = POLIGONOS_CAR_EMBUTIDOS[key];
-      urlSucesso = 'Memória Local (Zero-Fail)';
+      urlSucesso = `Memória Local (${key})`;
     }
 
     if (geojsonData) {
@@ -520,7 +574,6 @@ const ITPAMap = (function () {
 
       console.log(`[ITPAMap] CAR da propriedade '${key}' preparado com sucesso de: ${urlSucesso}`);
 
-      // Se centralizar for true (clique explícito para ligar o CAR)
       if (centralizar) {
         if (!map.hasLayer(layerGroupCar)) {
           map.addLayer(layerGroupCar);
@@ -537,10 +590,10 @@ const ITPAMap = (function () {
         }
       }
 
-      // Sincroniza com o módulo de Auditoria Territorial se disponível
       if (window.ITPAAuditoria && typeof window.ITPAAuditoria.processarGeojsonCar === 'function') {
         try {
-          window.ITPAAuditoria.processarGeojsonCar(geojsonData, 'car_guanai.geojson');
+          const nomeArquivo = key === 'nelito' ? 'car_nelito.geojson' : 'car_guanai.geojson';
+          window.ITPAAuditoria.processarGeojsonCar(geojsonData, nomeArquivo);
         } catch (eAudit) {}
       }
 
@@ -549,6 +602,127 @@ const ITPAMap = (function () {
       console.warn(`[ITPAMap] Nenhum arquivo CAR com feições encontrado para '${key}'.`);
       return false;
     }
+  }
+
+  /**
+   * Carrega o perímetro oficial da ESEC Guanabara (esec_limite.geojson)
+   * @param {boolean} centralizar Se deve aplicar fitBounds
+   * @returns {Promise<boolean>}
+   */
+  async function carregarCamadaEsecLimite(centralizar = true) {
+    if (!layerGroupEsecLimite || !map) return false;
+
+    const caminhos = [
+      './DATA/esec_limite.geojson',
+      'DATA/esec_limite.geojson',
+      './data/esec_limite.geojson'
+    ];
+
+    let geojsonData = null;
+    let urlSucesso = '';
+
+    for (const url of caminhos) {
+      try {
+        const resp = await fetch(url);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && ((Array.isArray(data.features) && data.features.length > 0) || data.type === 'Feature')) {
+            geojsonData = data;
+            urlSucesso = url;
+            break;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (geojsonData) {
+      layerGroupEsecLimite.clearLayers();
+      layerGroupEsecLimite.addData(geojsonData);
+      layerGroupEsecLimite.setStyle({
+        color: '#0891b2',       // Ciano / Azul Petróleo Oficial IBAMA
+        weight: 3.5,
+        opacity: 1.0,
+        fillColor: '#06b6d4',
+        fillOpacity: 0.12
+      });
+
+      if (centralizar) {
+        if (!map.hasLayer(layerGroupEsecLimite)) {
+          map.addLayer(layerGroupEsecLimite);
+        }
+        if (layerGroupEsecLimite.bringToFront) {
+          layerGroupEsecLimite.bringToFront();
+        }
+        if (layerGroupEsecLimite.getBounds && layerGroupEsecLimite.getBounds().isValid()) {
+          map.fitBounds(layerGroupEsecLimite.getBounds().pad(0.08), { maxZoom: 15 });
+        }
+      }
+
+      console.log(`[ITPAMap] ESEC Limite IBAMA carregado com sucesso de: ${urlSucesso}`);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Carrega o perímetro oficial da APA Guapimirim (apa_guapi_limite.geojson)
+   * @param {boolean} centralizar Se deve aplicar fitBounds
+   * @returns {Promise<boolean>}
+   */
+  async function carregarCamadaApaLimite(centralizar = true) {
+    if (!layerGroupApaLimite || !map) return false;
+
+    const caminhos = [
+      './DATA/apa_guapi_limite.geojson',
+      'DATA/apa_guapi_limite.geojson',
+      './data/apa_guapi_limite.geojson'
+    ];
+
+    let geojsonData = null;
+    let urlSucesso = '';
+
+    for (const url of caminhos) {
+      try {
+        const resp = await fetch(url);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && ((Array.isArray(data.features) && data.features.length > 0) || data.type === 'Feature')) {
+            geojsonData = data;
+            urlSucesso = url;
+            break;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (geojsonData) {
+      layerGroupApaLimite.clearLayers();
+      layerGroupApaLimite.addData(geojsonData);
+      layerGroupApaLimite.setStyle({
+        color: '#7c3aed',       // Roxo / Violeta destacado IBAMA
+        weight: 3.5,
+        opacity: 1.0,
+        fillColor: '#8b5cf6',
+        fillOpacity: 0.10,
+        dashArray: '8, 5'
+      });
+
+      if (centralizar) {
+        if (!map.hasLayer(layerGroupApaLimite)) {
+          map.addLayer(layerGroupApaLimite);
+        }
+        if (layerGroupApaLimite.bringToFront) {
+          layerGroupApaLimite.bringToFront();
+        }
+        if (layerGroupApaLimite.getBounds && layerGroupApaLimite.getBounds().isValid()) {
+          map.fitBounds(layerGroupApaLimite.getBounds().pad(0.08), { maxZoom: 15 });
+        }
+      }
+
+      console.log(`[ITPAMap] APA Guapi Limite IBAMA carregado com sucesso de: ${urlSucesso}`);
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -1132,6 +1306,14 @@ const ITPAMap = (function () {
 
     const ibamaAtivo = layerGroupIbama && map.hasLayer(layerGroupIbama);
     if (toggleIbama) toggleIbama.checked = !!ibamaAtivo;
+
+    const toggleEsecLimite = document.getElementById('sheet-toggle-esec-limite');
+    const esecLimiteAtivo = layerGroupEsecLimite && map.hasLayer(layerGroupEsecLimite);
+    if (toggleEsecLimite) toggleEsecLimite.checked = !!esecLimiteAtivo;
+
+    const toggleApaLimite = document.getElementById('sheet-toggle-apa-limite');
+    const apaLimiteAtivo = layerGroupApaLimite && map.hasLayer(layerGroupApaLimite);
+    if (toggleApaLimite) toggleApaLimite.checked = !!apaLimiteAtivo;
 
     // 6. Mapas Base (Radios)
     if (baseRadios && baseRadios.length) {
@@ -1951,7 +2133,7 @@ const ITPAMap = (function () {
     // =========================================================================
     // Se o CAR estiver ativo na troca de projeto, atualiza para o CAR correspondente
     if (layerGroupCar && map.hasLayer(layerGroupCar)) {
-      if (key === 'guanai') {
+      if (key === 'nelito' || key === 'guanai') {
         carregarCamadaCar(false);
       } else {
         layerGroupCar.clearLayers();
@@ -2483,7 +2665,9 @@ const ITPAMap = (function () {
           }
 
           if (window.showToast) {
-            if (key === 'guanai') {
+            if (key === 'nelito') {
+              window.showToast('Base CAR da Fazenda Nelito ativada (linha amarela)', 'info');
+            } else if (key === 'guanai') {
               window.showToast('Base CAR da Fazenda Guanaí ativada (linha amarela)', 'info');
             } else {
               window.showToast('Base CAR Oficial ativada (linha amarela)', 'info');
@@ -2533,6 +2717,60 @@ const ITPAMap = (function () {
         }
         sincronizarEstadosUI();
       };
+    }
+
+    const toggleEsecLimite = document.getElementById('sheet-toggle-esec-limite');
+    if (toggleEsecLimite) {
+      toggleEsecLimite.onchange = async () => {
+        if (toggleEsecLimite.checked) {
+          await carregarCamadaEsecLimite(true);
+          if (window.showToast) window.showToast('ESEC Limite IBAMA ativado (ciano)', 'info');
+        } else {
+          if (layerGroupEsecLimite && map.hasLayer(layerGroupEsecLimite)) {
+            map.removeLayer(layerGroupEsecLimite);
+          }
+          if (window.showToast) window.showToast('ESEC Limite IBAMA removido do mapa', 'default');
+        }
+        sincronizarEstadosUI();
+      };
+
+      const rowEsec = toggleEsecLimite.closest('.sheet-switch-row');
+      if (rowEsec) {
+        rowEsec.style.cursor = 'pointer';
+        rowEsec.addEventListener('click', (e) => {
+          if (e.target !== toggleEsecLimite && !e.target.closest('.ios-toggle')) {
+            toggleEsecLimite.checked = !toggleEsecLimite.checked;
+            toggleEsecLimite.dispatchEvent(new Event('change'));
+          }
+        });
+      }
+    }
+
+    const toggleApaLimite = document.getElementById('sheet-toggle-apa-limite');
+    if (toggleApaLimite) {
+      toggleApaLimite.onchange = async () => {
+        if (toggleApaLimite.checked) {
+          await carregarCamadaApaLimite(true);
+          if (window.showToast) window.showToast('APA Guapi Limite IBAMA ativado (roxo tracejado)', 'info');
+        } else {
+          if (layerGroupApaLimite && map.hasLayer(layerGroupApaLimite)) {
+            map.removeLayer(layerGroupApaLimite);
+          }
+          if (window.showToast) window.showToast('APA Guapi Limite removido do mapa', 'default');
+        }
+        sincronizarEstadosUI();
+      };
+
+      const rowApa = toggleApaLimite.closest('.sheet-switch-row');
+      if (rowApa) {
+        rowApa.style.cursor = 'pointer';
+        rowApa.addEventListener('click', (e) => {
+          if (e.target !== toggleApaLimite && !e.target.closest('.ios-toggle')) {
+            toggleApaLimite.checked = !toggleApaLimite.checked;
+            toggleApaLimite.dispatchEvent(new Event('change'));
+          }
+        });
+      }
     }
 
     // Reatividade a qualquer mudança de camada no Leaflet
@@ -2966,6 +3204,26 @@ const ITPAMap = (function () {
     getLayerGroupNdviAnterior: () => layerGroupNdviAnterior,
     getLayerGroupRgbAnterior: () => layerGroupRgbAnterior,
     getLayerGroupCar: () => layerGroupCar,
+    getLayerGroupEsecLimite: () => layerGroupEsecLimite,
+    getLayerGroupApaLimite: () => layerGroupApaLimite,
+    carregarCamadaEsecLimite,
+    carregarCamadaApaLimite,
+    alternarCamadaEsecLimite: (ligar) => {
+      const toggle = document.getElementById('sheet-toggle-esec-limite');
+      if (toggle) {
+        if (typeof ligar === 'boolean') toggle.checked = ligar;
+        else toggle.checked = !toggle.checked;
+        toggle.dispatchEvent(new Event('change'));
+      }
+    },
+    alternarCamadaApaLimite: (ligar) => {
+      const toggle = document.getElementById('sheet-toggle-apa-limite');
+      if (toggle) {
+        if (typeof ligar === 'boolean') toggle.checked = ligar;
+        else toggle.checked = !toggle.checked;
+        toggle.dispatchEvent(new Event('change'));
+      }
+    },
     carregarCamadaCar,
     alternarCamadaCar: (ligar) => {
       const toggle = document.getElementById('sheet-toggle-car');
