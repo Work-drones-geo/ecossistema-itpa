@@ -157,20 +157,24 @@ const ITPAMap = (function () {
     // 4b. Instanciação das Camadas de Conformidade e Auditoria (CMN nº 5.303/2026)
     layerGroupCar = L.geoJSON(null, {
       style: {
-        color: '#0284c7', // Azul Ciano Oficial CAR
-        weight: 2.2,
-        fillColor: '#38bdf8',
-        fillOpacity: 0.08
+        color: '#FFD700',       // Linha amarela oficial solicitada (Amarelo Ouro)
+        weight: 3.5,            // Traço visível e destacado
+        opacity: 1.0,           // Opacidade total na linha
+        fillColor: '#FFD700',   // Preenchimento suave
+        fillOpacity: 0.15
       },
       onEachFeature: (feature, layer) => {
         const props = feature.properties || {};
-        const cod = props.cod_imovel || props.COD_IMOVEL || props.car || props.id || 'Imóvel Rural';
+        const cod = props.cod_imovel || props.COD_IMOVEL || props.car || props.id || props.Name || '046596D24E32B5E48B05';
+        const nome = props.Name || props.nome || props.Nome || 'Área Guanaí';
         const area = props.area_ha || props.num_area || '--';
         layer.bindPopup(`
           <div class="itpa-popup-card">
-            <h4 style="margin:0 0 4px 0; color:#0284c7;">🏛️ Base CAR Oficial</h4>
-            <p style="margin:0; font-size:12px;"><strong>Código:</strong> ${cod}</p>
-            <p style="margin:0; font-size:12px;"><strong>Área:</strong> ${area} ha</p>
+            <h4 style="margin:0 0 4px 0; color:#B45309;">🏛️ Base CAR Oficial</h4>
+            <p style="margin:0; font-size:12px;"><strong>Imóvel:</strong> ${nome}</p>
+            <p style="margin:0; font-size:12px;"><strong>Código SICAR:</strong> ${cod}</p>
+            ${area !== '--' ? `<p style="margin:0; font-size:12px;"><strong>Área:</strong> ${area} ha</p>` : ''}
+            <p style="margin:4px 0 0 0; font-size:11px; color:#D97706;"><strong>Linha Amarela: Limite Cadastral do CAR</strong></p>
           </div>
         `);
       }
@@ -404,7 +408,81 @@ const ITPAMap = (function () {
       }
     };
 
-    await Promise.all([
+    /**
+   * Carrega o arquivo GeoJSON do CAR correspondente à propriedade selecionada.
+   * Quando Guanaí estiver selecionada, carrega 'DATA/car_guanai.geojson'.
+   * @param {boolean} centralizar Se deve aplicar fitBounds
+   * @returns {Promise<boolean>}
+   */
+  async function carregarCamadaCar(centralizar = true) {
+    if (!layerGroupCar || !map) return false;
+    const key = (window.PROJETO_ATIVO_ID || 'guanai').toLowerCase().trim();
+
+    // Prioriza car_guanai.geojson para Guanaí ou fallback robusto
+    const caminhos = (key === 'guanai')
+      ? [
+          './DATA/car_guanai.geojson',
+          'DATA/car_guanai.geojson',
+          './data/car_guanai.geojson',
+          './DATA/car_oficial.geojson'
+        ]
+      : [
+          `./DATA/car_${key}.geojson`,
+          `DATA/car_${key}.geojson`,
+          './DATA/car_guanai.geojson',
+          './DATA/car_oficial.geojson'
+        ];
+
+    let geojsonData = null;
+    let urlSucesso = '';
+
+    for (const url of caminhos) {
+      try {
+        const resp = await fetch(url);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && ((Array.isArray(data.features) && data.features.length > 0) || data.type === 'Feature')) {
+            geojsonData = data;
+            urlSucesso = url;
+            break;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (geojsonData) {
+      layerGroupCar.clearLayers();
+      layerGroupCar.addData(geojsonData);
+      layerGroupCar.setStyle({
+        color: '#FFD700',       // Linha amarela viva
+        weight: 3.5,
+        opacity: 1.0,
+        fillColor: '#FFD700',
+        fillOpacity: 0.15
+      });
+
+      console.log(`[ITPAMap] CAR da propriedade '${key}' carregado com sucesso de: ${urlSucesso}`);
+
+      if (centralizar && layerGroupCar.getBounds && layerGroupCar.getBounds().isValid()) {
+        map.fitBounds(layerGroupCar.getBounds().pad(0.08), { maxZoom: 16 });
+      }
+
+      // Sincroniza com o módulo de Auditoria Territorial se disponível
+      if (window.ITPAAuditoria && typeof window.ITPAAuditoria.processarGeojsonCar === 'function') {
+        try {
+          window.ITPAAuditoria.processarGeojsonCar(geojsonData, 'car_guanai.geojson');
+        } catch (eAudit) {}
+      }
+
+      return true;
+    } else {
+      console.warn(`[ITPAMap] Nenhum arquivo CAR com feições encontrado para '${key}'.`);
+      return false;
+    }
+  }
+
+  await Promise.all([
+      carregarCamadaCar(false),
       carregarCamadaGeoJson(['./DATA/car_oficial.geojson', './data/car_oficial.geojson'], layerGroupCar, 'Base CAR'),
       carregarCamadaGeoJson(['./DATA/prodes_alertas.geojson', './data/prodes_alertas.geojson'], layerGroupProdes, 'PRODES Alertas'),
       carregarCamadaGeoJson(['./DATA/ibama_embargos.geojson', './data/ibama_embargos.geojson'], layerGroupIbama, 'Embargos IBAMA')
@@ -419,6 +497,13 @@ const ITPAMap = (function () {
     if (!layerGroupCar || !map) return;
     layerGroupCar.clearLayers();
     layerGroupCar.addData(geojson);
+    layerGroupCar.setStyle({
+      color: '#FFD700',
+      weight: 3.5,
+      opacity: 1.0,
+      fillColor: '#FFD700',
+      fillOpacity: 0.15
+    });
 
     if (!map.hasLayer(layerGroupCar)) {
       map.addLayer(layerGroupCar);
@@ -1802,6 +1887,15 @@ const ITPAMap = (function () {
     // =========================================================================
     // ETAPA 4 (SINCRONIZAÇÃO UI & AUDITORIA): Atualiza botões e estados da tela
     // =========================================================================
+    // Se o CAR estiver ativo na troca de projeto, atualiza para o CAR correspondente
+    if (layerGroupCar && map.hasLayer(layerGroupCar)) {
+      if (key === 'guanai') {
+        carregarCamadaCar(false);
+      } else {
+        layerGroupCar.clearLayers();
+      }
+    }
+
     sincronizarEstadosUI();
 
     if (window.ITPAAuditoria && typeof window.ITPAAuditoria.definirProjetoAtivo === 'function') {
@@ -2312,14 +2406,52 @@ const ITPAMap = (function () {
     }
 
     if (toggleCar) {
-      toggleCar.onchange = () => {
+      toggleCar.onchange = async () => {
+        const key = (window.PROJETO_ATIVO_ID || 'guanai').toLowerCase().trim();
+
         if (toggleCar.checked) {
-          if (layerGroupCar && !map.hasLayer(layerGroupCar)) map.addLayer(layerGroupCar);
+          // Quando ligar: carrega car_guanai.geojson (ou o CAR da fazenda ativa)
+          const temFeatures = layerGroupCar && layerGroupCar.getLayers && layerGroupCar.getLayers().length > 0;
+          if (!temFeatures || key === 'guanai') {
+            await carregarCamadaCar(true);
+          }
+
+          if (layerGroupCar && !map.hasLayer(layerGroupCar)) {
+            map.addLayer(layerGroupCar);
+            if (layerGroupCar.getBounds && layerGroupCar.getBounds().isValid()) {
+              map.fitBounds(layerGroupCar.getBounds().pad(0.08), { maxZoom: 16 });
+            }
+          }
+
+          if (window.showToast) {
+            if (key === 'guanai') {
+              window.showToast('Base CAR da Fazenda Guanaí ativada (linha amarela)', 'info');
+            } else {
+              window.showToast('Base CAR Oficial ativada (linha amarela)', 'info');
+            }
+          }
         } else {
-          if (layerGroupCar && map.hasLayer(layerGroupCar)) map.removeLayer(layerGroupCar);
+          // Quando desligar: remove do mapa
+          if (layerGroupCar && map.hasLayer(layerGroupCar)) {
+            map.removeLayer(layerGroupCar);
+          }
+          if (window.showToast) {
+            window.showToast('Base CAR removida do mapa', 'default');
+          }
         }
         sincronizarEstadosUI();
       };
+
+      const rowCar = toggleCar.closest('.sheet-switch-row');
+      if (rowCar) {
+        rowCar.style.cursor = 'pointer';
+        rowCar.addEventListener('click', (e) => {
+          if (e.target !== toggleCar && !e.target.closest('.ios-toggle')) {
+            toggleCar.checked = !toggleCar.checked;
+            toggleCar.dispatchEvent(new Event('change'));
+          }
+        });
+      }
     }
 
     if (toggleProdes) {
@@ -2775,6 +2907,15 @@ const ITPAMap = (function () {
     getLayerGroupNdviAnterior: () => layerGroupNdviAnterior,
     getLayerGroupRgbAnterior: () => layerGroupRgbAnterior,
     getLayerGroupCar: () => layerGroupCar,
+    carregarCamadaCar,
+    alternarCamadaCar: (ligar) => {
+      const toggle = document.getElementById('sheet-toggle-car');
+      if (toggle) {
+        if (typeof ligar === 'boolean') toggle.checked = ligar;
+        else toggle.checked = !toggle.checked;
+        toggle.dispatchEvent(new Event('change'));
+      }
+    },
     getLayerGroupProdes: () => layerGroupProdes,
     getLayerGroupIbama: () => layerGroupIbama,
     carregarCarNoMapa,
