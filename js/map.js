@@ -515,7 +515,22 @@ const ITPAMap = (function () {
     if (!layerGroupCar || !map) return false;
     const key = (window.PROJETO_ATIVO_ID || 'nelito').toLowerCase().trim();
 
-    // Prioriza o arquivo de CAR específico de cada fazenda
+    // ESEC Guanabara NÃO possui cadastro no SICAR (Unidade de Conservação Federal)
+    if (key === 'esec') {
+      console.warn('[ITPAMap] ESEC Guanabara não possui Base CAR. Utilize ESEC Limite IBAMA ou APA Guapi Limite IBAMA.');
+      if (layerGroupCar && map.hasLayer(layerGroupCar)) {
+        map.removeLayer(layerGroupCar);
+      }
+      layerGroupCar.clearLayers();
+      const toggleCar = document.getElementById('sheet-toggle-car');
+      if (toggleCar) toggleCar.checked = false;
+      if (window.showToast) {
+        window.showToast('ESEC Guanabara não possui CAR. Utilize os Limites Oficiais IBAMA.', 'warning');
+      }
+      return false;
+    }
+
+    // Prioriza o arquivo de CAR específico de cada fazenda privada
     let caminhos = [];
     if (key === 'nelito') {
       caminhos = [
@@ -532,9 +547,7 @@ const ITPAMap = (function () {
     } else {
       caminhos = [
         `./DATA/car_${key}.geojson`,
-        `DATA/car_${key}.geojson`,
-        './DATA/car_nelito.geojson',
-        './DATA/car_guanai.geojson'
+        `DATA/car_${key}.geojson`
       ];
     }
 
@@ -1314,6 +1327,23 @@ const ITPAMap = (function () {
     const toggleApaLimite = document.getElementById('sheet-toggle-apa-limite');
     const apaLimiteAtivo = layerGroupApaLimite && map.hasLayer(layerGroupApaLimite);
     if (toggleApaLimite) toggleApaLimite.checked = !!apaLimiteAtivo;
+
+    // Gerenciamento contextual inteligente dos botões conforme a propriedade selecionada:
+    const rowCar = document.getElementById('row-car');
+    const rowEsecLimite = document.getElementById('row-esec-limite');
+    const rowApaLimite = document.getElementById('row-apa-limite');
+
+    if (keyAtiva === 'esec') {
+      // ESEC: Oculta CAR e exibe em destaque no topo os Limites Federais Oficiais
+      if (rowCar) rowCar.style.display = 'none';
+      if (rowEsecLimite) rowEsecLimite.style.display = 'flex';
+      if (rowApaLimite) rowApaLimite.style.display = 'flex';
+    } else {
+      // Fazendas privadas (Nelito e Guanaí): Exibe Base CAR e oculta limites de UC
+      if (rowCar) rowCar.style.display = 'flex';
+      if (rowEsecLimite) rowEsecLimite.style.display = 'none';
+      if (rowApaLimite) rowApaLimite.style.display = 'none';
+    }
 
     // 6. Mapas Base (Radios)
     if (baseRadios && baseRadios.length) {
@@ -2131,12 +2161,21 @@ const ITPAMap = (function () {
     // =========================================================================
     // ETAPA 4 (SINCRONIZAÇÃO UI & AUDITORIA): Atualiza botões e estados da tela
     // =========================================================================
-    // Se o CAR estiver ativo na troca de projeto, atualiza para o CAR correspondente
-    if (layerGroupCar && map.hasLayer(layerGroupCar)) {
-      if (key === 'nelito' || key === 'guanai') {
+    // Ajuste dinâmico de limites oficiais na troca de projeto
+    if (key === 'esec') {
+      if (layerGroupCar && map.hasLayer(layerGroupCar)) {
+        map.removeLayer(layerGroupCar);
+      }
+      if (layerGroupCar) layerGroupCar.clearLayers();
+    } else {
+      if (layerGroupEsecLimite && map.hasLayer(layerGroupEsecLimite)) {
+        map.removeLayer(layerGroupEsecLimite);
+      }
+      if (layerGroupApaLimite && map.hasLayer(layerGroupApaLimite)) {
+        map.removeLayer(layerGroupApaLimite);
+      }
+      if (layerGroupCar && map.hasLayer(layerGroupCar)) {
         carregarCamadaCar(false);
-      } else {
-        layerGroupCar.clearLayers();
       }
     }
 
@@ -2654,6 +2693,15 @@ const ITPAMap = (function () {
         const key = (window.PROJETO_ATIVO_ID || 'guanai').toLowerCase().trim();
 
         if (toggleCar.checked) {
+          if (key === 'esec') {
+            toggleCar.checked = false;
+            if (window.showToast) {
+              window.showToast('ESEC Guanabara não possui CAR. Utilize os Limites Oficiais IBAMA.', 'warning');
+            }
+            sincronizarEstadosUI();
+            return;
+          }
+
           // Quando ligar: abre imediatamente o polígono na cor amarela
           await carregarCamadaCar(true);
 
